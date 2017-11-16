@@ -37,7 +37,11 @@ public class OpenFileFactory implements AutoCloseable {
 
 	public void close(Path path) throws IOException {
 		OpenFile file = openFiles.remove(path);
-		file.close();
+		if (file != null) {
+			file.close();
+		} else {
+			LOG.warn("Attempted to close file that has not been opened or already been closed.");
+		}
 	}
 
 	/**

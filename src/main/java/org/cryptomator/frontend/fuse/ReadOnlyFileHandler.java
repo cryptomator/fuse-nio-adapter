@@ -57,7 +57,7 @@ public class ReadOnlyFileHandler implements Closeable {
 			openFiles.close(path);
 			return 0;
 		} catch (IOException e) {
-			LOG.error("Error opening file.", e);
+			LOG.error("Error closing file.", e);
 			return -ErrorCodes.EIO();
 		}
 	}
