@@ -18,5 +18,19 @@
 *.tar.gz
 *.rar
 
+# Eclipse Settings Files #
+.settings
+.project
+.classpath
+target/
+test-output/
+
+# IntelliJ Settings Files #
+.idea/
+out/
+.idea_modules/
+*.iml
+*.iws
+
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
