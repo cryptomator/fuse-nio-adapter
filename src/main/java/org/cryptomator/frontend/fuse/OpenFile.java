@@ -10,9 +10,12 @@ import java.nio.file.OpenOption;
 import java.nio.file.Path;
 
 import jnr.ffi.Pointer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class OpenFile implements Closeable {
 
+	private static final Logger LOG = LoggerFactory.getLogger(OpenFile.class);
 	private static final int BUFFER_SIZE = 4096;
 
 	private final SeekableByteChannel channel;
@@ -34,27 +37,33 @@ public class OpenFile implements Closeable {
 	 * @return Actual number of bytes read (can be less than {@code size} if reached EOF).
 	 * @throws IOException If an exception occurs during read.
 	 */
-	public int read(Pointer buf, long num, long offset) throws IOException {
+	public synchronized int read(Pointer buf, long num, long offset) throws IOException {
 		long size = channel.size();
 		if (offset >= size) {
 			return 0;
 		} else {
 			ByteBuffer bb = ByteBuffer.allocate(BUFFER_SIZE);
-			int read = 0;
-			for (long i = 0; i < num; i += read) {
-				long toRead = Math.min(BUFFER_SIZE, num - i);
-				assert toRead <= BUFFER_SIZE; // i.e. we can cast it back to int
-				bb.limit((int) toRead);
-				read = channel.read(bb);
+			long pos = 0;
+			channel.position(offset);
+			do {
+				long remaining = num-pos;
+				int read = readNext(bb, remaining);
 				if (read == -1) {
-					return (int) i; // reached EOF
+					return (int) pos; // reached EOF TODO: wtf cast
+				} else {
+					LOG.trace("Reading {}-{} ({}-{})", offset+pos, offset+pos+read, offset, offset+num);
+					buf.put(pos, bb.array(), 0, read);
+					pos += read;
 				}
-				bb.flip();
-				buf.put(i, bb.array(), 0, read);
-				bb.clear();
-			}
-			return (int) num;
+			} while (pos < num);
+			return (int) pos; // TODO wtf cast
 		}
+	}
+
+	private int readNext(ByteBuffer readBuf, long num) throws IOException {
+		readBuf.clear();
+		readBuf.limit((int) Math.min(readBuf.capacity(), num));
+		return channel.read(readBuf);
 	}
 
 	@Override
