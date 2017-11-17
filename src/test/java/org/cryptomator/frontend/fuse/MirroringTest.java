@@ -18,7 +18,7 @@ public class MirroringTest {
 			Path m = Paths.get(scanner.nextLine());
 			if (Files.isDirectory(p) && (IS_WIN || Files.isDirectory(m))) {
 				try (FuseNioAdapter fs = AdapterFactory.createReadOnlyAdapter(p)) {
-					fs.mount(m, false, false);
+					fs.mount(m, false, true);
 					System.out.println("Mounted successfully. Enter anything to stop the server...");
 					System.in.read();
 					fs.umount();

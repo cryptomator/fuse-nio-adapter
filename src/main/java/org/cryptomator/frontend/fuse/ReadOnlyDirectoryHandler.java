@@ -27,7 +27,13 @@ public class ReadOnlyDirectoryHandler {
 
 	public int getattr(Path node, FileStat stat) {
 		stat.st_mode.set(FileStat.S_IFDIR | 0755);
-		stat.st_nlink.set(2);
+		long nlinks;
+		try {
+			nlinks = 2 + Files.list(node).filter(Files::isDirectory).count();
+		} catch (IOException e) {
+			nlinks = 2;
+		}
+		stat.st_nlink.set(nlinks);
 		return 0;
 	}
 

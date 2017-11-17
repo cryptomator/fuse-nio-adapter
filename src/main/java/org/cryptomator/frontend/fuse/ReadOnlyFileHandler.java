@@ -5,6 +5,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
+import java.nio.file.attribute.PosixFileAttributeView;
 
 import javax.inject.Inject;
 
@@ -65,9 +68,18 @@ public class ReadOnlyFileHandler implements Closeable {
 	public int getattr(Path node, FileStat stat) {
 		try {
 			stat.st_mode.set(FileStat.S_IFREG | 0444);
-			stat.st_nlink.set(1);
+			stat.st_uid.set((Integer) Files.getAttribute(node, "unix:uid"));
+			stat.st_gid.set((Integer) Files.getAttribute(node, "unix:gid"));
+			BasicFileAttributes attr = Files.readAttributes(node, BasicFileAttributes.class);
+			LOG.info("getattr {} {}", attr.lastModifiedTime(), attr.creationTime());
+			stat.st_mtim.tv_sec.set(attr.lastModifiedTime().toInstant().getEpochSecond());
+			stat.st_ctim.tv_sec.set(attr.creationTime().toInstant().getEpochSecond());
+			stat.st_atim.tv_sec.set(attr.lastAccessTime().toInstant().getEpochSecond());
 			stat.st_size.set(Files.size(node));
 			return 0;
+		} catch (UnsupportedOperationException | IllegalArgumentException e) {
+			LOG.error("getattr failed.", e);
+			return -ErrorCodes.EIO();
 		} catch (IOException e) {
 			LOG.error("getattr failed.", e);
 			return -ErrorCodes.EIO();
