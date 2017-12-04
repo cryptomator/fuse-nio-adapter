@@ -13,4 +13,9 @@ public class AdapterFactory {
 		return comp.readOnlyAdapter();
 	}
 
+	public static FuseNioAdapter createReadWriteAdapter(Path root) {
+		FuseNioAdapterModule module = new FuseNioAdapterModule(root);
+		FuseNioAdapterComponent comp = DaggerFuseNioAdapterComponent.builder().fuseNioAdapterModule(module).build();
+		return comp.readWriteAdapter();
+	}
 }

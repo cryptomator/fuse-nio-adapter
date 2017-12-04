@@ -3,6 +3,7 @@ package org.cryptomator.frontend.fuse;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.stream.Stream;
 
 import javax.inject.Inject;
@@ -29,6 +30,13 @@ public class ReadOnlyDirectoryHandler {
 		stat.st_mode.set(FileStat.S_IFDIR | 0755);
 		long nlinks;
 		try {
+			stat.st_uid.set((Integer) Files.getAttribute(node, "unix:uid"));
+			stat.st_gid.set((Integer) Files.getAttribute(node, "unix:gid"));
+			BasicFileAttributes attr = Files.readAttributes(node, BasicFileAttributes.class);
+			stat.st_mtim.tv_sec.set(attr.lastModifiedTime().toInstant().getEpochSecond());
+			stat.st_ctim.tv_sec.set(attr.creationTime().toInstant().getEpochSecond());
+			stat.st_atim.tv_sec.set(attr.lastAccessTime().toInstant().getEpochSecond());
+			stat.st_size.set(Files.size(node));
 			nlinks = 2 + Files.list(node).filter(Files::isDirectory).count();
 		} catch (IOException e) {
 			nlinks = 2;
