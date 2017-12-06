@@ -56,8 +56,8 @@ public class FileAttributesUtilTest {
 
 		Assertions.assertEquals(424242l, stat.st_mtim.tv_sec.get());
 		Assertions.assertEquals(42, stat.st_mtim.tv_nsec.intValue());
-		Assertions.assertEquals(424242l, stat.st_ctim.tv_sec.get());
-		Assertions.assertEquals(42, stat.st_ctim.tv_nsec.intValue());
+		Assertions.assertEquals(424242l, stat.st_birthtime.tv_sec.get());
+		Assertions.assertEquals(42, stat.st_birthtime.tv_nsec.intValue());
 		Assertions.assertEquals(424242l, stat.st_atim.tv_sec.get());
 		Assertions.assertEquals(42, stat.st_atim.tv_nsec.intValue());
 		Assertions.assertEquals(42l, stat.st_size.longValue());

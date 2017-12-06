@@ -50,8 +50,8 @@ public class FileAttributesUtil {
 		stat.st_gid.set(gid);
 		stat.st_mtim.tv_sec.set(attr.lastModifiedTime().toInstant().getEpochSecond());
 		stat.st_mtim.tv_nsec.set(attr.lastModifiedTime().toInstant().getNano());
-		stat.st_ctim.tv_sec.set(attr.creationTime().toInstant().getEpochSecond());
-		stat.st_ctim.tv_nsec.set(attr.creationTime().toInstant().getNano());
+		stat.st_birthtime.tv_sec.set(attr.creationTime().toInstant().getEpochSecond());
+		stat.st_birthtime.tv_nsec.set(attr.creationTime().toInstant().getNano());
 		stat.st_atim.tv_sec.set(attr.lastAccessTime().toInstant().getEpochSecond());
 		stat.st_atim.tv_nsec.set(attr.lastAccessTime().toInstant().getNano());
 		stat.st_size.set(attr.size());
