@@ -12,14 +12,16 @@ public class MirroringTest {
 
 	public static void main(String[] args) throws IOException {
 		try (Scanner scanner = new Scanner(System.in)) {
-			//System.out.println("Enter path to the directory you want to mirror:");
-			//Path p = Paths.get(scanner.nextLine());
-            Path p = Paths.get("/home/alf/Arbeit/test-env/test1");
-			//System.out.println("Enter mount point or free drive letter (J:\\) on Windows:");
-			//Path m = Paths.get(scanner.nextLine());
-            Path m = Paths.get("/home/alf/Arbeit/test-env/test2");
+			// System.out.println("Enter path to the directory you want to mirror:");
+			// Path p = Paths.get(scanner.nextLine());
+			Path p = Paths.get("/Users/sebastian/Desktop/FOO/a");
+			int uid = (int) Files.getAttribute(p, "unix:uid");
+			int gid = (int) Files.getAttribute(p, "unix:gid");
+			// System.out.println("Enter mount point or free drive letter (J:\\) on Windows:");
+			// Path m = Paths.get(scanner.nextLine());
+			Path m = Paths.get("/Users/sebastian/Desktop/FOO/b");
 			if (Files.isDirectory(p) && (IS_WIN || Files.isDirectory(m))) {
-				try (FuseNioAdapter fs = AdapterFactory.createReadWriteAdapter(p)) {
+				try (FuseNioAdapter fs = AdapterFactory.createReadWriteAdapter(p, uid, gid)) {
 					fs.mount(m, false, true);
 					System.out.println("Mounted successfully. Enter anything to stop the server...");
 					System.in.read();

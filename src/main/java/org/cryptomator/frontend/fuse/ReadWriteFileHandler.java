@@ -1,21 +1,22 @@
 package org.cryptomator.frontend.fuse;
 
-import jnr.ffi.Pointer;
-import jnr.ffi.types.off_t;
-import jnr.ffi.types.size_t;
+import java.io.Closeable;
+import java.io.IOException;
+import java.nio.channels.FileChannel;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+
+import javax.inject.Inject;
+import javax.inject.Named;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import jnr.constants.platform.OpenFlags;
+import jnr.ffi.Pointer;
 import ru.serce.jnrfuse.ErrorCodes;
 import ru.serce.jnrfuse.struct.FileStat;
 import ru.serce.jnrfuse.struct.FuseFileInfo;
-
-import javax.inject.Inject;
-import java.io.Closeable;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
-import java.nio.file.attribute.BasicFileAttributes;
 
 @PerAdapter
 public class ReadWriteFileHandler extends ReadOnlyFileHandler implements Closeable {
@@ -23,8 +24,8 @@ public class ReadWriteFileHandler extends ReadOnlyFileHandler implements Closeab
 	private static final Logger LOG = LoggerFactory.getLogger(ReadWriteFileHandler.class);
 
 	@Inject
-	public ReadWriteFileHandler(OpenFileFactory openFiles) {
-		super(openFiles);
+	public ReadWriteFileHandler(OpenFileFactory openFiles, @Named("uid") int uid, @Named("gid") int gid) {
+		super(openFiles, uid, gid);
 	}
 
 	@Override
@@ -37,17 +38,26 @@ public class ReadWriteFileHandler extends ReadOnlyFileHandler implements Closeab
 	}
 
 	@Override
-	public int open(Path path, FuseFileInfo fi) {
-		try {
+	protected int open(Path path, OpenFlags openFlags) throws IOException {
+		switch (openFlags) {
+		case O_RDWR:
+			openFiles.open(path, StandardOpenOption.READ, StandardOpenOption.WRITE);
+			return 0;
+		case O_WRONLY:
 			openFiles.open(path, StandardOpenOption.WRITE);
 			return 0;
-		} catch (IOException e) {
-			LOG.error("Error opening file.", e);
-			return -ErrorCodes.EIO();
+		case O_APPEND:
+			openFiles.open(path, StandardOpenOption.WRITE, StandardOpenOption.APPEND);
+			return 0;
+		case O_TRUNC:
+			openFiles.open(path, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
+			return 0;
+		default:
+			return super.open(path, openFlags);
 		}
 	}
 
-	public int write(Path path, Pointer buf, @size_t long size, @off_t long offset, FuseFileInfo fi) {
+	public int write(Path path, Pointer buf, long size, long offset, FuseFileInfo fi) {
 		OpenFile file = openFiles.get(path);
 		if (file == null) {
 			LOG.warn("File not opened: {}", path);
@@ -56,7 +66,7 @@ public class ReadWriteFileHandler extends ReadOnlyFileHandler implements Closeab
 		try {
 			return file.write(buf, size, offset);
 		} catch (IOException e) {
-			LOG.error("Reading file failed.", e);
+			LOG.error("Writing to file failed.", e);
 			return -ErrorCodes.EIO();
 		}
 	}
@@ -71,7 +81,17 @@ public class ReadWriteFileHandler extends ReadOnlyFileHandler implements Closeab
 			file.flush();
 			return 0;
 		} catch (IOException e) {
-			LOG.error("Reading file failed.", e);
+			LOG.error("Flushing file failed.", e);
+			return -ErrorCodes.EIO();
+		}
+	}
+
+	public int truncate(Path path, long size) {
+		try (FileChannel fc = FileChannel.open(path, StandardOpenOption.WRITE)) {
+			fc.truncate(size);
+			return 0;
+		} catch (IOException e) {
+			LOG.error("Error truncating file", e);
 			return -ErrorCodes.EIO();
 		}
 	}

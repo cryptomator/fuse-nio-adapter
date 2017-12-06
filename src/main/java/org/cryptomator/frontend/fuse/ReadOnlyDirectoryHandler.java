@@ -7,6 +7,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.stream.Stream;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,17 +22,21 @@ import ru.serce.jnrfuse.struct.FuseFileInfo;
 public class ReadOnlyDirectoryHandler {
 
 	private static final Logger LOG = LoggerFactory.getLogger(ReadOnlyDirectoryHandler.class);
+	private final int uid;
+	private final int gid;
 
 	@Inject
-	public ReadOnlyDirectoryHandler() {
+	public ReadOnlyDirectoryHandler(@Named("uid") int uid, @Named("gid") int gid) {
+		this.uid = uid;
+		this.gid = gid;
 	}
 
 	public int getattr(Path node, FileStat stat) {
 		stat.st_mode.set(FileStat.S_IFDIR | 0555);
 		long nlinks;
 		try {
-			stat.st_uid.set((Integer) Files.getAttribute(node, "unix:uid"));
-			stat.st_gid.set((Integer) Files.getAttribute(node, "unix:gid"));
+			stat.st_uid.set(uid);
+			stat.st_gid.set(gid);
 			BasicFileAttributes attr = Files.readAttributes(node, BasicFileAttributes.class);
 			stat.st_mtim.tv_sec.set(attr.lastModifiedTime().toInstant().getEpochSecond());
 			stat.st_ctim.tv_sec.set(attr.creationTime().toInstant().getEpochSecond());

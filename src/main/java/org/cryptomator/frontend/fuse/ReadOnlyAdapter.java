@@ -12,8 +12,6 @@ import com.google.common.base.CharMatcher;
 import jnr.ffi.Pointer;
 import jnr.ffi.types.off_t;
 import jnr.ffi.types.size_t;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import ru.serce.jnrfuse.ErrorCodes;
 import ru.serce.jnrfuse.FuseFillDir;
 import ru.serce.jnrfuse.FuseStubFS;
@@ -26,7 +24,6 @@ import ru.serce.jnrfuse.struct.FuseFileInfo;
 @PerAdapter
 public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 
-	private static final Logger LOG = LoggerFactory.getLogger(ReadOnlyAdapter.class);
 	private final Path root;
 	private final ReadOnlyDirectoryHandler dirHandler;
 	private final ReadOnlyFileHandler fileHandler;

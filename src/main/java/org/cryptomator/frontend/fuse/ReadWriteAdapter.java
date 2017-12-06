@@ -1,67 +1,60 @@
 package org.cryptomator.frontend.fuse;
 
-import com.google.common.base.CharMatcher;
-import jnr.ffi.Pointer;
-import jnr.ffi.types.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import ru.serce.jnrfuse.ErrorCodes;
-import ru.serce.jnrfuse.FuseFillDir;
-import ru.serce.jnrfuse.FuseStubFS;
-import ru.serce.jnrfuse.struct.FileStat;
-import ru.serce.jnrfuse.struct.FuseFileInfo;
-import ru.serce.jnrfuse.struct.Timespec;
-
-import javax.inject.Inject;
-import javax.inject.Named;
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.nio.channels.FileChannel;
-import java.nio.file.*;
-import java.nio.file.attribute.*;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.time.Instant;
 import java.util.EnumSet;
 import java.util.Set;
 
+import javax.inject.Inject;
+import javax.inject.Named;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import jnr.ffi.Pointer;
+import jnr.ffi.types.gid_t;
+import jnr.ffi.types.mode_t;
+import jnr.ffi.types.off_t;
+import jnr.ffi.types.size_t;
+import jnr.ffi.types.uid_t;
+import ru.serce.jnrfuse.ErrorCodes;
+import ru.serce.jnrfuse.struct.FuseFileInfo;
+import ru.serce.jnrfuse.struct.Timespec;
+
 /**
- * Read-Only FUSE-NIO-Adapter based on Sergey Tselovalnikov's <a href="https://github.com/SerCeMan/jnr-fuse/blob/0.5.1/src/main/java/ru/serce/jnrfuse/examples/HelloFuse.java">HelloFuse</a>
  * TODO: get the current user and save it as the file owner!
  */
 @PerAdapter
 public class ReadWriteAdapter extends ReadOnlyAdapter implements FuseNioAdapter {
 
-	private static final Logger LOG = LoggerFactory.getLogger(ReadOnlyDirectoryHandler.class);
-	private final Path root;
-	private final ReadWriteDirectoryHandler dirHandler;
+	private static final Logger LOG = LoggerFactory.getLogger(ReadWriteAdapter.class);
 	private final ReadWriteFileHandler fileHandler;
+	private final FileAttributesUtil attrUtil;
 
 	@Inject
-	public ReadWriteAdapter(@Named("root") Path root, ReadWriteDirectoryHandler dirHandler, ReadWriteFileHandler fileHandler) {
+	public ReadWriteAdapter(@Named("root") Path root, ReadWriteDirectoryHandler dirHandler, ReadWriteFileHandler fileHandler, FileAttributesUtil attrUtil) {
 		super(root, dirHandler, fileHandler);
-		this.root = root;
-		this.dirHandler = dirHandler;
 		this.fileHandler = fileHandler;
+		this.attrUtil = attrUtil;
 	}
 
-	/**
-	 * TODO: check if this function should be implemented at all!
-	 *
-	 * @param var1
-	 * @param var2
-	 * @param var4
-	 * @return
-	 */
 	@Override
-	public int mknod(String var1, @mode_t long var2, @dev_t long var4) {
-		Path absPath = resolvePath(var1);
+	public int mknod(String path, long mode, long rdev) {
+		Path absPath = resolvePath(path);
 		if (Files.isDirectory(absPath)) {
 			return -ErrorCodes.EISDIR();
 		} else if (Files.exists(absPath)) {
 			return -ErrorCodes.EEXIST();
 		} else {
 			try {
-				//TODO: take POSIX permisiions in var2 into FileAttributes!
+				// TODO: take POSIX permisiions in mode into FileAttributes!
 				Files.createFile(absPath);
 				return 0;
 			} catch (IOException e) {
@@ -70,15 +63,6 @@ public class ReadWriteAdapter extends ReadOnlyAdapter implements FuseNioAdapter 
 		}
 	}
 
-	/**
-	 * TODO: löschen, wenn nicht gebraucht
-	 * UserPrincipalLookupService lookupService = FileSystems.getDefault().getUserPrincipalLookupService();
-	 * Files.setOwner(node, lookupService.lookupPrincipalByName(System.getProperty("user.name")));
-	 *
-	 * @param path
-	 * @param mode
-	 * @return
-	 */
 	@Override
 	public int mkdir(String path, @mode_t long mode) {
 		Path node = resolvePath(path);
@@ -92,24 +76,13 @@ public class ReadWriteAdapter extends ReadOnlyAdapter implements FuseNioAdapter 
 			return -ErrorCodes.EIO();
 		}
 
-
 	}
 
-	/**
-	 * TODO: Maybe create a file attribute object to set the metadata more atomically
-	 *
-	 * @param path
-	 * @param mode
-	 * @param fi
-	 * @return
-	 */
 	@Override
 	public int create(String path, @mode_t long mode, FuseFileInfo fi) {
 		Path node = resolvePath(path);
 		try {
-			Files.createFile(node);
-			//TODO: maybe create an instance of the lookup service as a class variable
-			Files.setPosixFilePermissions(node, octalModeToPosixPermissions(mode));
+			Files.createFile(node, PosixFilePermissions.asFileAttribute(attrUtil.octalModeToPosixPermissions(mode)));
 			return 0;
 		} catch (FileAlreadyExistsException e) {
 			return -ErrorCodes.EEXIST();
@@ -119,10 +92,9 @@ public class ReadWriteAdapter extends ReadOnlyAdapter implements FuseNioAdapter 
 		}
 	}
 
-
 	@Override
 	public int chown(String path, @uid_t long uid, @gid_t long gid) {
-		//return -ErrorCodes.ENOSYS();
+		LOG.info("Ignoring chown(uid={}, gid={}) call. Files will be served with static uid/gid.", uid, gid);
 		return 0;
 	}
 
@@ -133,40 +105,21 @@ public class ReadWriteAdapter extends ReadOnlyAdapter implements FuseNioAdapter 
 			return -ErrorCodes.ENOENT();
 		} else {
 			try {
-				Files.setPosixFilePermissions(node, octalModeToPosixPermissions(mode));
+				Files.setPosixFilePermissions(node, attrUtil.octalModeToPosixPermissions(mode));
 				return 0;
+			} catch (UnsupportedOperationException e) {
+				LOG.warn("Setting posix permissions not supported by underlying file system.");
+				return -ErrorCodes.ENOSYS();
 			} catch (IOException e) {
-				e.printStackTrace();
+				LOG.error("Error changing file attributes: " + node, e);
 				return -ErrorCodes.EIO();
 			}
 		}
 	}
 
-
-	/**
-	 * test-method, needs refactoring
-	 * but works properly
-	 *
-	 * @param mode
-	 * @return
-	 */
-	private Set<PosixFilePermission> octalModeToPosixPermissions(long mode) {
-		Set<PosixFilePermission> result = EnumSet.noneOf(PosixFilePermission.class);
-		if ((mode & 0400) == 0400) result.add(PosixFilePermission.OWNER_READ);
-		if ((mode & 0200) == 0200) result.add(PosixFilePermission.OWNER_WRITE);
-		if ((mode & 0100) == 0100) result.add(PosixFilePermission.OWNER_EXECUTE);
-		if ((mode & 0040) == 0040) result.add(PosixFilePermission.GROUP_READ);
-		if ((mode & 0020) == 0020) result.add(PosixFilePermission.GROUP_WRITE);
-		if ((mode & 0010) == 0010) result.add(PosixFilePermission.GROUP_EXECUTE);
-		if ((mode & 0004) == 0004) result.add(PosixFilePermission.OTHERS_READ);
-		if ((mode & 0002) == 0002) result.add(PosixFilePermission.OTHERS_WRITE);
-		if ((mode & 0001) == 0001) result.add(PosixFilePermission.OTHERS_EXECUTE);
-		return result;
-	}
-
 	@Override
-	public int unlink(String var1) {
-		Path node = resolvePath(var1);
+	public int unlink(String path) {
+		Path node = resolvePath(path);
 		assert !Files.isDirectory(node);
 		return delete(node);
 	}
@@ -185,11 +138,10 @@ public class ReadWriteAdapter extends ReadOnlyAdapter implements FuseNioAdapter 
 		} catch (FileNotFoundException e) {
 			return -ErrorCodes.ENOENT();
 		} catch (IOException e) {
-			LOG.info("Error:", e);
+			LOG.error("Error deleting file: " + node, e);
 			return -ErrorCodes.EIO();
 		}
 	}
-
 
 	@Override
 	public int rename(String oldpath, String newpath) {
@@ -203,7 +155,7 @@ public class ReadWriteAdapter extends ReadOnlyAdapter implements FuseNioAdapter 
 		} catch (FileAlreadyExistsException e) {
 			return -ErrorCodes.EEXIST();
 		} catch (IOException e) {
-			LOG.error("", e);
+			LOG.error("Renaming " + nodeOld + " to " + nodeNew + " failed.", e);
 			return -ErrorCodes.EIO();
 		}
 	}
@@ -215,7 +167,7 @@ public class ReadWriteAdapter extends ReadOnlyAdapter implements FuseNioAdapter 
 			return -ErrorCodes.ENOENT();
 		} else {
 			try {
-				//TODO::: implement it right
+				// TODO::: implement it right
 				Files.setLastModifiedTime(node, FileTime.from(Instant.now()));
 				Files.setAttribute(node, "lastAccessTime", FileTime.from(Instant.now()));
 				return 0;
@@ -227,7 +179,6 @@ public class ReadWriteAdapter extends ReadOnlyAdapter implements FuseNioAdapter 
 
 	}
 
-
 	@Override
 	public int write(String path, Pointer buf, @size_t long size, @off_t long offset, FuseFileInfo fi) {
 		Path node = resolvePath(path);
@@ -237,13 +188,7 @@ public class ReadWriteAdapter extends ReadOnlyAdapter implements FuseNioAdapter 
 	@Override
 	public int truncate(String path, @off_t long size) {
 		Path node = resolvePath(path);
-		try (FileChannel fc = FileChannel.open(node, StandardOpenOption.WRITE)) {
-			fc.truncate(size);
-			return 0;
-		} catch (IOException e) {
-			LOG.error("", e);
-			return -ErrorCodes.EIO();
-		}
+		return fileHandler.truncate(node, size);
 	}
 
 	@Override
@@ -252,4 +197,3 @@ public class ReadWriteAdapter extends ReadOnlyAdapter implements FuseNioAdapter 
 		return fileHandler.flush(node);
 	}
 }
-
