@@ -11,8 +11,8 @@ import ru.serce.jnrfuse.struct.FileStat;
 public class ReadWriteDirectoryHandler extends ReadOnlyDirectoryHandler {
 
 	@Inject
-	public ReadWriteDirectoryHandler(@Named("uid") int uid, @Named("gid") int gid) {
-		super(uid, gid);
+	public ReadWriteDirectoryHandler(FileAttributesUtil attrUtil) {
+		super(attrUtil);
 	}
 
 	@Override

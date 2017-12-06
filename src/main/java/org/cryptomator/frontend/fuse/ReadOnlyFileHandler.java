@@ -25,14 +25,12 @@ public class ReadOnlyFileHandler implements Closeable {
 	private static final Logger LOG = LoggerFactory.getLogger(ReadOnlyFileHandler.class);
 
 	protected final OpenFileFactory openFiles;
-	private final int uid;
-	private final int gid;
+	private final FileAttributesUtil attrUtil;
 
 	@Inject
-	public ReadOnlyFileHandler(OpenFileFactory openFiles, @Named("uid") int uid, @Named("gid") int gid) {
+	public ReadOnlyFileHandler(OpenFileFactory openFiles, FileAttributesUtil attrUtil) {
 		this.openFiles = openFiles;
-		this.uid = uid;
-		this.gid = gid;
+		this.attrUtil = attrUtil;
 	}
 
 	public int open(Path path, FuseFileInfo fi) {
@@ -78,24 +76,11 @@ public class ReadOnlyFileHandler implements Closeable {
 		}
 	}
 
-	/**
-	 * TODO: read out (linux) permissions in linux and set it appropiatly (with a Set<PosixPermission> to OCatl converter. For Windows, dunno...
-	 * 
-	 * @param node
-	 * @param stat
-	 * @return
-	 */
 	public int getattr(Path node, FileStat stat) {
 		try {
 			stat.st_mode.set(FileStat.S_IFREG | 0444);
-			stat.st_uid.set(uid);
-			stat.st_gid.set(gid);
 			BasicFileAttributes attr = Files.readAttributes(node, BasicFileAttributes.class);
-			LOG.info("getattr {} {}", attr.lastModifiedTime(), attr.creationTime());
-			stat.st_mtim.tv_sec.set(attr.lastModifiedTime().toInstant().getEpochSecond());
-			stat.st_ctim.tv_sec.set(attr.creationTime().toInstant().getEpochSecond());
-			stat.st_atim.tv_sec.set(attr.lastAccessTime().toInstant().getEpochSecond());
-			stat.st_size.set(Files.size(node));
+			attrUtil.copyBasicFileAttributesFromNioToFuse(attr, stat);
 			return 0;
 		} catch (UnsupportedOperationException | IllegalArgumentException e) {
 			LOG.error("getattr failed.", e);

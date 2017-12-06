@@ -24,8 +24,8 @@ public class ReadWriteFileHandler extends ReadOnlyFileHandler implements Closeab
 	private static final Logger LOG = LoggerFactory.getLogger(ReadWriteFileHandler.class);
 
 	@Inject
-	public ReadWriteFileHandler(OpenFileFactory openFiles, @Named("uid") int uid, @Named("gid") int gid) {
-		super(openFiles, uid, gid);
+	public ReadWriteFileHandler(OpenFileFactory openFiles, FileAttributesUtil attrUtil) {
+		super(openFiles, attrUtil);
 	}
 
 	@Override
