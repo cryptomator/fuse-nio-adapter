@@ -27,7 +27,7 @@ public class ReadOnlyDirectoryHandler {
 	}
 
 	public int getattr(Path node, FileStat stat) {
-		stat.st_mode.set(FileStat.S_IFDIR | 0755);
+		stat.st_mode.set(FileStat.S_IFDIR | 0555);
 		long nlinks;
 		try {
 			stat.st_uid.set((Integer) Files.getAttribute(node, "unix:uid"));

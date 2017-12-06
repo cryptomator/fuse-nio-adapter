@@ -10,18 +10,19 @@ import ru.serce.jnrfuse.FuseFillDir;
 import ru.serce.jnrfuse.FuseStubFS;
 import ru.serce.jnrfuse.struct.FileStat;
 import ru.serce.jnrfuse.struct.FuseFileInfo;
+import ru.serce.jnrfuse.struct.Timespec;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.nio.file.DirectoryStream;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.attribute.FileTime;
-import java.nio.file.attribute.PosixFilePermissions;
-import java.nio.file.attribute.UserPrincipalLookupService;
+import java.nio.channels.FileChannel;
+import java.nio.file.*;
+import java.nio.file.attribute.*;
 import java.time.Instant;
+import java.util.EnumSet;
+import java.util.Set;
 
 /**
  * Read-Only FUSE-NIO-Adapter based on Sergey Tselovalnikov's <a href="https://github.com/SerCeMan/jnr-fuse/blob/0.5.1/src/main/java/ru/serce/jnrfuse/examples/HelloFuse.java">HelloFuse</a>
@@ -43,84 +44,96 @@ public class ReadWriteAdapter extends ReadOnlyAdapter implements FuseNioAdapter 
 		this.fileHandler = fileHandler;
 	}
 
+	/**
+	 * TODO: check if this function should be implemented at all!
+	 *
+	 * @param var1
+	 * @param var2
+	 * @param var4
+	 * @return
+	 */
 	@Override
 	public int mknod(String var1, @mode_t long var2, @dev_t long var4) {
 		Path absPath = resolvePath(var1);
-		if(Files.isDirectory(absPath)){
+		if (Files.isDirectory(absPath)) {
 			return -ErrorCodes.EISDIR();
-		}
-		else if(Files.exists(absPath)){
+		} else if (Files.exists(absPath)) {
 			return -ErrorCodes.EEXIST();
-		}
-		else {
-			try{
+		} else {
+			try {
 				//TODO: take POSIX permisiions in var2 into FileAttributes!
 				Files.createFile(absPath);
 				return 0;
-			}
-			catch (IOException e) {
+			} catch (IOException e) {
 				return -ErrorCodes.EIO();
 			}
 		}
 	}
 
+	/**
+	 * TODO: löschen, wenn nicht gebraucht
+	 * UserPrincipalLookupService lookupService = FileSystems.getDefault().getUserPrincipalLookupService();
+	 * Files.setOwner(node, lookupService.lookupPrincipalByName(System.getProperty("user.name")));
+	 *
+	 * @param path
+	 * @param mode
+	 * @return
+	 */
 	@Override
-	public int mkdir(String path, @mode_t long mode){
-	    Path node = resolvePath(path);
-	    if(Files.exists(node)){
-	    	return  -ErrorCodes.EEXIST();
-		}
-		else{
-			try {
-				Files.createDirectory(node);
-				Files.setLastModifiedTime(node, FileTime.from(Instant.now()));
-				//TODO: maybe create an instance of the lookup service as a class variable
-				UserPrincipalLookupService lookupService = FileSystems.getDefault().getUserPrincipalLookupService();
-				LOG.info("XXX Current owner is ");
-				Files.setOwner(node, lookupService.lookupPrincipalByName(System.getProperty("user.name")));
-				//TODO: set cTime
-				Files.setAttribute(node, "lastAccessTime", FileTime.from(Instant.now()));
-				Files.setAttribute(node, "creationTime", FileTime.from(Instant.now()));
-				Files.setAttribute(node, "isDirectory", true);
-				//TODO: check if this is the right permission!
-				Files.setPosixFilePermissions(node, PosixFilePermissions.fromString("rwxr-xr-x"));
-				return 0;
-			} catch (IOException e) {
-				LOG.error("Exception occured",e);
-				return -ErrorCodes.EIO();
-			}
-		}
-	}
-	
-		@Override
-	public int create(String path, @mode_t long mode, FuseFileInfo fi){
+	public int mkdir(String path, @mode_t long mode) {
 		Path node = resolvePath(path);
-		if(Files.exists(node)){
+		try {
+			Files.createDirectory(node);
+			return 0;
+		} catch (FileAlreadyExistsException e) {
 			return -ErrorCodes.EEXIST();
+		} catch (IOException e) {
+			LOG.error("Exception occured", e);
+			return -ErrorCodes.EIO();
 		}
-		else{
-			//TODO: create PosixFileAttribute
-			try {
-				Files.createFile(node,null);
-				return 0;
-			} catch (IOException e) {
-				LOG.error("Exception occured",e);
-			    return -ErrorCodes.EIO();
-			}
-		}
+
 
 	}
 
+	/**
+	 * TODO: Maybe create a file attribute object to set the metadata more atomically
+	 *
+	 * @param path
+	 * @param mode
+	 * @param fi
+	 * @return
+	 */
 	@Override
-	public int chown(String path, @uid_t long uid, @gid_t long gid){
-		Path node =resolvePath(path);
-		if(!Files.exists(node)){
-			return -ErrorCodes.ENOENT();
+	public int create(String path, @mode_t long mode, FuseFileInfo fi) {
+		Path node = resolvePath(path);
+		try {
+			Files.createFile(node);
+			//TODO: maybe create an instance of the lookup service as a class variable
+			Files.setPosixFilePermissions(node, octalModeToPosixPermissions(mode));
+			return 0;
+		} catch (FileAlreadyExistsException e) {
+			return -ErrorCodes.EEXIST();
+		} catch (IOException e) {
+			LOG.error("Exception occured", e);
+			return -ErrorCodes.EIO();
 		}
-		else{
+	}
+
+
+	@Override
+	public int chown(String path, @uid_t long uid, @gid_t long gid) {
+		//return -ErrorCodes.ENOSYS();
+		return 0;
+	}
+
+	@Override
+	public int chmod(String path, @mode_t long mode) {
+		Path node = resolvePath(path);
+		if (!Files.exists(node)) {
+			return -ErrorCodes.ENOENT();
+		} else {
 			try {
-				Files.setAttribute(node,"unix:uid", uid);
-				Files.setAttribute(node, "unix:gid", gid);
+				Files.setPosixFilePermissions(node, octalModeToPosixPermissions(mode));
 				return 0;
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -129,89 +142,114 @@ public class ReadWriteAdapter extends ReadOnlyAdapter implements FuseNioAdapter 
 		}
 	}
 
+
+	/**
+	 * test-method, needs refactoring
+	 * but works properly
+	 *
+	 * @param mode
+	 * @return
+	 */
+	private Set<PosixFilePermission> octalModeToPosixPermissions(long mode) {
+		Set<PosixFilePermission> result = EnumSet.noneOf(PosixFilePermission.class);
+		if ((mode & 0400) == 0400) result.add(PosixFilePermission.OWNER_READ);
+		if ((mode & 0200) == 0200) result.add(PosixFilePermission.OWNER_WRITE);
+		if ((mode & 0100) == 0100) result.add(PosixFilePermission.OWNER_EXECUTE);
+		if ((mode & 0040) == 0040) result.add(PosixFilePermission.GROUP_READ);
+		if ((mode & 0020) == 0020) result.add(PosixFilePermission.GROUP_WRITE);
+		if ((mode & 0010) == 0010) result.add(PosixFilePermission.GROUP_EXECUTE);
+		if ((mode & 0004) == 0004) result.add(PosixFilePermission.OTHERS_READ);
+		if ((mode & 0002) == 0002) result.add(PosixFilePermission.OTHERS_WRITE);
+		if ((mode & 0001) == 0001) result.add(PosixFilePermission.OTHERS_EXECUTE);
+		return result;
+	}
+
 	@Override
-	public int chmod(String path, @mode_t long mode){
-		Path node =resolvePath(path);
-		if(!Files.exists(node)){
+	public int unlink(String var1) {
+		Path node = resolvePath(var1);
+		assert !Files.isDirectory(node);
+		return delete(node);
+	}
+
+	@Override
+	public int rmdir(String path) {
+		Path node = resolvePath(path);
+		assert Files.isDirectory(node);
+		return delete(node);
+	}
+
+	private int delete(Path node) {
+		try {
+			Files.delete(node);
+			return 0;
+		} catch (FileNotFoundException e) {
 			return -ErrorCodes.ENOENT();
+		} catch (IOException e) {
+			LOG.info("Error:", e);
+			return -ErrorCodes.EIO();
 		}
-		else{
+	}
+
+
+	@Override
+	public int rename(String oldpath, String newpath) {
+		Path nodeOld = resolvePath(oldpath);
+		Path nodeNew = resolvePath(newpath);
+		try {
+			Files.move(nodeOld, nodeNew);
+			return 0;
+		} catch (FileNotFoundException e) {
+			return -ErrorCodes.ENOENT();
+		} catch (FileAlreadyExistsException e) {
+			return -ErrorCodes.EEXIST();
+		} catch (IOException e) {
+			LOG.error("", e);
+			return -ErrorCodes.EIO();
+		}
+	}
+
+	@Override
+	public int utimens(String path, Timespec[] timespec) {
+		Path node = resolvePath(path);
+		if (!Files.exists(node)) {
+			return -ErrorCodes.ENOENT();
+		} else {
 			try {
-				String perm = octalPermToLetters(mode);
-				Files.setPosixFilePermissions(node, PosixFilePermissions.fromString(perm));
+				//TODO::: implement it right
+				Files.setLastModifiedTime(node, FileTime.from(Instant.now()));
+				Files.setAttribute(node, "lastAccessTime", FileTime.from(Instant.now()));
 				return 0;
 			} catch (IOException e) {
-				e.printStackTrace();
+				LOG.error("", e);
 				return -ErrorCodes.EIO();
 			}
 		}
+
 	}
 
-	//TODO: check if this function does the right thing
-	private String octalPermToLetters(@mode_t long mode){
-		String perm ="";
-		for(int i=2; i>=0; i++){
-			int role = (int) (mode/((int) (Math.pow(10,i))))%10;
-			String rolePerm ="";
-			if(role == 4){
-				rolePerm.concat("rwx");
-			}else if(role == 2){
-				rolePerm.concat("rw-");
-			}else if(role == 1){
-				rolePerm.concat("r--");
-			}
-			else{
-				rolePerm.concat("---");
-			}
-			perm = perm.concat(rolePerm);
-		}
-		return perm;
-	}
-	
 
 	@Override
-	public int unlink(String var1){
-		Path absPath = resolvePath(var1);
-		if(!Files.exists(absPath)){
-			return -ErrorCodes.ENOENT();
-		}
-		else if(Files.isDirectory(absPath)){
-			return -ErrorCodes.EISDIR();
-		}
-		else{
-			try{
-				Files.delete(absPath);
-				return 0;
-			} catch (IOException e) {
-				LOG.info("Error:",e);
-				return -ErrorCodes.EIO();
-			}
-		}
-
+	public int write(String path, Pointer buf, @size_t long size, @off_t long offset, FuseFileInfo fi) {
+		Path node = resolvePath(path);
+		return fileHandler.write(node, buf, size, offset, fi);
 	}
 
 	@Override
-	public int rmdir(String path){
-		Path absPath = resolvePath(path);
-		if(!Files.exists(absPath)){
-			return -ErrorCodes.ENOENT();
+	public int truncate(String path, @off_t long size) {
+		Path node = resolvePath(path);
+		try (FileChannel fc = FileChannel.open(node, StandardOpenOption.WRITE)) {
+			fc.truncate(size);
+			return 0;
+		} catch (IOException e) {
+			LOG.error("", e);
+			return -ErrorCodes.EIO();
 		}
-		else if(Files.isDirectory(absPath)){
-			try(DirectoryStream<Path> dirStream = Files.newDirectoryStream(absPath)) {
-				if(dirStream.iterator().hasNext()){
-					return -ErrorCodes.ENOTEMPTY();
-				}
-				else{
-					Files.delete(absPath);
-					return 0;
-				}
-			} catch (IOException e) {
-				return -ErrorCodes.EIO();
-			}
-		}
-		else{
-			return -ErrorCodes.ENOTDIR();
-		}
+	}
+
+	@Override
+	public int flush(String path, FuseFileInfo fi) {
+		Path node = resolvePath(path);
+		return fileHandler.flush(node);
 	}
 }
 

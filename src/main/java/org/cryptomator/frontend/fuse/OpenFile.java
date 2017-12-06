@@ -4,33 +4,37 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 
 import jnr.ffi.Pointer;
+import jnr.ffi.types.off_t;
+import jnr.ffi.types.size_t;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.serce.jnrfuse.struct.FuseFileInfo;
 
 public class OpenFile implements Closeable {
 
 	private static final Logger LOG = LoggerFactory.getLogger(OpenFile.class);
 	private static final int BUFFER_SIZE = 4096;
 
-	private final SeekableByteChannel channel;
+	private final FileChannel channel;
 
 	public OpenFile(Path path, OpenOption... options) throws UncheckedIOException {
 		try {
-			this.channel = Files.newByteChannel(path, options);
+			this.channel = FileChannel.open(path, options);
 		} catch (IOException e) {
 			throw new UncheckedIOException(e);
 		}
 	}
 
 	/**
-	 * Reads up to {@code size} bytes beginning at {@code offset} into {@code buf}
-	 * 
+	 * Reads up to {@code num} bytes beginning at {@code offset} into {@code buf}
+	 *
 	 * @param buf Buffer
 	 * @param num Number of bytes to read
 	 * @param offset Position of first byte to read
@@ -46,18 +50,44 @@ public class OpenFile implements Closeable {
 			long pos = 0;
 			channel.position(offset);
 			do {
-				long remaining = num-pos;
+				long remaining = num - pos;
 				int read = readNext(bb, remaining);
 				if (read == -1) {
 					return (int) pos; // reached EOF TODO: wtf cast
 				} else {
-					LOG.trace("Reading {}-{} ({}-{})", offset+pos, offset+pos+read, offset, offset+num);
+					LOG.trace("Reading {}-{} ({}-{})", offset + pos, offset + pos + read, offset, offset + num);
 					buf.put(pos, bb.array(), 0, read);
 					pos += read;
 				}
 			} while (pos < num);
 			return (int) pos; // TODO wtf cast
 		}
+	}
+
+	/**
+	 * Writes up to {@code num} bytes from {@code buf} from {@code offset} into the current file
+	 *
+	 * @param buf Buffer
+	 * @param num Number of bytes to write
+	 * @param offset Position of first byte to write at
+	 * @return Actual number of bytes written
+	 * TODO: only the bytes which contains information or also some filling zeros?
+	 * @throws IOException If an exception occurs during write.
+	 */
+	public synchronized int write(Pointer buf, long num, long offset) throws IOException {
+		ByteBuffer bb = ByteBuffer.allocate(BUFFER_SIZE);
+		long written = 0;
+		channel.position(offset);
+		do {
+			long remaining = num - written;
+			bb.clear();
+			int len = (int) Math.min(remaining, bb.capacity());
+			buf.get(written, bb.array(), 0, len);
+			bb.limit(len);
+			channel.write(bb);
+			written += len;
+		} while (written < num);
+		return (int) written; // TODO wtf cast
 	}
 
 	private int readNext(ByteBuffer readBuf, long num) throws IOException {
@@ -69,6 +99,10 @@ public class OpenFile implements Closeable {
 	@Override
 	public void close() throws IOException {
 		channel.close();
+	}
+
+	public void flush() throws IOException {
+		channel.force(false);
 	}
 
 }

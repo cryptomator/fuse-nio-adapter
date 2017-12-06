@@ -24,7 +24,7 @@ public class ReadOnlyFileHandler implements Closeable {
 
 	private static final Logger LOG = LoggerFactory.getLogger(ReadOnlyFileHandler.class);
 
-	private final OpenFileFactory openFiles;
+	protected final OpenFileFactory openFiles;
 
 	@Inject
 	public ReadOnlyFileHandler(OpenFileFactory openFiles) {
@@ -65,6 +65,12 @@ public class ReadOnlyFileHandler implements Closeable {
 		}
 	}
 
+	/**
+	 * TODO: read out (linux) permissions  in linux and set it appropiatly (with a Set<PosixPermission> to OCatl converter. For Windows, dunno...
+	 * @param node
+	 * @param stat
+	 * @return
+	 */
 	public int getattr(Path node, FileStat stat) {
 		try {
 			stat.st_mode.set(FileStat.S_IFREG | 0444);

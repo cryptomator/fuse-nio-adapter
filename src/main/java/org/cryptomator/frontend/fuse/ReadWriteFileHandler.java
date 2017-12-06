@@ -1,6 +1,8 @@
 package org.cryptomator.frontend.fuse;
 
 import jnr.ffi.Pointer;
+import jnr.ffi.types.off_t;
+import jnr.ffi.types.size_t;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.serce.jnrfuse.ErrorCodes;
@@ -20,12 +22,57 @@ public class ReadWriteFileHandler extends ReadOnlyFileHandler implements Closeab
 
 	private static final Logger LOG = LoggerFactory.getLogger(ReadWriteFileHandler.class);
 
-	private final OpenFileFactory openFiles;
-
 	@Inject
 	public ReadWriteFileHandler(OpenFileFactory openFiles) {
 		super(openFiles);
-		this.openFiles = openFiles;
 	}
 
+	@Override
+	public int getattr(Path node, FileStat stat) {
+		int result = super.getattr(node, stat);
+		if (result == 0) {
+			stat.st_mode.set(FileStat.S_IFREG | 0644);
+		}
+		return result;
+	}
+
+	@Override
+	public int open(Path path, FuseFileInfo fi) {
+		try {
+			openFiles.open(path, StandardOpenOption.WRITE);
+			return 0;
+		} catch (IOException e) {
+			LOG.error("Error opening file.", e);
+			return -ErrorCodes.EIO();
+		}
+	}
+
+	public int write(Path path, Pointer buf, @size_t long size, @off_t long offset, FuseFileInfo fi) {
+		OpenFile file = openFiles.get(path);
+		if (file == null) {
+			LOG.warn("File not opened: {}", path);
+			return -ErrorCodes.EBADFD();
+		}
+		try {
+			return file.write(buf, size, offset);
+		} catch (IOException e) {
+			LOG.error("Reading file failed.", e);
+			return -ErrorCodes.EIO();
+		}
+	}
+
+	public int flush(Path path) {
+		OpenFile file = openFiles.get(path);
+		if (file == null) {
+			LOG.warn("File not opened: {}", path);
+			return -ErrorCodes.EBADFD();
+		}
+		try {
+			file.flush();
+			return 0;
+		} catch (IOException e) {
+			LOG.error("Reading file failed.", e);
+			return -ErrorCodes.EIO();
+		}
+	}
 }

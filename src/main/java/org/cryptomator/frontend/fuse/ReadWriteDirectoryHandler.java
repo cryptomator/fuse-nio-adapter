@@ -12,6 +12,7 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.stream.Stream;
 
 @PerAdapter
@@ -23,4 +24,12 @@ public class ReadWriteDirectoryHandler extends ReadOnlyDirectoryHandler {
 	public ReadWriteDirectoryHandler() {
 	}
 
+	@Override
+	public int getattr(Path node, FileStat stat) {
+		int result = super.getattr(node, stat);
+		if (result == 0) {
+			stat.st_mode.set(FileStat.S_IFDIR | 0755);
+		}
+		return result;
+	}
 }
