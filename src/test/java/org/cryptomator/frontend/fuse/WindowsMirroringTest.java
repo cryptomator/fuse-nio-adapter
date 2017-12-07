@@ -18,8 +18,8 @@ public class WindowsMirroringTest {
 			System.out.println("Enter path to the directory you want to mirror:");
 			Path p = Paths.get(scanner.nextLine());
 			if (Files.isDirectory(p)) {
-				try (FuseNioAdapter fs = AdapterFactory.createReadWriteAdapter(p, 0, 0)) {
-					fs.mount(Paths.get("J:\\"), false, true);
+				try (FuseNioAdapter fs = AdapterFactory.createReadWriteAdapter(p, -1, -1)) {
+					fs.mount(Paths.get("J:\\"), false, true, new String[] {"-ouid=-1", "-ogid=-1", "-ovolname=FUSE-NIO-Adapter"});
 					System.out.println("Mounted successfully. Enter anything to stop the server...");
 					System.in.read();
 					fs.umount();
