@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
@@ -25,6 +26,7 @@ import jnr.ffi.types.off_t;
 import jnr.ffi.types.size_t;
 import jnr.ffi.types.uid_t;
 import ru.serce.jnrfuse.ErrorCodes;
+import ru.serce.jnrfuse.struct.Flock;
 import ru.serce.jnrfuse.struct.FuseFileInfo;
 import ru.serce.jnrfuse.struct.Timespec;
 
@@ -32,7 +34,7 @@ import ru.serce.jnrfuse.struct.Timespec;
  * TODO: get the current user and save it as the file owner!
  */
 @PerAdapter
-public class ReadWriteAdapter extends ReadOnlyAdapter implements FuseNioAdapter {
+public class ReadWriteAdapter extends ReadOnlyAdapter {
 
 	private static final Logger LOG = LoggerFactory.getLogger(ReadWriteAdapter.class);
 	private final ReadWriteFileHandler fileHandler;
@@ -166,17 +168,14 @@ public class ReadWriteAdapter extends ReadOnlyAdapter implements FuseNioAdapter 
 		if (!Files.exists(node)) {
 			return -ErrorCodes.ENOENT();
 		} else {
-			try {
-				// TODO::: implement it right
-				Files.setLastModifiedTime(node, FileTime.from(Instant.now()));
-				Files.setAttribute(node, "lastAccessTime", FileTime.from(Instant.now()));
-				return 0;
-			} catch (IOException e) {
-				LOG.error("", e);
-				return -ErrorCodes.EIO();
-			}
+			/*
+			 From utimensat(2) man page:
+			 the array times: times[0] specifies the new "last access time" (atime);
+			 times[1] specifies the new "last modification time" (mtime).
+			 */
+			assert timespec.length == 2;
+			return fileHandler.utimens(node, timespec[0], timespec[1]);
 		}
-
 	}
 
 	@Override

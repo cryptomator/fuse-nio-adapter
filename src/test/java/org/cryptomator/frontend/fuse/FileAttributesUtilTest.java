@@ -36,7 +36,7 @@ public class FileAttributesUtilTest {
 				Arguments.of(PosixFilePermissions.fromString("r--r--r--"), 0444l),
 				Arguments.of(PosixFilePermissions.fromString("rwx------"), 0700l),
 				Arguments.of(PosixFilePermissions.fromString("rw-r--r--"), 0644l),
-				Arguments.of(PosixFilePermissions.fromString("--x--x---"), 0110l)
+				Arguments.of(PosixFilePermissions.fromString("-w---xr--"), 0214l)
 		);
 	}
 

@@ -3,8 +3,13 @@ package org.cryptomator.frontend.fuse;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.BasicFileAttributeView;
+import java.nio.file.attribute.FileTime;
+import java.time.DateTimeException;
+import java.time.Instant;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -17,6 +22,7 @@ import jnr.ffi.Pointer;
 import ru.serce.jnrfuse.ErrorCodes;
 import ru.serce.jnrfuse.struct.FileStat;
 import ru.serce.jnrfuse.struct.FuseFileInfo;
+import ru.serce.jnrfuse.struct.Timespec;
 
 @PerAdapter
 public class ReadWriteFileHandler extends ReadOnlyFileHandler implements Closeable {
@@ -91,7 +97,22 @@ public class ReadWriteFileHandler extends ReadOnlyFileHandler implements Closeab
 			fc.truncate(size);
 			return 0;
 		} catch (IOException e) {
-			LOG.error("Error truncating file", e);
+			LOG.error("Truncating file feild.", e);
+			return -ErrorCodes.EIO();
+		}
+	}
+
+	public int utimens(Path node, Timespec mTimeSpec, Timespec aTimeSpec) {
+		try {
+			FileTime mTime = FileTime.from(Instant.ofEpochSecond(mTimeSpec.tv_sec.longValue(), mTimeSpec.tv_nsec.intValue()));
+			FileTime aTime = FileTime.from(Instant.ofEpochSecond(aTimeSpec.tv_sec.longValue(), aTimeSpec.tv_nsec.intValue()));
+			Files.getFileAttributeView(node, BasicFileAttributeView.class).setTimes(mTime, aTime, null);
+			return 0;
+		} catch (DateTimeException | ArithmeticException e) {
+			LOG.error("Invalid argument in Instant.ofEpochSecond(...) ", e);
+			return -ErrorCodes.EINVAL();
+		} catch (IOException e) {
+			LOG.error("Setting file access/modification times failed.", e);
 			return -ErrorCodes.EIO();
 		}
 	}

@@ -1,11 +1,10 @@
 package org.cryptomator.frontend.fuse;
 
-import java.nio.file.Path;
-
-import javax.inject.Named;
-
 import dagger.Module;
 import dagger.Provides;
+
+import javax.inject.Named;
+import java.nio.file.Path;
 
 @Module
 class FuseNioAdapterModule {

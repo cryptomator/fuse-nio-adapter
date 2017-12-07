@@ -1,5 +1,9 @@
 package org.cryptomator.frontend.fuse;
 
+import jnr.ffi.Pointer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -7,11 +11,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import jnr.ffi.Pointer;
 
 public class OpenFile implements Closeable {
 
@@ -67,7 +66,7 @@ public class OpenFile implements Closeable {
 	 * @param num Number of bytes to write
 	 * @param offset Position of first byte to write at
 	 * @return Actual number of bytes written
-	 *         TODO: only the bytes which contains information or also some filling zeros?
+	 * TODO: only the bytes which contains information or also some filling zeros?
 	 * @throws IOException If an exception occurs during write.
 	 */
 	public synchronized int write(Pointer buf, long num, long offset) throws IOException {
