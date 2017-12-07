@@ -6,7 +6,10 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
+import java.nio.file.attribute.FileAttribute;
+import java.util.Set;
 
+import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,9 +25,9 @@ public class OpenFile implements Closeable {
 	private final Path path;
 	private final FileChannel channel;
 
-	public OpenFile(Path path, OpenOption... options) throws IOException {
+	public OpenFile(Path path, Set<? extends OpenOption> options, FileAttribute<?>... attrs) throws IOException {
 		this.path = path;
-		this.channel = FileChannel.open(path, options);
+		this.channel = FileChannel.open(path, options, attrs);
 	}
 
 	/**

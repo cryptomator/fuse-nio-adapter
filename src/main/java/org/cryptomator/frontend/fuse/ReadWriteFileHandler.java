@@ -3,15 +3,14 @@ package org.cryptomator.frontend.fuse;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
-import java.nio.file.FileStore;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
+import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributeView;
+import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.PosixFileAttributeView;
 import java.time.DateTimeException;
 import java.time.Instant;
+import java.util.EnumSet;
 
 import javax.inject.Inject;
 
@@ -46,6 +45,19 @@ public class ReadWriteFileHandler extends ReadOnlyFileHandler implements Closeab
 			stat.st_mode.set(FileStat.S_IFREG | 0777);
 		}
 		return result;
+	}
+
+	public int createAndOpen(Path path, FuseFileInfo fi, FileAttribute<?>... attrs) {
+		try {
+			long fileHandle = openFiles.open(path, EnumSet.of(StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE), attrs);
+			fi.fh.set(fileHandle);
+			return 0;
+		} catch (FileAlreadyExistsException e) {
+			return -ErrorCodes.EEXIST();
+		} catch (IOException e) {
+			LOG.error("Error opening file.", e);
+			return -ErrorCodes.EIO();
+		}
 	}
 
 	/**

@@ -13,6 +13,7 @@ import java.nio.file.attribute.PosixFilePermissions;
 import javax.inject.Inject;
 import javax.inject.Named;
 
+import jnr.constants.platform.OpenFlags;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,19 +62,11 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 	@Override
 	public int create(String path, @mode_t long mode, FuseFileInfo fi) {
 		Path node = resolvePath(path);
-		try {
-			if (fileStore.supportsFileAttributeView(PosixFileAttributeView.class)) {
-				FileAttribute<?> attrs = PosixFilePermissions.asFileAttribute(attrUtil.octalModeToPosixPermissions(mode));
-				Files.createFile(node, attrs);
-			} else {
-				Files.createFile(node);
-			}
-			return 0;
-		} catch (FileAlreadyExistsException e) {
-			return -ErrorCodes.EEXIST();
-		} catch (IOException | UnsupportedOperationException e) {
-			LOG.error("Exception occured", e);
-			return -ErrorCodes.EIO();
+		if (fileStore.supportsFileAttributeView(PosixFileAttributeView.class)) {
+			FileAttribute<?> attrs = PosixFilePermissions.asFileAttribute(attrUtil.octalModeToPosixPermissions(mode));
+			return fileHandler.createAndOpen(node, fi, attrs);
+		} else {
+			return fileHandler.createAndOpen(node, fi);
 		}
 	}
 
