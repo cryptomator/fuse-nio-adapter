@@ -3,7 +3,6 @@ package org.cryptomator.frontend.fuse;
 import java.nio.file.Path;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 
 import ru.serce.jnrfuse.struct.FileStat;
 

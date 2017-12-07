@@ -7,7 +7,6 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
