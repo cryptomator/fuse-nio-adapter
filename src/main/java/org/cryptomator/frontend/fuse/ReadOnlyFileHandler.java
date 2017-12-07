@@ -6,15 +6,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.nio.file.attribute.FileTime;
-import java.nio.file.attribute.PosixFileAttributeView;
 
 import javax.inject.Inject;
 
+import jnr.constants.platform.OpenFlags;
+import jnr.ffi.Pointer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import jnr.ffi.Pointer;
 import ru.serce.jnrfuse.ErrorCodes;
 import ru.serce.jnrfuse.struct.FileStat;
 import ru.serce.jnrfuse.struct.FuseFileInfo;
@@ -24,16 +22,19 @@ public class ReadOnlyFileHandler implements Closeable {
 
 	private static final Logger LOG = LoggerFactory.getLogger(ReadOnlyFileHandler.class);
 
-	private final OpenFileFactory openFiles;
+	protected final OpenFileFactory openFiles;
+	private final FileAttributesUtil attrUtil;
 
 	@Inject
-	public ReadOnlyFileHandler(OpenFileFactory openFiles) {
+	public ReadOnlyFileHandler(OpenFileFactory openFiles, FileAttributesUtil attrUtil) {
 		this.openFiles = openFiles;
+		this.attrUtil = attrUtil;
 	}
 
 	public int open(Path path, FuseFileInfo fi) {
 		try {
-			openFiles.open(path, StandardOpenOption.READ);
+			long fileHandle = open(path, OpenFlags.valueOf(fi.flags.longValue()));
+			fi.fh.set(fileHandle);
 			return 0;
 		} catch (IOException e) {
 			LOG.error("Error opening file.", e);
@@ -41,8 +42,23 @@ public class ReadOnlyFileHandler implements Closeable {
 		}
 	}
 
+	/**
+	 * @param path path of the file to open
+	 * @param options file open options
+	 * @return file handle used to identify and close open files.
+	 * @throws IOException
+	 */
+	protected long open(Path path, OpenFlags openFlags) throws IOException {
+		switch (openFlags) {
+		case O_RDONLY:
+			return openFiles.open(path, StandardOpenOption.READ);
+		default:
+			throw new IOException("Unsupported open flags: " + openFlags.name());
+		}
+	}
+
 	public int read(Path path, Pointer buf, long size, long offset, FuseFileInfo fi) {
-		OpenFile file = openFiles.get(path);
+		OpenFile file = openFiles.get(fi.fh.get());
 		if (file == null) {
 			LOG.warn("File not opened: {}", path);
 			return -ErrorCodes.EBADFD();
@@ -57,7 +73,7 @@ public class ReadOnlyFileHandler implements Closeable {
 
 	public int release(Path path, FuseFileInfo fi) {
 		try {
-			openFiles.close(path);
+			openFiles.close(fi.fh.get());
 			return 0;
 		} catch (IOException e) {
 			LOG.error("Error closing file.", e);
@@ -68,14 +84,8 @@ public class ReadOnlyFileHandler implements Closeable {
 	public int getattr(Path node, FileStat stat) {
 		try {
 			stat.st_mode.set(FileStat.S_IFREG | 0444);
-			stat.st_uid.set((Integer) Files.getAttribute(node, "unix:uid"));
-			stat.st_gid.set((Integer) Files.getAttribute(node, "unix:gid"));
 			BasicFileAttributes attr = Files.readAttributes(node, BasicFileAttributes.class);
-			LOG.info("getattr {} {}", attr.lastModifiedTime(), attr.creationTime());
-			stat.st_mtim.tv_sec.set(attr.lastModifiedTime().toInstant().getEpochSecond());
-			stat.st_ctim.tv_sec.set(attr.creationTime().toInstant().getEpochSecond());
-			stat.st_atim.tv_sec.set(attr.lastAccessTime().toInstant().getEpochSecond());
-			stat.st_size.set(Files.size(node));
+			attrUtil.copyBasicFileAttributesFromNioToFuse(attr, stat);
 			return 0;
 		} catch (UnsupportedOperationException | IllegalArgumentException e) {
 			LOG.error("getattr failed.", e);

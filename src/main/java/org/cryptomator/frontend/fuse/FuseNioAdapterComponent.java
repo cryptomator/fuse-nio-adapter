@@ -8,4 +8,6 @@ public interface FuseNioAdapterComponent {
 
 	ReadOnlyAdapter readOnlyAdapter();
 
+	ReadWriteAdapter readWriteAdapter();
+
 }
