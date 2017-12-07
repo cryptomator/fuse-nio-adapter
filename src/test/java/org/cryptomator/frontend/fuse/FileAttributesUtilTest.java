@@ -8,14 +8,13 @@ import java.time.Instant;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import jnr.ffi.Runtime;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
-
-import jnr.ffi.Runtime;
 import ru.serce.jnrfuse.struct.FileStat;
 
 public class FileAttributesUtilTest {

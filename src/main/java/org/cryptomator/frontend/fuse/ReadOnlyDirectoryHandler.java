@@ -8,10 +8,9 @@ import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
+import jnr.ffi.Pointer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import jnr.ffi.Pointer;
 import ru.serce.jnrfuse.ErrorCodes;
 import ru.serce.jnrfuse.FuseFillDir;
 import ru.serce.jnrfuse.struct.FileStat;

@@ -13,16 +13,14 @@ import java.nio.file.attribute.PosixFilePermissions;
 import javax.inject.Inject;
 import javax.inject.Named;
 
-import jnr.constants.platform.OpenFlags;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jnr.ffi.Pointer;
 import jnr.ffi.types.gid_t;
 import jnr.ffi.types.mode_t;
 import jnr.ffi.types.off_t;
 import jnr.ffi.types.size_t;
 import jnr.ffi.types.uid_t;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.serce.jnrfuse.ErrorCodes;
 import ru.serce.jnrfuse.struct.FuseFileInfo;
 import ru.serce.jnrfuse.struct.Timespec;

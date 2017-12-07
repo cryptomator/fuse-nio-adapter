@@ -1,13 +1,14 @@
 package org.cryptomator.frontend.fuse;
 
-import ru.serce.jnrfuse.struct.FileStat;
-
-import javax.inject.Inject;
-import javax.inject.Named;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.EnumSet;
 import java.util.Set;
+
+import javax.inject.Inject;
+import javax.inject.Named;
+
+import ru.serce.jnrfuse.struct.FileStat;
 
 @PerAdapter
 public class FileAttributesUtil {

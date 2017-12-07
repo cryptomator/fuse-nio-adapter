@@ -9,13 +9,10 @@ import java.nio.file.Path;
 import java.nio.file.attribute.FileAttribute;
 import java.util.Set;
 
-import com.google.common.collect.Sets;
+import com.google.common.base.MoreObjects;
+import jnr.ffi.Pointer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.base.MoreObjects;
-
-import jnr.ffi.Pointer;
 
 public class OpenFile implements Closeable {
 
