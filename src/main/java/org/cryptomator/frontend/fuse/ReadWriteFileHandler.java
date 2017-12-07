@@ -12,7 +12,6 @@ import java.time.DateTimeException;
 import java.time.Instant;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -7,7 +7,6 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.stream.Stream;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +22,6 @@ public class ReadOnlyDirectoryHandler {
 
 	private static final Logger LOG = LoggerFactory.getLogger(ReadOnlyDirectoryHandler.class);
 	private final FileAttributesUtil attrUtil;
-
 
 	@Inject
 	public ReadOnlyDirectoryHandler(FileAttributesUtil attrUtil) {
