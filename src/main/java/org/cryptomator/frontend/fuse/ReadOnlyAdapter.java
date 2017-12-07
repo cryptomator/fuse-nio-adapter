@@ -1,11 +1,15 @@
 package org.cryptomator.frontend.fuse;
 
 import java.io.IOException;
+import java.nio.file.FileStore;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.CharMatcher;
 
@@ -17,6 +21,7 @@ import ru.serce.jnrfuse.FuseFillDir;
 import ru.serce.jnrfuse.FuseStubFS;
 import ru.serce.jnrfuse.struct.FileStat;
 import ru.serce.jnrfuse.struct.FuseFileInfo;
+import ru.serce.jnrfuse.struct.Statvfs;
 
 /**
  * Read-Only FUSE-NIO-Adapter based on Sergey Tselovalnikov's <a href="https://github.com/SerCeMan/jnr-fuse/blob/0.5.1/src/main/java/ru/serce/jnrfuse/examples/HelloFuse.java">HelloFuse</a>
@@ -24,13 +29,17 @@ import ru.serce.jnrfuse.struct.FuseFileInfo;
 @PerAdapter
 public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 
-	private final Path root;
+	private static final Logger LOG = LoggerFactory.getLogger(ReadOnlyAdapter.class);
+	private static final int BLOCKSIZE = 4096;
+	protected final Path root;
+	protected final FileStore fileStore;
 	private final ReadOnlyDirectoryHandler dirHandler;
 	private final ReadOnlyFileHandler fileHandler;
 
 	@Inject
-	public ReadOnlyAdapter(@Named("root") Path root, ReadOnlyDirectoryHandler dirHandler, ReadOnlyFileHandler fileHandler) {
+	public ReadOnlyAdapter(@Named("root") Path root, FileStore fileStore, ReadOnlyDirectoryHandler dirHandler, ReadOnlyFileHandler fileHandler) {
 		this.root = root;
+		this.fileStore = fileStore;
 		this.dirHandler = dirHandler;
 		this.fileHandler = fileHandler;
 	}
@@ -41,12 +50,37 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 	}
 
 	@Override
+	public int statfs(String path, Statvfs stbuf) {
+		try {
+			long total = fileStore.getTotalSpace();
+			long avail = fileStore.getUsableSpace();
+			long tBlocks = total / BLOCKSIZE;
+			long aBlocks = avail / BLOCKSIZE;
+			stbuf.f_bsize.set(BLOCKSIZE);
+			stbuf.f_frsize.set(BLOCKSIZE);
+			stbuf.f_blocks.set(tBlocks);
+			stbuf.f_bavail.set(aBlocks);
+			stbuf.f_bfree.set(aBlocks);
+			return 0;
+		} catch (IOException e) {
+			LOG.error("statfs failed.", e);
+			return -ErrorCodes.EIO();
+		}
+	}
+
+	@Override
 	public int getattr(String path, FileStat stat) {
 		Path node = resolvePath(path);
 		if (Files.isDirectory(node)) {
-			return dirHandler.getattr(node, stat);
+			dirHandler.getattr(node, stat);
+			stat.st_uid.set(getContext().uid.get());
+			stat.st_gid.set(getContext().pid.get());
+			return 0;
 		} else if (Files.exists(node)) {
-			return fileHandler.getattr(node, stat);
+			fileHandler.getattr(node, stat);
+			stat.st_uid.set(getContext().uid.get());
+			stat.st_gid.set(getContext().pid.get());
+			return 0;
 		} else {
 			return -ErrorCodes.ENOENT();
 		}

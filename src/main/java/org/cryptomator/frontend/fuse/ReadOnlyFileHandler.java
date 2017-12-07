@@ -34,25 +34,32 @@ public class ReadOnlyFileHandler implements Closeable {
 
 	public int open(Path path, FuseFileInfo fi) {
 		try {
-			return open(path, OpenFlags.valueOf(fi.flags.longValue()));
+			long fileHandle = open(path, OpenFlags.valueOf(fi.flags.longValue()));
+			fi.fh.set(fileHandle);
+			return 0;
 		} catch (IOException e) {
 			LOG.error("Error opening file.", e);
 			return -ErrorCodes.EIO();
 		}
 	}
 
-	protected int open(Path path, OpenFlags openFlags) throws IOException {
+	/**
+	 * @param path path of the file to open
+	 * @param options file open options
+	 * @return file handle used to identify and close open files.
+	 * @throws IOException
+	 */
+	protected long open(Path path, OpenFlags openFlags) throws IOException {
 		switch (openFlags) {
 		case O_RDONLY:
-			openFiles.open(path, StandardOpenOption.READ);
-			return 0;
+			return openFiles.open(path, StandardOpenOption.READ);
 		default:
 			throw new IOException("Unsupported open flags: " + openFlags.name());
 		}
 	}
 
 	public int read(Path path, Pointer buf, long size, long offset, FuseFileInfo fi) {
-		OpenFile file = openFiles.get(path);
+		OpenFile file = openFiles.get(fi.fh.get());
 		if (file == null) {
 			LOG.warn("File not opened: {}", path);
 			return -ErrorCodes.EBADFD();
@@ -67,7 +74,7 @@ public class ReadOnlyFileHandler implements Closeable {
 
 	public int release(Path path, FuseFileInfo fi) {
 		try {
-			openFiles.close(path);
+			openFiles.close(fi.fh.get());
 			return 0;
 		} catch (IOException e) {
 			LOG.error("Error closing file.", e);

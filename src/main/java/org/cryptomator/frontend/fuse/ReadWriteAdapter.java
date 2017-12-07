@@ -3,12 +3,12 @@ package org.cryptomator.frontend.fuse;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.FileStore;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.attribute.BasicFileAttributeView;
-import java.nio.file.attribute.FileTime;
+import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.PosixFilePermissions;
-import java.time.Instant;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -23,7 +23,6 @@ import jnr.ffi.types.off_t;
 import jnr.ffi.types.size_t;
 import jnr.ffi.types.uid_t;
 import ru.serce.jnrfuse.ErrorCodes;
-import ru.serce.jnrfuse.struct.Flock;
 import ru.serce.jnrfuse.struct.FuseFileInfo;
 import ru.serce.jnrfuse.struct.Timespec;
 
@@ -38,28 +37,10 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 	private final FileAttributesUtil attrUtil;
 
 	@Inject
-	public ReadWriteAdapter(@Named("root") Path root, ReadWriteDirectoryHandler dirHandler, ReadWriteFileHandler fileHandler, FileAttributesUtil attrUtil) {
-		super(root, dirHandler, fileHandler);
+	public ReadWriteAdapter(@Named("root") Path root, FileStore fileStore, ReadWriteDirectoryHandler dirHandler, ReadWriteFileHandler fileHandler, FileAttributesUtil attrUtil) {
+		super(root, fileStore, dirHandler, fileHandler);
 		this.fileHandler = fileHandler;
 		this.attrUtil = attrUtil;
-	}
-
-	@Override
-	public int mknod(String path, long mode, long rdev) {
-		Path absPath = resolvePath(path);
-		if (Files.isDirectory(absPath)) {
-			return -ErrorCodes.EISDIR();
-		} else if (Files.exists(absPath)) {
-			return -ErrorCodes.EEXIST();
-		} else {
-			try {
-				// TODO: take POSIX permisiions in mode into FileAttributes!
-				Files.createFile(absPath);
-				return 0;
-			} catch (IOException e) {
-				return -ErrorCodes.EIO();
-			}
-		}
 	}
 
 	@Override
@@ -81,11 +62,16 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 	public int create(String path, @mode_t long mode, FuseFileInfo fi) {
 		Path node = resolvePath(path);
 		try {
-			Files.createFile(node, PosixFilePermissions.asFileAttribute(attrUtil.octalModeToPosixPermissions(mode)));
+			if (fileStore.supportsFileAttributeView(PosixFileAttributeView.class)) {
+				FileAttribute<?> attrs = PosixFilePermissions.asFileAttribute(attrUtil.octalModeToPosixPermissions(mode));
+				Files.createFile(node, attrs);
+			} else {
+				Files.createFile(node);
+			}
 			return 0;
 		} catch (FileAlreadyExistsException e) {
 			return -ErrorCodes.EEXIST();
-		} catch (IOException e) {
+		} catch (IOException | UnsupportedOperationException e) {
 			LOG.error("Exception occured", e);
 			return -ErrorCodes.EIO();
 		}
@@ -166,9 +152,9 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 			return -ErrorCodes.ENOENT();
 		} else {
 			/*
-			 From utimensat(2) man page:
-			 the array times: times[0] specifies the new "last access time" (atime);
-			 times[1] specifies the new "last modification time" (mtime).
+			 * From utimensat(2) man page:
+			 * the array times: times[0] specifies the new "last access time" (atime);
+			 * times[1] specifies the new "last modification time" (mtime).
 			 */
 			assert timespec.length == 2;
 			return fileHandler.utimens(node, timespec[0], timespec[1]);
@@ -190,6 +176,6 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 	@Override
 	public int flush(String path, FuseFileInfo fi) {
 		Path node = resolvePath(path);
-		return fileHandler.flush(node);
+		return fileHandler.flush(node, fi);
 	}
 }

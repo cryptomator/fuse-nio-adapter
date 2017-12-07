@@ -3,11 +3,13 @@ package org.cryptomator.frontend.fuse;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
+import java.nio.file.FileStore;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.FileTime;
+import java.nio.file.attribute.PosixFileAttributeView;
 import java.time.DateTimeException;
 import java.time.Instant;
 
@@ -27,43 +29,46 @@ import ru.serce.jnrfuse.struct.Timespec;
 public class ReadWriteFileHandler extends ReadOnlyFileHandler implements Closeable {
 
 	private static final Logger LOG = LoggerFactory.getLogger(ReadWriteFileHandler.class);
+	private FileStore fileStore;
 
 	@Inject
-	public ReadWriteFileHandler(OpenFileFactory openFiles, FileAttributesUtil attrUtil) {
+	public ReadWriteFileHandler(OpenFileFactory openFiles, FileAttributesUtil attrUtil, FileStore fileStore) {
 		super(openFiles, attrUtil);
+		this.fileStore = fileStore;
 	}
 
 	@Override
 	public int getattr(Path node, FileStat stat) {
 		int result = super.getattr(node, stat);
-		if (result == 0) {
+		if (result == 0 && fileStore.supportsFileAttributeView(PosixFileAttributeView.class)) {
 			stat.st_mode.set(FileStat.S_IFREG | 0644);
+		} else if (result == 0) {
+			stat.st_mode.set(FileStat.S_IFREG | 0777);
 		}
 		return result;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
-	protected int open(Path path, OpenFlags openFlags) throws IOException {
+	protected long open(Path path, OpenFlags openFlags) throws IOException {
 		switch (openFlags) {
 		case O_RDWR:
-			openFiles.open(path, StandardOpenOption.READ, StandardOpenOption.WRITE);
-			return 0;
+			return openFiles.open(path, StandardOpenOption.READ, StandardOpenOption.WRITE);
 		case O_WRONLY:
-			openFiles.open(path, StandardOpenOption.WRITE);
-			return 0;
+			return openFiles.open(path, StandardOpenOption.WRITE);
 		case O_APPEND:
-			openFiles.open(path, StandardOpenOption.WRITE, StandardOpenOption.APPEND);
-			return 0;
+			return openFiles.open(path, StandardOpenOption.WRITE, StandardOpenOption.APPEND);
 		case O_TRUNC:
-			openFiles.open(path, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
-			return 0;
+			return openFiles.open(path, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
 		default:
 			return super.open(path, openFlags);
 		}
 	}
 
 	public int write(Path path, Pointer buf, long size, long offset, FuseFileInfo fi) {
-		OpenFile file = openFiles.get(path);
+		OpenFile file = openFiles.get(fi.fh.get());
 		if (file == null) {
 			LOG.warn("File not opened: {}", path);
 			return -ErrorCodes.EBADFD();
@@ -76,8 +81,8 @@ public class ReadWriteFileHandler extends ReadOnlyFileHandler implements Closeab
 		}
 	}
 
-	public int flush(Path path) {
-		OpenFile file = openFiles.get(path);
+	public int flush(Path path, FuseFileInfo fi) {
+		OpenFile file = openFiles.get(fi.fh.get());
 		if (file == null) {
 			LOG.warn("File not opened: {}", path);
 			return -ErrorCodes.EBADFD();

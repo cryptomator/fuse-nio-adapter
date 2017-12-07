@@ -1,23 +1,22 @@
 package org.cryptomator.frontend.fuse;
 
-import jnr.ffi.Runtime;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.Mockito;
-import ru.serce.jnrfuse.struct.FileStat;
-
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.time.Instant;
-import java.util.EnumSet;
 import java.util.Set;
 import java.util.stream.Stream;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.Mockito;
+
+import jnr.ffi.Runtime;
+import ru.serce.jnrfuse.struct.FileStat;
 
 public class FileAttributesUtilTest {
 
@@ -29,14 +28,14 @@ public class FileAttributesUtilTest {
 		Assertions.assertEquals(expectedPerms, perms);
 	}
 
-	private static Stream<Arguments> filePermissionProvider() {
-		return Stream.of(
-				Arguments.of(PosixFilePermissions.fromString("rwxr-xr-x"), 0755l),
-				Arguments.of(PosixFilePermissions.fromString("---------"), 0000l),
-				Arguments.of(PosixFilePermissions.fromString("r--r--r--"), 0444l),
-				Arguments.of(PosixFilePermissions.fromString("rwx------"), 0700l),
-				Arguments.of(PosixFilePermissions.fromString("rw-r--r--"), 0644l),
-				Arguments.of(PosixFilePermissions.fromString("-w---xr--"), 0214l)
+	static Stream<Arguments> filePermissionProvider() {
+		return Stream.of( //
+				Arguments.of(PosixFilePermissions.fromString("rwxr-xr-x"), 0755l), //
+				Arguments.of(PosixFilePermissions.fromString("---------"), 0000l), //
+				Arguments.of(PosixFilePermissions.fromString("r--r--r--"), 0444l), //
+				Arguments.of(PosixFilePermissions.fromString("rwx------"), 0700l), //
+				Arguments.of(PosixFilePermissions.fromString("rw-r--r--"), 0644l), //
+				Arguments.of(PosixFilePermissions.fromString("-w---xr--"), 0214l) //
 		);
 	}
 

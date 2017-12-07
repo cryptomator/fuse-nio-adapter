@@ -1,11 +1,13 @@
 package org.cryptomator.frontend.fuse;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javax.inject.Inject;
 
@@ -17,26 +19,31 @@ public class OpenFileFactory implements AutoCloseable {
 
 	private static final Logger LOG = LoggerFactory.getLogger(OpenFileFactory.class);
 
-	private final ConcurrentMap<Path, OpenFile> openFiles = new ConcurrentHashMap<>();
+	private final ConcurrentMap<Long, OpenFile> openFiles = new ConcurrentHashMap<>();
+	private final AtomicLong fileHandleGen = new AtomicLong();
 
 	@Inject
 	public OpenFileFactory() {
 	}
 
-	public void open(Path path, OpenOption... options) throws IOException {
-		try {
-			openFiles.computeIfAbsent(path, p -> new OpenFile(path, options));
-		} catch (UncheckedIOException e) {
-			throw new IOException(e);
-		}
+	/**
+	 * @param path path of the file to open
+	 * @param options file open options
+	 * @return file handle used to identify and close open files.
+	 * @throws IOException
+	 */
+	public long open(Path path, OpenOption... options) throws IOException {
+		long fileHandle = fileHandleGen.getAndIncrement();
+		openFiles.put(fileHandle, new OpenFile(path, options));
+		return fileHandle;
 	}
 
-	public OpenFile get(Path path) {
-		return openFiles.get(path);
+	public OpenFile get(Long fileHandle) {
+		return openFiles.get(fileHandle);
 	}
 
-	public void close(Path path) throws IOException {
-		OpenFile file = openFiles.remove(path);
+	public void close(long fileHandle) throws IOException {
+		OpenFile file = openFiles.remove(fileHandle);
 		if (file != null) {
 			file.close();
 		} else {
@@ -53,13 +60,16 @@ public class OpenFileFactory implements AutoCloseable {
 	@Override
 	public synchronized void close() throws IOException {
 		IOException exception = new IOException("At least one open file could not be closed.");
-		for (Path p : openFiles.keySet()) {
+		for (Iterator<Map.Entry<Long, OpenFile>> it = openFiles.entrySet().iterator(); it.hasNext();) {
+			Map.Entry<Long, OpenFile> entry = it.next();
+			OpenFile openFile = entry.getValue();
+			LOG.warn("Closing unclosed file {}", openFile);
 			try {
-				LOG.warn("Closing unclosed file {}", p);
-				close(p);
+				openFile.close();
 			} catch (IOException e) {
 				exception.addSuppressed(e);
 			}
+			it.remove();
 		}
 		if (exception.getSuppressed().length > 0) {
 			throw exception;
