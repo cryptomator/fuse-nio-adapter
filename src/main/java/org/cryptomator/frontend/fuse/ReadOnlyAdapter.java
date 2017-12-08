@@ -70,15 +70,9 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 	public int getattr(String path, FileStat stat) {
 		Path node = resolvePath(path);
 		if (Files.isDirectory(node)) {
-			dirHandler.getattr(node, stat);
-			stat.st_uid.set(getContext().uid.get());
-			stat.st_gid.set(getContext().pid.get());
-			return 0;
+			return dirHandler.getattr(node, stat);
 		} else if (Files.exists(node)) {
-			fileHandler.getattr(node, stat);
-			stat.st_uid.set(getContext().uid.get());
-			stat.st_gid.set(getContext().pid.get());
-			return 0;
+			return fileHandler.getattr(node, stat);
 		} else {
 			return -ErrorCodes.ENOENT();
 		}

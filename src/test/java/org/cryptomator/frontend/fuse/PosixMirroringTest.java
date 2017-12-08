@@ -17,8 +17,8 @@ public class PosixMirroringTest {
 			System.out.println("Enter mount point:");
 			Path m = Paths.get(scanner.nextLine());
 			if (Files.isDirectory(p) && Files.isDirectory(m)) {
-				try (FuseNioAdapter fs = AdapterFactory.createReadWriteAdapter(p, uid, gid)) {
-					fs.mount(m, false, true, new String[]{"-ovolname=FUSE-NIO-Adapter", "-oauto_xattr"});
+				try (FuseNioAdapter fs = AdapterFactory.createReadWriteAdapter(p)) {
+					fs.mount(m, false, true, new String[]{"-ouid="+uid, "-ogid="+gid, "-ovolname=FUSE-NIO-Adapter", "-oauto_xattr"});
 					System.out.println("Mounted successfully. Enter anything to stop the server...");
 					System.in.read();
 					fs.umount();

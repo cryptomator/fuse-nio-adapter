@@ -21,7 +21,7 @@ public class FileAttributesUtilTest {
 	@ParameterizedTest
 	@MethodSource("filePermissionProvider")
 	public void testOctalModeToPosixPermissions(Set<PosixFilePermission> expectedPerms, long octalMode) {
-		FileAttributesUtil util = new FileAttributesUtil(0, 0);
+		FileAttributesUtil util = new FileAttributesUtil();
 		Set<PosixFilePermission> perms = util.octalModeToPosixPermissions(octalMode);
 		Assertions.assertEquals(expectedPerms, perms);
 	}
@@ -48,7 +48,7 @@ public class FileAttributesUtilTest {
 		Mockito.when(attr.lastAccessTime()).thenReturn(ftime);
 		Mockito.when(attr.size()).thenReturn(42l);
 
-		FileAttributesUtil util = new FileAttributesUtil(0, 0);
+		FileAttributesUtil util = new FileAttributesUtil();
 		FileStat stat = new FileStat(jnr.ffi.Runtime.getSystemRuntime());
 		util.copyBasicFileAttributesFromNioToFuse(attr, stat);
 
@@ -73,7 +73,7 @@ public class FileAttributesUtilTest {
 		Mockito.when(attr.lastAccessTime()).thenReturn(ftime);
 		Mockito.when(attr.size()).thenReturn(42l);
 
-		FileAttributesUtil util = new FileAttributesUtil(0, 0);
+		FileAttributesUtil util = new FileAttributesUtil();
 		FileStat stat = util.basicFileAttributesToFileStat(attr);
 
 		Assertions.assertTrue((FileStat.S_IFDIR & stat.st_mode.intValue()) == FileStat.S_IFDIR);

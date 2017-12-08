@@ -6,20 +6,18 @@ import java.util.EnumSet;
 import java.util.Set;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 
 import ru.serce.jnrfuse.struct.FileStat;
 
 @PerAdapter
 public class FileAttributesUtil {
 
-	private final int uid;
-	private final int gid;
+	// uid/gid are overwritten by fuse mount options -ouid=...
+	private static final int DUMMY_UID = 65534; // usually nobody
+	private static final int DUMMY_GID = 65534; // usually nobody
 
 	@Inject
-	public FileAttributesUtil(@Named("uid") int uid, @Named("gid") int gid) {
-		this.uid = uid;
-		this.gid = gid;
+	public FileAttributesUtil() {
 	}
 
 	public Set<PosixFilePermission> octalModeToPosixPermissions(long mode) {
@@ -50,8 +48,8 @@ public class FileAttributesUtil {
 		} else {
 			stat.st_mode.set(stat.st_mode.longValue() | FileStat.S_IFREG);
 		}
-		stat.st_uid.set(uid);
-		stat.st_gid.set(gid);
+		stat.st_uid.set(DUMMY_UID);
+		stat.st_gid.set(DUMMY_GID);
 		stat.st_mtim.tv_sec.set(attrs.lastModifiedTime().toInstant().getEpochSecond());
 		stat.st_mtim.tv_nsec.set(attrs.lastModifiedTime().toInstant().getNano());
 		stat.st_birthtime.tv_sec.set(attrs.creationTime().toInstant().getEpochSecond());
