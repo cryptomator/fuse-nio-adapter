@@ -8,7 +8,6 @@ import java.time.Instant;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import jnr.ffi.Runtime;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -43,15 +42,41 @@ public class FileAttributesUtilTest {
 		Instant instant = Instant.ofEpochSecond(424242l, 42);
 		FileTime ftime = FileTime.from(instant);
 		BasicFileAttributes attr = Mockito.mock(BasicFileAttributes.class);
+		Mockito.when(attr.isDirectory()).thenReturn(true);
 		Mockito.when(attr.lastModifiedTime()).thenReturn(ftime);
 		Mockito.when(attr.creationTime()).thenReturn(ftime);
 		Mockito.when(attr.lastAccessTime()).thenReturn(ftime);
 		Mockito.when(attr.size()).thenReturn(42l);
 
 		FileAttributesUtil util = new FileAttributesUtil(0, 0);
-		FileStat stat = new FileStat(Runtime.getSystemRuntime());
+		FileStat stat = new FileStat(jnr.ffi.Runtime.getSystemRuntime());
 		util.copyBasicFileAttributesFromNioToFuse(attr, stat);
 
+		Assertions.assertTrue((FileStat.S_IFDIR & stat.st_mode.intValue()) == FileStat.S_IFDIR);
+		Assertions.assertEquals(424242l, stat.st_mtim.tv_sec.get());
+		Assertions.assertEquals(42, stat.st_mtim.tv_nsec.intValue());
+		Assertions.assertEquals(424242l, stat.st_birthtime.tv_sec.get());
+		Assertions.assertEquals(42, stat.st_birthtime.tv_nsec.intValue());
+		Assertions.assertEquals(424242l, stat.st_atim.tv_sec.get());
+		Assertions.assertEquals(42, stat.st_atim.tv_nsec.intValue());
+		Assertions.assertEquals(42l, stat.st_size.longValue());
+	}
+
+	@Test
+	public void testBasicFileAttributesToFileStat() {
+		Instant instant = Instant.ofEpochSecond(424242l, 42);
+		FileTime ftime = FileTime.from(instant);
+		BasicFileAttributes attr = Mockito.mock(BasicFileAttributes.class);
+		Mockito.when(attr.isDirectory()).thenReturn(true);
+		Mockito.when(attr.lastModifiedTime()).thenReturn(ftime);
+		Mockito.when(attr.creationTime()).thenReturn(ftime);
+		Mockito.when(attr.lastAccessTime()).thenReturn(ftime);
+		Mockito.when(attr.size()).thenReturn(42l);
+
+		FileAttributesUtil util = new FileAttributesUtil(0, 0);
+		FileStat stat = util.basicFileAttributesToFileStat(attr);
+
+		Assertions.assertTrue((FileStat.S_IFDIR & stat.st_mode.intValue()) == FileStat.S_IFDIR);
 		Assertions.assertEquals(424242l, stat.st_mtim.tv_sec.get());
 		Assertions.assertEquals(42, stat.st_mtim.tv_nsec.intValue());
 		Assertions.assertEquals(424242l, stat.st_birthtime.tv_sec.get());

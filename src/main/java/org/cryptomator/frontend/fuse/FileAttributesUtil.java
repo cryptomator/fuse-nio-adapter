@@ -38,16 +38,27 @@ public class FileAttributesUtil {
 		return result;
 	}
 
-	public void copyBasicFileAttributesFromNioToFuse(BasicFileAttributes attr, FileStat stat) {
+	public FileStat basicFileAttributesToFileStat(BasicFileAttributes attrs) {
+		FileStat stat = new FileStat(jnr.ffi.Runtime.getSystemRuntime());
+		copyBasicFileAttributesFromNioToFuse(attrs, stat);
+		return stat;
+	}
+
+	public void copyBasicFileAttributesFromNioToFuse(BasicFileAttributes attrs, FileStat stat) {
+		if (attrs.isDirectory()) {
+			stat.st_mode.set(stat.st_mode.longValue() | FileStat.S_IFDIR);
+		} else {
+			stat.st_mode.set(stat.st_mode.longValue() | FileStat.S_IFREG);
+		}
 		stat.st_uid.set(uid);
 		stat.st_gid.set(gid);
-		stat.st_mtim.tv_sec.set(attr.lastModifiedTime().toInstant().getEpochSecond());
-		stat.st_mtim.tv_nsec.set(attr.lastModifiedTime().toInstant().getNano());
-		stat.st_birthtime.tv_sec.set(attr.creationTime().toInstant().getEpochSecond());
-		stat.st_birthtime.tv_nsec.set(attr.creationTime().toInstant().getNano());
-		stat.st_atim.tv_sec.set(attr.lastAccessTime().toInstant().getEpochSecond());
-		stat.st_atim.tv_nsec.set(attr.lastAccessTime().toInstant().getNano());
-		stat.st_size.set(attr.size());
+		stat.st_mtim.tv_sec.set(attrs.lastModifiedTime().toInstant().getEpochSecond());
+		stat.st_mtim.tv_nsec.set(attrs.lastModifiedTime().toInstant().getNano());
+		stat.st_birthtime.tv_sec.set(attrs.creationTime().toInstant().getEpochSecond());
+		stat.st_birthtime.tv_nsec.set(attrs.creationTime().toInstant().getNano());
+		stat.st_atim.tv_sec.set(attrs.lastAccessTime().toInstant().getEpochSecond());
+		stat.st_atim.tv_nsec.set(attrs.lastAccessTime().toInstant().getNano());
+		stat.st_size.set(attrs.size());
 	}
 
 }

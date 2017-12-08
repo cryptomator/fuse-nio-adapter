@@ -45,10 +45,25 @@ public class ReadOnlyDirectoryHandler {
 		filter.apply(buf, ".", null, 0);
 		filter.apply(buf, "..", null, 0);
 
+		// fill in names and basic file attributes
+//		Files.walkFileTree(node, EnumSet.noneOf(FileVisitOption.class), 1, new SimpleFileVisitor<Path>() {
+//
+//			@Override
+//			public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+//				FileStat stat = attrUtil.basicFileAttributesToFileStat(attrs);
+//				if (attrs.isDirectory()) {
+//					stat.st_mode.set(FileStat.S_IFDIR | FileStat.ALL_READ | FileStat.S_IXUGO);
+//				} else {
+//					stat.st_mode.set(FileStat.S_IFREG | FileStat.ALL_READ);
+//				}
+//				filter.apply(buf, file.getFileName().toString(), stat, 0);
+//				return FileVisitResult.CONTINUE;
+//			}
+//		});
+
+		// just fill in names, getattr gets called for each entry anyway
 		try (Stream<Path> stream = Files.list(node)) {
-			stream.map(Path::getFileName).map(Path::toString).forEach(fileName -> {
-				filter.apply(buf, fileName, null, 0);
-			});
+			stream.map(Path::getFileName).map(Path::toString).forEach(fileName ->  filter.apply(buf, fileName, null, 0));
 			return 0;
 		} catch (IOException e) {
 			LOG.error("Dir Listing failed.", e);
