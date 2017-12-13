@@ -69,23 +69,23 @@ public class ReadWriteFileHandler extends ReadOnlyFileHandler implements Closeab
 	@Override
 	protected long open(Path path, OpenFlags openFlags) throws IOException {
 		switch (openFlags) {
-		case O_RDWR:
-			return openFiles.open(path, StandardOpenOption.READ, StandardOpenOption.WRITE);
-		case O_WRONLY:
-			return openFiles.open(path, StandardOpenOption.WRITE);
-		case O_APPEND:
-			return openFiles.open(path, StandardOpenOption.WRITE, StandardOpenOption.APPEND);
-		case O_TRUNC:
-			return openFiles.open(path, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
-		default:
-			return super.open(path, openFlags);
+			case O_RDWR:
+				return openFiles.open(path, StandardOpenOption.READ, StandardOpenOption.WRITE);
+			case O_WRONLY:
+				return openFiles.open(path, StandardOpenOption.WRITE);
+			case O_APPEND:
+				return openFiles.open(path, StandardOpenOption.WRITE, StandardOpenOption.APPEND);
+			case O_TRUNC:
+				return openFiles.open(path, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
+			default:
+				return super.open(path, openFlags);
 		}
 	}
 
 	public int write(Path path, Pointer buf, long size, long offset, FuseFileInfo fi) {
 		OpenFile file = openFiles.get(fi.fh.get());
 		if (file == null) {
-			LOG.warn("File not opened: {}", path);
+			LOG.warn("write: File not opened: {}", path);
 			return -ErrorCodes.EBADFD();
 		}
 		try {
@@ -99,7 +99,7 @@ public class ReadWriteFileHandler extends ReadOnlyFileHandler implements Closeab
 	public int flush(Path path, FuseFileInfo fi) {
 		OpenFile file = openFiles.get(fi.fh.get());
 		if (file == null) {
-			LOG.warn("File not opened: {}", path);
+			LOG.warn("flush: File not opened: {}", path);
 			return -ErrorCodes.EBADFD();
 		}
 		try {
@@ -112,11 +112,25 @@ public class ReadWriteFileHandler extends ReadOnlyFileHandler implements Closeab
 	}
 
 	public int truncate(Path path, long size) {
-		try (FileChannel fc = FileChannel.open(path, StandardOpenOption.WRITE)) {
-			fc.truncate(size);
+		try (FileChannel fc = FileChannel.open(path, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING)) {
 			return 0;
 		} catch (IOException e) {
 			LOG.error("Truncating file feild.", e);
+			return -ErrorCodes.EIO();
+		}
+	}
+
+	public int ftruncate(Path path, long size, FuseFileInfo fi) {
+		OpenFile file = openFiles.get(fi.fh.get());
+		if (file == null) {
+			LOG.warn("ftruncate: File not opened: {}", path);
+			return -ErrorCodes.EBADFD();
+		}
+		try {
+			file.truncate(size);
+			return 0;
+		} catch (IOException e) {
+			LOG.error("Flushing file failed.", e);
 			return -ErrorCodes.EIO();
 		}
 	}

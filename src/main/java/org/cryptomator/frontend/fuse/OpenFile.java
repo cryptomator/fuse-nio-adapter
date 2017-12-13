@@ -100,6 +100,10 @@ public class OpenFile implements Closeable {
 		channel.force(false);
 	}
 
+	public void truncate(long size) throws IOException {
+		channel.truncate(size);
+	}
+
 	@Override
 	public String toString() {
 		return MoreObjects.toStringHelper(OpenFile.class) //

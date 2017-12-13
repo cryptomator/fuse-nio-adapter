@@ -165,6 +165,12 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 	}
 
 	@Override
+	public int ftruncate(String path, long size, FuseFileInfo fi) {
+		Path node = resolvePath(path);
+		return fileHandler.ftruncate(node, size, fi);
+	}
+
+	@Override
 	public int flush(String path, FuseFileInfo fi) {
 		Path node = resolvePath(path);
 		return fileHandler.flush(node, fi);
