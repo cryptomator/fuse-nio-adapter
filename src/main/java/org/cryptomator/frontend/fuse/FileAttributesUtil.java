@@ -1,5 +1,6 @@
 package org.cryptomator.frontend.fuse;
 
+import java.nio.file.AccessMode;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.EnumSet;
@@ -7,6 +8,7 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import ru.serce.jnrfuse.flags.AccessConstants;
 import ru.serce.jnrfuse.struct.FileStat;
 
 @PerAdapter
@@ -18,6 +20,16 @@ public class FileAttributesUtil {
 
 	@Inject
 	public FileAttributesUtil() {
+	}
+
+	public Set<AccessMode> accessModeMaskToSet(int mask) {
+		Set<AccessMode> accessModes = EnumSet.noneOf(AccessMode.class);
+		// @formatter:off
+		if ((mask & AccessConstants.R_OK) == AccessConstants.R_OK) accessModes.add(AccessMode.READ);
+		if ((mask & AccessConstants.W_OK) == AccessConstants.W_OK) accessModes.add(AccessMode.WRITE);
+		if ((mask & AccessConstants.X_OK) == AccessConstants.X_OK) accessModes.add(AccessMode.EXECUTE);
+		// @formatter:on
+		return accessModes;
 	}
 
 	public Set<PosixFilePermission> octalModeToPosixPermissions(long mode) {

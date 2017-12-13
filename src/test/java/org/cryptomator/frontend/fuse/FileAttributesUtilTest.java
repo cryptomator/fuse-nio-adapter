@@ -1,10 +1,12 @@
 package org.cryptomator.frontend.fuse;
 
+import java.nio.file.AccessMode;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.time.Instant;
+import java.util.EnumSet;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -14,9 +16,29 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
+import ru.serce.jnrfuse.flags.AccessConstants;
 import ru.serce.jnrfuse.struct.FileStat;
 
 public class FileAttributesUtilTest {
+
+	@ParameterizedTest
+	@MethodSource("accessModeProvider")
+	public void testAccessModeMaskToSet(Set<AccessMode> expectedModes, int mask) {
+		FileAttributesUtil util = new FileAttributesUtil();
+		Set<AccessMode> accessModes = util.accessModeMaskToSet(mask);
+		Assertions.assertEquals(expectedModes, accessModes);
+	}
+
+	static Stream<Arguments> accessModeProvider() {
+		return Stream.of( //
+				Arguments.of(EnumSet.noneOf(AccessMode.class), 0), //
+				Arguments.of(EnumSet.of(AccessMode.READ), AccessConstants.R_OK), //
+				Arguments.of(EnumSet.of(AccessMode.WRITE), AccessConstants.W_OK), //
+				Arguments.of(EnumSet.of(AccessMode.EXECUTE), AccessConstants.X_OK), //
+				Arguments.of(EnumSet.of(AccessMode.READ, AccessMode.WRITE), AccessConstants.R_OK | AccessConstants.W_OK), //
+				Arguments.of(EnumSet.allOf(AccessMode.class), AccessConstants.R_OK | AccessConstants.W_OK | AccessConstants.X_OK | AccessConstants.F_OK) //
+		);
+	}
 
 	@ParameterizedTest
 	@MethodSource("filePermissionProvider")

@@ -37,7 +37,7 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 
 	@Inject
 	public ReadWriteAdapter(@Named("root") Path root, FileStore fileStore, ReadWriteDirectoryHandler dirHandler, ReadWriteFileHandler fileHandler, FileAttributesUtil attrUtil) {
-		super(root, fileStore, dirHandler, fileHandler);
+		super(root, fileStore, dirHandler, fileHandler, attrUtil);
 		this.fileHandler = fileHandler;
 		this.attrUtil = attrUtil;
 	}

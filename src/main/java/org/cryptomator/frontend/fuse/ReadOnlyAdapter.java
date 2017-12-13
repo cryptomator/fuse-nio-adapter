@@ -1,14 +1,19 @@
 package org.cryptomator.frontend.fuse;
 
 import java.io.IOException;
+import java.nio.file.AccessDeniedException;
+import java.nio.file.AccessMode;
 import java.nio.file.FileStore;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.util.Set;
 
 import javax.inject.Inject;
 import javax.inject.Named;
 
 import com.google.common.base.CharMatcher;
+import com.google.common.collect.Iterables;
 import jnr.ffi.Pointer;
 import jnr.ffi.types.off_t;
 import jnr.ffi.types.size_t;
@@ -33,13 +38,15 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 	protected final FileStore fileStore;
 	private final ReadOnlyDirectoryHandler dirHandler;
 	private final ReadOnlyFileHandler fileHandler;
+	private final FileAttributesUtil attrUtil;
 
 	@Inject
-	public ReadOnlyAdapter(@Named("root") Path root, FileStore fileStore, ReadOnlyDirectoryHandler dirHandler, ReadOnlyFileHandler fileHandler) {
+	public ReadOnlyAdapter(@Named("root") Path root, FileStore fileStore, ReadOnlyDirectoryHandler dirHandler, ReadOnlyFileHandler fileHandler, FileAttributesUtil attrUtil) {
 		this.root = root;
 		this.fileStore = fileStore;
 		this.dirHandler = dirHandler;
 		this.fileHandler = fileHandler;
+		this.attrUtil = attrUtil;
 	}
 
 	protected Path resolvePath(String absolutePath) {
@@ -62,6 +69,29 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 			return 0;
 		} catch (IOException e) {
 			LOG.error("statfs failed.", e);
+			return -ErrorCodes.EIO();
+		}
+	}
+
+
+	@Override
+	public int access(String path, int mask) {
+		Path node = resolvePath(path);
+		Set<AccessMode> accessModes = attrUtil.accessModeMaskToSet(mask);
+		return checkAccess(node, accessModes);
+	}
+
+	protected int checkAccess(Path path, Set<AccessMode> accessModes) {
+		try {
+			// TODO return -EACCES, if accessMode contains WRITE
+			path.getFileSystem().provider().checkAccess(path, Iterables.toArray(accessModes, AccessMode.class));
+			return 0;
+		} catch (NoSuchFileException e) {
+			return -ErrorCodes.ENOENT();
+		} catch (AccessDeniedException e) {
+			return -ErrorCodes.EACCES();
+		} catch (IOException e) {
+			LOG.error("checking checkAccess failed.", e);
 			return -ErrorCodes.EIO();
 		}
 	}
