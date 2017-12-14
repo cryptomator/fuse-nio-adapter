@@ -8,6 +8,7 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import jnr.posix.util.Platform;
 import ru.serce.jnrfuse.flags.AccessConstants;
 import ru.serce.jnrfuse.struct.FileStat;
 
@@ -64,8 +65,14 @@ public class FileAttributesUtil {
 		stat.st_gid.set(DUMMY_GID);
 		stat.st_mtim.tv_sec.set(attrs.lastModifiedTime().toInstant().getEpochSecond());
 		stat.st_mtim.tv_nsec.set(attrs.lastModifiedTime().toInstant().getNano());
-		stat.st_birthtime.tv_sec.set(attrs.creationTime().toInstant().getEpochSecond());
-		stat.st_birthtime.tv_nsec.set(attrs.creationTime().toInstant().getNano());
+		if(Platform.IS_LINUX){
+			stat.st_ctim.tv_sec.set(attrs.creationTime().toInstant().getEpochSecond());
+			stat.st_ctim.tv_nsec.set(attrs.creationTime().toInstant().getNano());
+		}
+		else {
+			stat.st_birthtime.tv_sec.set(attrs.creationTime().toInstant().getEpochSecond());
+			stat.st_birthtime.tv_nsec.set(attrs.creationTime().toInstant().getNano());
+		}
 		stat.st_atim.tv_sec.set(attrs.lastAccessTime().toInstant().getEpochSecond());
 		stat.st_atim.tv_nsec.set(attrs.lastAccessTime().toInstant().getNano());
 		stat.st_size.set(attrs.size());
