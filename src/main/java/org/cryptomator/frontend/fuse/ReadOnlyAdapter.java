@@ -73,7 +73,6 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 		}
 	}
 
-
 	@Override
 	public int access(String path, int mask) {
 		Path node = resolvePath(path);
@@ -109,17 +108,18 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 	}
 
 	@Override
-	public int readdir(String path, Pointer buf, FuseFillDir filter, @off_t long offset, FuseFileInfo fi) {
+	public int readdir(String path, Pointer buf, FuseFillDir filler, @off_t long offset, FuseFileInfo fi) {
 		Path node = resolvePath(path);
 		if (!Files.isDirectory(node)) {
 			return -ErrorCodes.ENOENT();
 		}
-		return dirHandler.readdir(node, buf, filter, offset, fi);
+		return dirHandler.readdir(node, buf, filler, offset, fi);
 	}
 
 	@Override
 	public int open(String path, FuseFileInfo fi) {
 		Path node = resolvePath(path);
+		// TODO do we need to distinguish files vs. dirs? https://github.com/libfuse/libfuse/wiki/Invariants
 		if (Files.isDirectory(node)) {
 			return -ErrorCodes.EISDIR();
 		} else if (Files.exists(node)) {
@@ -132,24 +132,22 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 	@Override
 	public int read(String path, Pointer buf, @size_t long size, @off_t long offset, FuseFileInfo fi) {
 		Path node = resolvePath(path);
-		if (Files.isDirectory(node)) {
-			return -ErrorCodes.EISDIR();
-		} else if (Files.exists(node)) {
-			return fileHandler.read(node, buf, size, offset, fi);
-		} else {
-			return -ErrorCodes.ENOENT();
-		}
+		assert Files.exists(node);
+		return fileHandler.read(node, buf, size, offset, fi);
 	}
 
 	@Override
 	public int release(String path, FuseFileInfo fi) {
 		Path node = resolvePath(path);
-		if (Files.isDirectory(node)) {
-			return -ErrorCodes.EISDIR();
-		} else if (Files.exists(node)) {
-			return fileHandler.release(node, fi);
-		} else {
-			return -ErrorCodes.ENOENT();
+		return fileHandler.release(node, fi);
+	}
+
+	@Override
+	public void destroy(Pointer initResult) {
+		try {
+			close();
+		} catch (IOException e) {
+			LOG.error("I/O exception during file system destruction.", e);
 		}
 	}
 

@@ -1,6 +1,7 @@
 package org.cryptomator.frontend.fuse;
 
 import java.io.IOException;
+import java.nio.channels.ClosedChannelException;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileAttribute;
@@ -57,12 +58,19 @@ public class OpenFileFactory implements AutoCloseable {
 		return openFiles.get(fileHandle);
 	}
 
-	public void close(long fileHandle) throws IOException {
+	/**
+	 * Closes the channel identified by the given fileHandle
+	 * 
+	 * @param fileHandle file handle used to identify
+	 * @throws ClosedChannelException If no channel for the given fileHandle has been found.
+	 * @throws IOException
+	 */
+	public void close(long fileHandle) throws ClosedChannelException, IOException {
 		OpenFile file = openFiles.remove(fileHandle);
 		if (file != null) {
 			file.close();
 		} else {
-			LOG.warn("Attempted to close file that has not been opened or already been closed.");
+			throw new ClosedChannelException();
 		}
 	}
 

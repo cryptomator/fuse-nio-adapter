@@ -2,6 +2,7 @@ package org.cryptomator.frontend.fuse;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.nio.channels.ClosedChannelException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -60,8 +61,8 @@ public class ReadOnlyFileHandler implements Closeable {
 	public int read(Path path, Pointer buf, long size, long offset, FuseFileInfo fi) {
 		OpenFile file = openFiles.get(fi.fh.get());
 		if (file == null) {
-			LOG.warn("File not opened: {}", path);
-			return -ErrorCodes.EBADFD();
+			LOG.warn("Attempted to read from file with illegal fileHandle {}: {}", fi.fh.get(), path);
+			return -ErrorCodes.EBADF();
 		}
 		try {
 			return file.read(buf, size, offset);
@@ -75,6 +76,9 @@ public class ReadOnlyFileHandler implements Closeable {
 		try {
 			openFiles.close(fi.fh.get());
 			return 0;
+		} catch (ClosedChannelException e) {
+			LOG.warn("Attempted to close file with illegal fileHandle {}: {}", fi.fh.get(), path);
+			return -ErrorCodes.EBADF();
 		} catch (IOException e) {
 			LOG.error("Error closing file.", e);
 			return -ErrorCodes.EIO();

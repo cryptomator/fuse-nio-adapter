@@ -27,13 +27,13 @@ public class ReadOnlyDirectoryHandler {
 		this.attrUtil = attrUtil;
 	}
 
-	public int getattr(Path node, FileStat stat) {
+	public int getattr(Path path, FileStat stat) {
 		stat.st_mode.set(FileStat.S_IFDIR | 0555);
 		long nlinks;
 		try {
-			BasicFileAttributes attr = Files.readAttributes(node, BasicFileAttributes.class);
+			BasicFileAttributes attr = Files.readAttributes(path, BasicFileAttributes.class);
 			attrUtil.copyBasicFileAttributesFromNioToFuse(attr, stat);
-			nlinks = 2 + Files.list(node).filter(Files::isDirectory).count();
+			nlinks = 2 + countSubDirs(path);
 		} catch (IOException e) {
 			nlinks = 2;
 		}
@@ -41,9 +41,15 @@ public class ReadOnlyDirectoryHandler {
 		return 0;
 	}
 
-	public int readdir(Path node, Pointer buf, FuseFillDir filter, long offset, FuseFileInfo fi) {
-		filter.apply(buf, ".", null, 0);
-		filter.apply(buf, "..", null, 0);
+	private long countSubDirs(Path path) throws IOException {
+		try (Stream<Path> stream = Files.list(path)) {
+			return stream.filter(Files::isDirectory).count();
+		}
+	}
+
+	public int readdir(Path path, Pointer buf, FuseFillDir filler, long offset, FuseFileInfo fi) {
+		filler.apply(buf, ".", null, 0);
+		filler.apply(buf, "..", null, 0);
 
 		// fill in names and basic file attributes
 //		Files.walkFileTree(node, EnumSet.noneOf(FileVisitOption.class), 1, new SimpleFileVisitor<Path>() {
@@ -62,8 +68,8 @@ public class ReadOnlyDirectoryHandler {
 //		});
 
 		// just fill in names, getattr gets called for each entry anyway
-		try (Stream<Path> stream = Files.list(node)) {
-			stream.map(Path::getFileName).map(Path::toString).forEach(fileName ->  filter.apply(buf, fileName, null, 0));
+		try (Stream<Path> stream = Files.list(path)) {
+			stream.map(Path::getFileName).map(Path::toString).forEach(fileName -> filler.apply(buf, fileName, null, 0));
 			return 0;
 		} catch (IOException e) {
 			LOG.error("Dir Listing failed.", e);
