@@ -45,17 +45,17 @@ public class ReadOnlyFileHandler implements Closeable {
 
 	/**
 	 * @param path path of the file to open
-	 * @param options file open options
 	 * @return file handle used to identify and close open files.
 	 * @throws IOException
 	 */
 	protected long open(Path path, OpenFlags openFlags) throws IOException {
 		switch (openFlags) {
 		case O_RDONLY:
-			return openFiles.open(path, StandardOpenOption.READ);
+			break;
 		default:
-			throw new IOException("Unsupported open flags: " + openFlags.name());
+			LOG.warn("Unsupportd open flags: " + openFlags.name());
 		}
+		return openFiles.open(path, StandardOpenOption.READ);
 	}
 
 	public int read(Path path, Pointer buf, long size, long offset, FuseFileInfo fi) {
