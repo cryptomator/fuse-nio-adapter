@@ -1,13 +1,18 @@
 package org.cryptomator.frontend.fuse;
 
 import java.io.IOException;
+import java.nio.file.DirectoryIteratorException;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Iterator;
 import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
+import com.google.common.collect.Iterators;
 import jnr.ffi.Pointer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +25,8 @@ import ru.serce.jnrfuse.struct.FuseFileInfo;
 public class ReadOnlyDirectoryHandler {
 
 	private static final Logger LOG = LoggerFactory.getLogger(ReadOnlyDirectoryHandler.class);
+	private static final Path SAME_DIR = Paths.get(".");
+	private static final Path PARENT_DIR = Paths.get("..");
 	private final FileAttributesUtil attrUtil;
 
 	@Inject
@@ -48,10 +55,7 @@ public class ReadOnlyDirectoryHandler {
 	}
 
 	public int readdir(Path path, Pointer buf, FuseFillDir filler, long offset, FuseFileInfo fi) {
-		filler.apply(buf, ".", null, 0);
-		filler.apply(buf, "..", null, 0);
-
-		// fill in names and basic file attributes
+		// fill in names and basic file attributes - however only the filetype is used...
 //		Files.walkFileTree(node, EnumSet.noneOf(FileVisitOption.class), 1, new SimpleFileVisitor<Path>() {
 //
 //			@Override
@@ -68,10 +72,17 @@ public class ReadOnlyDirectoryHandler {
 //		});
 
 		// just fill in names, getattr gets called for each entry anyway
-		try (Stream<Path> stream = Files.list(path)) {
-			stream.map(Path::getFileName).map(Path::toString).forEach(fileName -> filler.apply(buf, fileName, null, 0));
+		try (DirectoryStream<Path> ds = Files.newDirectoryStream(path)) {
+			Iterator<Path> sameAndParent = Iterators.forArray(SAME_DIR, PARENT_DIR);
+			Iterator<Path> iter = Iterators.concat(sameAndParent, ds.iterator());
+			while (iter.hasNext()) {
+				String fileName = iter.next().getFileName().toString();
+				if (filler.apply(buf, fileName, null, 0) != 0) {
+					return -ErrorCodes.ENOMEM();
+				}
+			}
 			return 0;
-		} catch (IOException e) {
+		} catch (DirectoryIteratorException | IOException e) {
 			LOG.error("Dir Listing failed.", e);
 			return -ErrorCodes.EIO();
 		}
