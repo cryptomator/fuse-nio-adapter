@@ -45,6 +45,7 @@ public class ReadOnlyFileHandler implements Closeable {
 
 	/**
 	 * @param path path of the file to open
+	 * @param openFlags file open options
 	 * @return file handle used to identify and close open files.
 	 * @throws IOException
 	 */
