@@ -117,7 +117,6 @@
 	<build>
 		<plugins>
 			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.7.0</version>
 				<configuration>
@@ -128,7 +127,7 @@
 			</plugin>
 			<plugin>
 				<artifactId>maven-surefire-plugin</artifactId>
-				<version>2.20.1</version>
+				<version>2.19.1</version> <!-- 2.20 causes memory leaks, see http://junit.org/junit5/docs/current/user-guide/#running-tests-build-maven -->
 				<configuration>
 					<includes>
 						<include>**/*Test.java</include>

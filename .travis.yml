@@ -11,7 +11,7 @@ install:
 - mvn dependency:go-offline -Pdependency-check
 - mvn dependency:go-offline -Pcoverage
 script:
-- mvn clean test
+- mvn clean test -Dsurefire.useFile=false
 after_success:
 - "if [[ ${TRAVIS_JDK_VERSION} == 'oraclejdk8' ]]; then mvn test jacoco:report verify -Pcoverage; fi"
 cache:
