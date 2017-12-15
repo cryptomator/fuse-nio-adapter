@@ -6,7 +6,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Scanner;
 
-public class PosixMirroringTest {
+public class MacMirroringTest {
 
 	public static void main(String[] args) throws IOException {
 		try (Scanner scanner = new Scanner(System.in)) {
