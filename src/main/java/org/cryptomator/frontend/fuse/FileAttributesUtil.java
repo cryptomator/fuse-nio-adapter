@@ -65,11 +65,10 @@ public class FileAttributesUtil {
 		stat.st_gid.set(DUMMY_GID);
 		stat.st_mtim.tv_sec.set(attrs.lastModifiedTime().toInstant().getEpochSecond());
 		stat.st_mtim.tv_nsec.set(attrs.lastModifiedTime().toInstant().getNano());
-		if(Platform.IS_LINUX){
-			stat.st_ctim.tv_sec.set(attrs.creationTime().toInstant().getEpochSecond());
-			stat.st_ctim.tv_nsec.set(attrs.creationTime().toInstant().getNano());
-		}
-		else {
+		stat.st_ctim.tv_sec.set(attrs.creationTime().toInstant().getEpochSecond());
+		stat.st_ctim.tv_nsec.set(attrs.creationTime().toInstant().getNano());
+		if (Platform.IS_MAC || Platform.IS_WINDOWS) {
+			assert stat.st_birthtime != null;
 			stat.st_birthtime.tv_sec.set(attrs.creationTime().toInstant().getEpochSecond());
 			stat.st_birthtime.tv_nsec.set(attrs.creationTime().toInstant().getNano());
 		}

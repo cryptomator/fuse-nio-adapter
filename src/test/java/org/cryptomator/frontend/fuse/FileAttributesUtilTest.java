@@ -12,6 +12,7 @@ import java.util.stream.Stream;
 
 import jnr.posix.util.Platform;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -78,8 +79,12 @@ public class FileAttributesUtilTest {
 		Assertions.assertTrue((FileStat.S_IFDIR & stat.st_mode.intValue()) == FileStat.S_IFDIR);
 		Assertions.assertEquals(424242l, stat.st_mtim.tv_sec.get());
 		Assertions.assertEquals(42, stat.st_mtim.tv_nsec.intValue());
-		Assertions.assertEquals(424242l, stat.st_birthtime.tv_sec.get());
-		Assertions.assertEquals(42, stat.st_birthtime.tv_nsec.intValue());
+		Assertions.assertEquals(424242l, stat.st_ctim.tv_sec.get());
+		Assertions.assertEquals(42, stat.st_ctim.tv_nsec.intValue());
+		Assumptions.assumingThat(Platform.IS_MAC || Platform.IS_WINDOWS, () -> {
+			Assertions.assertEquals(424242l, stat.st_birthtime.tv_sec.get());
+			Assertions.assertEquals(42, stat.st_birthtime.tv_nsec.intValue());
+		});
 		Assertions.assertEquals(424242l, stat.st_atim.tv_sec.get());
 		Assertions.assertEquals(42, stat.st_atim.tv_nsec.intValue());
 		Assertions.assertEquals(42l, stat.st_size.longValue());
@@ -102,14 +107,12 @@ public class FileAttributesUtilTest {
 		Assertions.assertTrue((FileStat.S_IFDIR & stat.st_mode.intValue()) == FileStat.S_IFDIR);
 		Assertions.assertEquals(424242l, stat.st_mtim.tv_sec.get());
 		Assertions.assertEquals(42, stat.st_mtim.tv_nsec.intValue());
-		if(Platform.IS_LINUX) {
-			Assertions.assertEquals(424242l, stat.st_ctim.tv_sec.get());
-			Assertions.assertEquals(42, stat.st_ctim.tv_nsec.intValue());
-		}
-		else {
+		Assertions.assertEquals(424242l, stat.st_ctim.tv_sec.get());
+		Assertions.assertEquals(42, stat.st_ctim.tv_nsec.intValue());
+		Assumptions.assumingThat(Platform.IS_MAC || Platform.IS_WINDOWS, () -> {
 			Assertions.assertEquals(424242l, stat.st_birthtime.tv_sec.get());
 			Assertions.assertEquals(42, stat.st_birthtime.tv_nsec.intValue());
-		}
+		});
 		Assertions.assertEquals(424242l, stat.st_atim.tv_sec.get());
 		Assertions.assertEquals(42, stat.st_atim.tv_nsec.intValue());
 		Assertions.assertEquals(42l, stat.st_size.longValue());
