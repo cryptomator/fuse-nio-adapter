@@ -92,7 +92,7 @@
 			<version>${slf4j.version}</version>
 			<scope>test</scope>
 		</dependency>
-		
+
 		<!-- Testing -->
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
@@ -144,4 +144,90 @@
 			</plugin>
 		</plugins>
 	</build>
+
+	<profiles>
+		<profile>
+			<id>dependency-check</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.owasp</groupId>
+						<artifactId>dependency-check-maven</artifactId>
+						<version>3.0.2</version>
+						<configuration>
+							<cveValidForHours>24</cveValidForHours>
+							<failBuildOnCVSS>0</failBuildOnCVSS>
+							<skipTestScope>true</skipTestScope>
+							<detail>true</detail>
+							<suppressionFile>suppression.xml</suppressionFile>
+						</configuration>
+						<executions>
+							<execution>
+								<goals>
+									<goal>check</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+
+		<profile>
+			<id>coverage</id>
+			<dependencies>
+				<dependency>
+					<groupId>com.codacy</groupId>
+					<artifactId>codacy-coverage-reporter</artifactId>
+					<version>2.0.1</version>
+					<classifier>assembly</classifier>
+					<exclusions>
+						<exclusion>
+							<groupId>*</groupId>
+							<artifactId>*</artifactId>
+						</exclusion>
+					</exclusions>
+				</dependency>
+			</dependencies>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.jacoco</groupId>
+						<artifactId>jacoco-maven-plugin</artifactId>
+						<version>0.7.9</version>
+						<executions>
+							<execution>
+								<id>prepare-agent</id>
+								<goals>
+									<goal>prepare-agent</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<groupId>org.codehaus.mojo</groupId>
+						<artifactId>exec-maven-plugin</artifactId>
+						<version>1.6.0</version>
+						<executions>
+							<execution>
+								<phase>verify</phase>
+								<goals>
+									<goal>java</goal>
+								</goals>
+								<configuration>
+									<mainClass>com.codacy.CodacyCoverageReporter</mainClass>
+									<arguments>
+										<argument>-l</argument>
+										<argument>Java</argument>
+										<argument>-r</argument>
+										<argument>${project.build.directory}/site/jacoco/jacoco.xml</argument>
+									</arguments>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 </project>

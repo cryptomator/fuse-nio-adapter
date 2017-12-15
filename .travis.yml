@@ -1,0 +1,18 @@
+language: java
+sudo: false
+jdk:
+- oraclejdk8
+- oraclejdk9
+env:
+  global:
+  - secure: "SvqhJ7cFF4Uir0rvngiZAsxhgYAFCdw1bVHfKtA2MAV5taAuGsN0Uij+kLUP0oxHmrKwbSoOlHmTOG6m6GYOmX9ALAgfVRI41vnZxzhhR6zdHq4Kx84rhIxGHAXhxY8GPJiN+ClyeEr/qf6Jb60XyydU7w1wO8a1y+AYSW/CK0HZ4qORVgHOmfMmP7sCmgaPwCCcNoq/5mW873XHbJUbVh4d0wNn6Pej9oKRgsShWCqb/ihQ4IqNQjSQO+nF9FAuqMVzFJhnoNempuHG6R98QUlHXZ4IERlYfWfwjg6OtXk369QMAbQQ3k8bheozgM7R1mRq/cfIyIWzqY29UjqGVChy918QvXLDpLtVeU8ThF5cPgsle8K2NdaHZutfYXFo7qVosIAAMwkory5WN+RX7W2DqXAFwZjn5SfHvPMTz3tFgvAfVkV3qQg/bdOI6vA1cLghd/ZPRiCoJVJ/EdxwDor/FH5wRW2XFPIkqSWjlv4TnAd8YoAUZ44iO0DyUgyrB6oVdNYhW+0ei0M181rkSLdg5yfDykQF324lIwMwoalDMK4LcTxcgFVdyLSZr0xVtJr9vmr3w2xoJfB18hufHKkqMZQ+kDlhAmAjZApmrAIRR22gqhJJNctTEbX4O2s2BbD93TuKhBQMMDYzfoM8s62NCQ3qUbPtQUECW5HbF+k=" #CODACY_PROJECT_TOKEN
+install:
+- mvn dependency:go-offline -Pdependency-check
+- mvn dependency:go-offline -Pcoverage
+script:
+- mvn clean test
+after_success:
+- "if [[ ${TRAVIS_JDK_VERSION} == 'oraclejdk8' ]]; then mvn test jacoco:report verify -Pcoverage; fi"
+cache:
+  directories:
+  - $HOME/.m2
