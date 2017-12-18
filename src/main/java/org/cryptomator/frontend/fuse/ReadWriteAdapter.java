@@ -2,11 +2,13 @@ package org.cryptomator.frontend.fuse;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileStore;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.PosixFilePermissions;
@@ -150,12 +152,12 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 		try {
 			Path nodeOld = resolvePath(oldpath);
 			Path nodeNew = resolvePath(newpath);
-			Files.move(nodeOld, nodeNew);
+			Files.move(nodeOld, nodeNew, StandardCopyOption.REPLACE_EXISTING);
 			return 0;
 		} catch (FileNotFoundException e) {
 			return -ErrorCodes.ENOENT();
-		} catch (FileAlreadyExistsException e) {
-			return -ErrorCodes.EEXIST();
+		} catch (DirectoryNotEmptyException e) {
+			return -ErrorCodes.ENOTEMPTY();
 		} catch (IOException | RuntimeException e) {
 			LOG.error("Renaming " + oldpath + " to " + newpath + " failed.", e);
 			return -ErrorCodes.EIO();
