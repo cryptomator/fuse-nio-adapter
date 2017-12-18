@@ -3,6 +3,7 @@ package org.cryptomator.frontend.fuse;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
+import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
@@ -41,6 +42,9 @@ public class ReadOnlyFileHandler implements Closeable {
 			long fileHandle = open(path, openOptions);
 			fi.fh.set(fileHandle);
 			return 0;
+		} catch (AccessDeniedException e) {
+			LOG.warn("Attempted to open file with unsupported flags.", e);
+			return -ErrorCodes.EROFS();
 		} catch (IOException e) {
 			LOG.error("Error opening file.", e);
 			return -ErrorCodes.EIO();
@@ -51,13 +55,15 @@ public class ReadOnlyFileHandler implements Closeable {
 	 * @param path path of the file to open
 	 * @param openOptions file open options
 	 * @return file handle used to identify and close open files.
+	 * @throws AccessDeniedException Thrown if the requested openOptions are not supported
 	 * @throws IOException
 	 */
-	protected long open(Path path, Set<OpenOption> openOptions) throws IOException {
+	protected long open(Path path, Set<OpenOption> openOptions) throws AccessDeniedException, IOException {
 		if (openOptions.contains(StandardOpenOption.WRITE)) {
-			LOG.warn("Unsupported open options {}, opening file {} in readonly.", openOptions, path);
+			throw new AccessDeniedException(path.toString(), null, "Unsupported open options: WRITE");
+		} else {
+			return openFiles.open(path, StandardOpenOption.READ);
 		}
-		return openFiles.open(path, StandardOpenOption.READ);
 	}
 
 	public int read(Path path, Pointer buf, long size, long offset, FuseFileInfo fi) {

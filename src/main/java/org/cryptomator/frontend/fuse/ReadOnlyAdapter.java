@@ -6,6 +6,7 @@ import java.nio.file.AccessMode;
 import java.nio.file.FileStore;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
+import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
 import java.util.Set;
 
@@ -67,7 +68,7 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 			stbuf.f_bavail.set(aBlocks);
 			stbuf.f_bfree.set(aBlocks);
 			return 0;
-		} catch (IOException e) {
+		} catch (IOException | RuntimeException e) {
 			LOG.error("statfs failed.", e);
 			return -ErrorCodes.EIO();
 		}
@@ -75,9 +76,14 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 
 	@Override
 	public int access(String path, int mask) {
-		Path node = resolvePath(path);
-		Set<AccessMode> accessModes = attrUtil.accessModeMaskToSet(mask);
-		return checkAccess(node, accessModes);
+		try {
+			Path node = resolvePath(path);
+			Set<AccessMode> accessModes = attrUtil.accessModeMaskToSet(mask);
+			return checkAccess(node, accessModes);
+		} catch (RuntimeException e) {
+			LOG.error("checkAccess failed.", e);
+			return -ErrorCodes.EIO();
+		}
 	}
 
 	protected int checkAccess(Path path, Set<AccessMode> accessModes) {
@@ -90,64 +96,88 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 		} catch (AccessDeniedException e) {
 			return -ErrorCodes.EACCES();
 		} catch (IOException e) {
-			LOG.error("checking checkAccess failed.", e);
+			LOG.error("checkAccess failed.", e);
 			return -ErrorCodes.EIO();
 		}
 	}
 
 	@Override
 	public int getattr(String path, FileStat stat) {
-		Path node = resolvePath(path);
-		if (Files.isDirectory(node)) {
-			return dirHandler.getattr(node, stat);
-		} else if (Files.exists(node)) {
-			return fileHandler.getattr(node, stat);
-		} else {
-			return -ErrorCodes.ENOENT();
+		try {
+			Path node = resolvePath(path);
+			if (Files.isDirectory(node)) {
+				return dirHandler.getattr(node, stat);
+			} else if (Files.exists(node)) {
+				return fileHandler.getattr(node, stat);
+			} else {
+				return -ErrorCodes.ENOENT();
+			}
+		} catch (RuntimeException e) {
+			LOG.error("getattr failed.", e);
+			return -ErrorCodes.EIO();
 		}
 	}
 
 	@Override
 	public int readdir(String path, Pointer buf, FuseFillDir filler, @off_t long offset, FuseFileInfo fi) {
-		Path node = resolvePath(path);
-		if (!Files.isDirectory(node)) {
+		try {
+			Path node = resolvePath(path);
+			return dirHandler.readdir(node, buf, filler, offset, fi);
+		} catch (NotDirectoryException e) {
 			return -ErrorCodes.ENOENT();
+		} catch (IOException | RuntimeException e) {
+			LOG.error("readdir failed.", e);
+			return -ErrorCodes.EIO();
 		}
-		return dirHandler.readdir(node, buf, filler, offset, fi);
 	}
 
 	@Override
 	public int open(String path, FuseFileInfo fi) {
-		Path node = resolvePath(path);
-		// TODO do we need to distinguish files vs. dirs? https://github.com/libfuse/libfuse/wiki/Invariants
-		if (Files.isDirectory(node)) {
-			return -ErrorCodes.EISDIR();
-		} else if (Files.exists(node)) {
-			return fileHandler.open(node, fi);
-		} else {
-			return -ErrorCodes.ENOENT();
+		try {
+			Path node = resolvePath(path);
+			// TODO do we need to distinguish files vs. dirs? https://github.com/libfuse/libfuse/wiki/Invariants
+			if (Files.isDirectory(node)) {
+				return -ErrorCodes.EISDIR();
+			} else if (Files.exists(node)) {
+				return fileHandler.open(node, fi);
+			} else {
+				return -ErrorCodes.ENOENT();
+			}
+		} catch (RuntimeException e) {
+			LOG.error("open failed.", e);
+			return -ErrorCodes.EIO();
 		}
 	}
 
 	@Override
 	public int read(String path, Pointer buf, @size_t long size, @off_t long offset, FuseFileInfo fi) {
-		Path node = resolvePath(path);
-		assert Files.exists(node);
-		return fileHandler.read(node, buf, size, offset, fi);
+		try {
+			Path node = resolvePath(path);
+			assert Files.exists(node);
+			return fileHandler.read(node, buf, size, offset, fi);
+		} catch (RuntimeException e) {
+			LOG.error("read failed.", e);
+			return -ErrorCodes.EIO();
+		}
 	}
 
 	@Override
 	public int release(String path, FuseFileInfo fi) {
-		Path node = resolvePath(path);
-		return fileHandler.release(node, fi);
+		try {
+			Path node = resolvePath(path);
+			return fileHandler.release(node, fi);
+		} catch (RuntimeException e) {
+			LOG.error("release failed.", e);
+			return -ErrorCodes.EIO();
+		}
 	}
 
 	@Override
 	public void destroy(Pointer initResult) {
 		try {
 			close();
-		} catch (IOException e) {
-			LOG.error("I/O exception during file system destruction.", e);
+		} catch (IOException | RuntimeException e) {
+			LOG.error("destroy failed.", e);
 		}
 	}
 

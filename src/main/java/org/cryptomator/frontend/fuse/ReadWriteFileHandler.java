@@ -6,6 +6,7 @@ import java.nio.channels.FileChannel;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileStore;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -53,7 +54,7 @@ public class ReadWriteFileHandler extends ReadOnlyFileHandler implements Closeab
 
 	public int createAndOpen(Path path, FuseFileInfo fi, FileAttribute<?>... attrs) {
 		try {
-			long fileHandle = openFiles.open(path, EnumSet.of(StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE), attrs);
+			long fileHandle = openFiles.open(path, EnumSet.of(StandardOpenOption.CREATE_NEW, StandardOpenOption.READ, StandardOpenOption.WRITE), attrs);
 			fi.fh.set(fileHandle);
 			return 0;
 		} catch (FileAlreadyExistsException e) {
@@ -134,6 +135,8 @@ public class ReadWriteFileHandler extends ReadOnlyFileHandler implements Closeab
 		} catch (DateTimeException | ArithmeticException e) {
 			LOG.error("Invalid argument in Instant.ofEpochSecond(...) ", e);
 			return -ErrorCodes.EINVAL();
+		} catch (NoSuchFileException e) {
+			return -ErrorCodes.ENOENT();
 		} catch (IOException e) {
 			LOG.error("Setting file access/modification times failed.", e);
 			return -ErrorCodes.EIO();

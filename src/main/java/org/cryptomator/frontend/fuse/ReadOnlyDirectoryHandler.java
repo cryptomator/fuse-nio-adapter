@@ -54,7 +54,7 @@ public class ReadOnlyDirectoryHandler {
 		}
 	}
 
-	public int readdir(Path path, Pointer buf, FuseFillDir filler, long offset, FuseFileInfo fi) {
+	public int readdir(Path path, Pointer buf, FuseFillDir filler, long offset, FuseFileInfo fi) throws IOException {
 		// fill in names and basic file attributes - however only the filetype is used...
 //		Files.walkFileTree(node, EnumSet.noneOf(FileVisitOption.class), 1, new SimpleFileVisitor<Path>() {
 //
@@ -82,9 +82,8 @@ public class ReadOnlyDirectoryHandler {
 				}
 			}
 			return 0;
-		} catch (DirectoryIteratorException | IOException e) {
-			LOG.error("Dir Listing failed.", e);
-			return -ErrorCodes.EIO();
+		} catch (DirectoryIteratorException e) {
+			throw new IOException(e);
 		}
 	}
 
