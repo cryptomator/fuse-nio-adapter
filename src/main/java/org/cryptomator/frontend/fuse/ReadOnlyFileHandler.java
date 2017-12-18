@@ -52,7 +52,7 @@ public class ReadOnlyFileHandler implements Closeable {
 	protected long open(Path path, OpenFlags openFlags) throws IOException {
 		switch (openFlags) {
 		case O_RDONLY:
-			// fallthrough
+			return openFiles.open(path, StandardOpenOption.READ);
 		default:
 			LOG.warn("Unsupported open flags, opening in readonly mode: " + openFlags.name());
 			return openFiles.open(path, StandardOpenOption.READ);
