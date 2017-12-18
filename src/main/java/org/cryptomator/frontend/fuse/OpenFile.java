@@ -79,7 +79,7 @@ public class OpenFile implements Closeable {
 			int len = (int) Math.min(remaining, bb.capacity());
 			buf.get(written, bb.array(), 0, len);
 			bb.limit(len);
-			channel.write(bb);
+			channel.write(bb); // TODO check return value
 			written += len;
 		} while (written < num);
 		return (int) written; // TODO wtf cast

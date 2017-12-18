@@ -4,13 +4,14 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.file.Files;
+import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Set;
 
 import javax.inject.Inject;
 
-import jnr.constants.platform.OpenFlags;
 import jnr.ffi.Pointer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,16 +26,19 @@ public class ReadOnlyFileHandler implements Closeable {
 
 	protected final OpenFileFactory openFiles;
 	private final FileAttributesUtil attrUtil;
+	private final OpenOptionsUtil openOptionsUtil;
 
 	@Inject
-	public ReadOnlyFileHandler(OpenFileFactory openFiles, FileAttributesUtil attrUtil) {
+	public ReadOnlyFileHandler(OpenFileFactory openFiles, FileAttributesUtil attrUtil, OpenOptionsUtil openOptionsUtil) {
 		this.openFiles = openFiles;
 		this.attrUtil = attrUtil;
+		this.openOptionsUtil = openOptionsUtil;
 	}
 
 	public int open(Path path, FuseFileInfo fi) {
 		try {
-			long fileHandle = open(path, OpenFlags.valueOf(fi.flags.longValue()));
+			Set<OpenOption> openOptions = openOptionsUtil.fuseOpenFlagsToNioOpenOptions(fi.flags.longValue());
+			long fileHandle = open(path, openOptions);
 			fi.fh.set(fileHandle);
 			return 0;
 		} catch (IOException e) {
@@ -45,18 +49,15 @@ public class ReadOnlyFileHandler implements Closeable {
 
 	/**
 	 * @param path path of the file to open
-	 * @param openFlags file open options
+	 * @param openOptions file open options
 	 * @return file handle used to identify and close open files.
 	 * @throws IOException
 	 */
-	protected long open(Path path, OpenFlags openFlags) throws IOException {
-		switch (openFlags) {
-		case O_RDONLY:
-			return openFiles.open(path, StandardOpenOption.READ);
-		default:
-			LOG.warn("Unsupported open flags, opening in readonly mode: " + openFlags.name());
-			return openFiles.open(path, StandardOpenOption.READ);
+	protected long open(Path path, Set<OpenOption> openOptions) throws IOException {
+		if (openOptions.contains(StandardOpenOption.WRITE)) {
+			LOG.warn("Unsupported open options {}, opening file {} in readonly.", openOptions, path);
 		}
+		return openFiles.open(path, StandardOpenOption.READ);
 	}
 
 	public int read(Path path, Pointer buf, long size, long offset, FuseFileInfo fi) {

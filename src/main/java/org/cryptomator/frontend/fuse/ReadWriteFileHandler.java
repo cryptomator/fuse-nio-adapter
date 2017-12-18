@@ -6,6 +6,7 @@ import java.nio.channels.FileChannel;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileStore;
 import java.nio.file.Files;
+import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributeView;
@@ -15,10 +16,10 @@ import java.nio.file.attribute.PosixFileAttributeView;
 import java.time.DateTimeException;
 import java.time.Instant;
 import java.util.EnumSet;
+import java.util.Set;
 
 import javax.inject.Inject;
 
-import jnr.constants.platform.OpenFlags;
 import jnr.ffi.Pointer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,8 +35,8 @@ public class ReadWriteFileHandler extends ReadOnlyFileHandler implements Closeab
 	private FileStore fileStore;
 
 	@Inject
-	public ReadWriteFileHandler(OpenFileFactory openFiles, FileAttributesUtil attrUtil, FileStore fileStore) {
-		super(openFiles, attrUtil);
+	public ReadWriteFileHandler(OpenFileFactory openFiles, FileAttributesUtil attrUtil, FileStore fileStore, OpenOptionsUtil openOptionsUtil) {
+		super(openFiles, attrUtil, openOptionsUtil);
 		this.fileStore = fileStore;
 	}
 
@@ -67,19 +68,8 @@ public class ReadWriteFileHandler extends ReadOnlyFileHandler implements Closeab
 	 * {@inheritDoc}
 	 */
 	@Override
-	protected long open(Path path, OpenFlags openFlags) throws IOException {
-		switch (openFlags) {
-			case O_RDWR:
-				return openFiles.open(path, StandardOpenOption.READ, StandardOpenOption.WRITE);
-			case O_WRONLY:
-				return openFiles.open(path, StandardOpenOption.WRITE);
-			case O_APPEND:
-				return openFiles.open(path, StandardOpenOption.WRITE, StandardOpenOption.APPEND);
-			case O_TRUNC:
-				return openFiles.open(path, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
-			default:
-				return super.open(path, openFlags);
-		}
+	protected long open(Path path, Set<OpenOption> openOptions) throws IOException {
+		return openFiles.open(path, openOptions);
 	}
 
 	public int write(Path path, Pointer buf, long size, long offset, FuseFileInfo fi) {
