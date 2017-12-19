@@ -8,10 +8,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Iterator;
-import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Iterators;
 import jnr.ffi.Pointer;
 import org.slf4j.Logger;
@@ -49,8 +49,10 @@ public class ReadOnlyDirectoryHandler {
 	}
 
 	private long countSubDirs(Path path) throws IOException {
-		try (Stream<Path> stream = Files.list(path)) {
-			return stream.filter(Files::isDirectory).count();
+		try (DirectoryStream<Path> ds = Files.newDirectoryStream(path, Files::isDirectory)) {
+			return Iterables.size(ds);
+		} catch (DirectoryIteratorException e) {
+			throw new IOException(e);
 		}
 	}
 
