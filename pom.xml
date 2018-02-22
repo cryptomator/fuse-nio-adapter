@@ -22,6 +22,7 @@
 		<junit.jupiter.version>5.0.2</junit.jupiter.version>
 		<junit.platform.version>1.0.2</junit.platform.version>
 		<mockito.version>2.11.0</mockito.version>
+		<commons-lang3.version>3.6</commons-lang3.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
 
@@ -91,6 +92,13 @@
 			<artifactId>slf4j-simple</artifactId>
 			<version>${slf4j.version}</version>
 			<scope>test</scope>
+		</dependency>
+
+		<!-- Apache Commons -->
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+			<version>${commons-lang3.version}</version>
 		</dependency>
 
 		<!-- Testing -->
