@@ -41,7 +41,7 @@ public class WindowsFuseEnvironment implements FuseEnvironment{
 		mountOptions.add("-ouid=-1");
 		mountOptions.add("-ogid=-1");
 		mountOptions.add("-ovolname=" + mountName);
-		mountOptions.add("-oFileInfoTimeout=-1");
+		//mountOptions.add("-oFileInfoTimeout=-1");
 		return mountOptions.toArray(new String [mountOptions.size()]);
 	}
 

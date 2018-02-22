@@ -7,35 +7,40 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class FuseMount {
 
 	public static final Logger LOG = LoggerFactory.getLogger(FuseMount.class);
 
-	private final FuseNioAdapter adapter;
 
+	private FuseNioAdapter adapter;
 	private FuseEnvironment environment;
 	private boolean canBeEnhanced;
 
 	/**
-	 * TODO: the adapter should be injected as well!
 	 * @param environment
 	 */
 	@Inject
 	public FuseMount(FuseEnvironment environment) {
-		this.adapter = AdapterFactory.createReadWriteAdapter(Paths.get("Y:\\"));
 		this.environment = environment;
 		this.canBeEnhanced = true;
 	}
 
-	public void mount(EnvironmentVariables envVar, String... additionalMountParameters ) throws CommandFailedException {
-		environment.makeEnvironment(envVar);
-		try{
-			canBeEnhanced = false;
-			adapter.mount(Paths.get(environment.getMountPoint()), false, false, ArrayUtils.addAll(environment.getMountParameters(), additionalMountParameters));
-		} catch (Exception e){
-			throw new CommandFailedException("Unable to mount Filesystem.", e);
+	public void mount(String mountSource, EnvironmentVariables envVar, String... additionalMountParameters ) throws CommandFailedException {
+		try(FuseNioAdapter fs = AdapterFactory.createReadWriteAdapter(Paths.get(mountSource))){
+			adapter = fs;
+			environment.makeEnvironment(envVar);
+			try {
+				canBeEnhanced = false;
+				adapter.mount(Paths.get(environment.getMountPoint()), false, false, ArrayUtils.addAll(environment.getMountParameters(), additionalMountParameters));
+			} catch (Exception e) {
+				throw new CommandFailedException("Unable to mount Filesystem.", e);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new CommandFailedException("Filesystem cannnot be initalized: Invalid Path.");
 		}
 	}
 
