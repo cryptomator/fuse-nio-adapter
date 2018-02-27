@@ -20,12 +20,10 @@ public class WindowsMirrorFuseMountTest {
 			System.out.println("Enter path to the directory you want to mirror:");
 			Path p = Paths.get(scanner.nextLine());
 			if (Files.isDirectory(p)) {
-				FuseMountComponent fmComponent = DaggerFuseMountComponent.builder().environmentModule(new EnvironmentModule()).build();
-				FuseMount fm = fmComponent.fuseMount();
-
+				FuseMount fm = DaggerFuseMountComponent.create().fuseMount();
 				EnvironmentVariables envVars = EnvironmentVariables.create().withMountName("tresor").withMountPath("J:\\").build();
-				try{
-					fm.mount(p.toAbsolutePath().toString(), envVars);
+				try {
+					fm.mount(p.toAbsolutePath(), envVars);
 					System.out.println("Mounted successfully. Enter anything to stop the server...");
 					System.in.read();
 					fm.unmount();
@@ -33,7 +31,7 @@ public class WindowsMirrorFuseMountTest {
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
-		} else {
+			} else {
 				System.err.println("Invalid directory.");
 			}
 		}

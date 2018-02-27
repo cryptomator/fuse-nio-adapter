@@ -9,25 +9,22 @@ import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 
-public class LinuxFuseEnvironment implements FuseEnvironment{
+public class LinuxFuseEnvironment implements FuseEnvironment {
 
+	private static final String DEFAULT_MOUNTROOT_LINUX = System.getProperty("user.home") + ".Cryptomator";
 
 	private Path root;
 
 	@Inject
-	public LinuxFuseEnvironment(){
+	public LinuxFuseEnvironment() {
 	}
 
 	@Override
 	public void makeEnvironment(EnvironmentVariables envVars) throws CommandFailedException {
-		String rootString = envVars.get(EnvironmentVariable.MOUNTPATH);
-		if(rootString == null){
-			throw new CommandFailedException("No drive Letter given.");
-		}
-		try{
+		String rootString = envVars.getOrDefault(EnvironmentVariable.MOUNTPATH, DEFAULT_MOUNTROOT_LINUX);
+		try {
 			root = Paths.get(rootString).toAbsolutePath();
-		}
-		catch (InvalidPathException e){
+		} catch (InvalidPathException e) {
 			throw new CommandFailedException(e);
 		}
 	}
@@ -45,7 +42,7 @@ public class LinuxFuseEnvironment implements FuseEnvironment{
 		}
 		mountOptions.add("-oauto_unmount");
 		mountOptions.add("-ofsname=CryptoFs");
-		return mountOptions.toArray(new String [mountOptions.size()]);
+		return mountOptions.toArray(new String[mountOptions.size()]);
 	}
 
 	private String getUIdOrGID(String idtype) throws IOException {

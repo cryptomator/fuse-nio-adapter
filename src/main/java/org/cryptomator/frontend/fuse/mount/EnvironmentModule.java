@@ -10,30 +10,30 @@ import java.util.Set;
 public class EnvironmentModule {
 
 	@Provides
-	static FallbackEnvironment provideFallbackEnvironment(){
+	static FallbackEnvironment provideFallbackEnvironment() {
 		return new FallbackEnvironment();
 	}
 
 	@Provides
 	@IntoSet
-	static FuseEnvironment provideWindowsFuseEnvironment(){
+	static FuseEnvironment provideWindowsFuseEnvironment() {
 		return new WindowsFuseEnvironment();
 	}
 
 	@Provides
 	@IntoSet
-	static FuseEnvironment provideLinuxEnvironment(){
+	static FuseEnvironment provideLinuxEnvironment() {
 		return new LinuxFuseEnvironment();
 	}
 
 	@Provides
 	@IntoSet
-	static FuseEnvironment provideMacFuseEnvironment(){
+	static FuseEnvironment provideMacFuseEnvironment() {
 		return new MacFuseEnvironment();
 	}
 
-	 @Provides
-	static FuseEnvironment provideEnvironment(FallbackEnvironment fallback, Set<FuseEnvironment> envs){
+	@Provides
+	static FuseEnvironment provideEnvironment(FallbackEnvironment fallback, Set<FuseEnvironment> envs) {
 		return envs.stream().filter(FuseEnvironment::isApplicable).findFirst().orElse(fallback);
 	}
 

@@ -11,23 +11,21 @@ import java.util.concurrent.TimeUnit;
 
 public class MacFuseEnvironment implements FuseEnvironment {
 
+	private static final String DEFAULT_MOUNTROOT_MAC = System.getProperty("user.home") + "Library/Application Support/Cryptomator";
+
 	private Path mountPath;
 	private String mountName;
 
 	@Inject
-	public MacFuseEnvironment(){
+	public MacFuseEnvironment() {
 	}
 
 	@Override
 	public void makeEnvironment(EnvironmentVariables envVars) throws CommandFailedException {
-		String rootString = envVars.get(EnvironmentVariable.MOUNTPATH);
-		if(rootString == null){
-			throw new CommandFailedException("No drive Letter given.");
-		}
-		try{
+		String rootString = envVars.getOrDefault(EnvironmentVariable.MOUNTPATH, DEFAULT_MOUNTROOT_MAC);
+		try {
 			mountPath = Paths.get(rootString).toAbsolutePath();
-		}
-		catch (InvalidPathException e){
+		} catch (InvalidPathException e) {
 			throw new CommandFailedException(e);
 		}
 		mountName = envVars.getOrDefault(EnvironmentVariable.MOUNTNAME, "vault");
@@ -44,9 +42,9 @@ public class MacFuseEnvironment implements FuseEnvironment {
 			e.printStackTrace();
 			throw new CommandFailedException(e);
 		}
-			mountOptions.add("-ovolname=" + mountName);
-			mountOptions.add("-oauto_xattr");
-		return mountOptions.toArray(new String [mountOptions.size()]);
+		mountOptions.add("-ovolname=" + mountName);
+		mountOptions.add("-oauto_xattr");
+		return mountOptions.toArray(new String[mountOptions.size()]);
 	}
 
 	private String getUIdOrGID(String idtype) throws IOException {
@@ -90,6 +88,7 @@ public class MacFuseEnvironment implements FuseEnvironment {
 
 	/**
 	 * TODO: should we check for more?
+	 *
 	 * @return
 	 */
 	@Override

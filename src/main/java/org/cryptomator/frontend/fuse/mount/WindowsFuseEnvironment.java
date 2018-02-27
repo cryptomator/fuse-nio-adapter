@@ -8,7 +8,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 
-public class WindowsFuseEnvironment implements FuseEnvironment{
+public class WindowsFuseEnvironment implements FuseEnvironment {
 
 	private static final String AUTOASSIGN_DRRIVE_LETTER = "*";
 
@@ -16,33 +16,32 @@ public class WindowsFuseEnvironment implements FuseEnvironment{
 	private String mountName;
 
 	@Inject
-	public WindowsFuseEnvironment(){
+	public WindowsFuseEnvironment() {
 	}
 
 	@Override
 	public void makeEnvironment(EnvironmentVariables envVar) throws CommandFailedException {
 		String rootString = envVar.get(EnvironmentVariable.MOUNTPATH);
-		if(rootString == null){
+		if (rootString == null) {
 			throw new CommandFailedException("No drive Letter given.");
 		}
-		try{
+		try {
 			root = Paths.get(rootString).toAbsolutePath();
-		}
-		catch (InvalidPathException e){
+		} catch (InvalidPathException e) {
 			throw new CommandFailedException(e);
 		}
-		mountName = envVar.getOrDefault(EnvironmentVariable.MOUNTNAME,"vault");
+		mountName = envVar.getOrDefault(EnvironmentVariable.MOUNTNAME, "vault");
 	}
 
 	@Override
-	public String[] getMountParameters() throws CommandFailedException {
+	public String[] getMountParameters() {
 		ArrayList<String> mountOptions = new ArrayList<>(8);
 		mountOptions.add(("-oatomic_o_trunc"));
 		mountOptions.add("-ouid=-1");
 		mountOptions.add("-ogid=-1");
 		mountOptions.add("-ovolname=" + mountName);
 		//mountOptions.add("-oFileInfoTimeout=-1");
-		return mountOptions.toArray(new String [mountOptions.size()]);
+		return mountOptions.toArray(new String[mountOptions.size()]);
 	}
 
 	@Override
@@ -62,6 +61,7 @@ public class WindowsFuseEnvironment implements FuseEnvironment{
 
 	/**
 	 * TODO: Should we check more?
+	 *
 	 * @return
 	 */
 	@Override

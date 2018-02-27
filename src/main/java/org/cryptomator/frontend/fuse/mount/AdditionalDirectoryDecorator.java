@@ -6,7 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-public class AdditionalDirectoryDecorator extends FuseEnvironmentDecorator{
+public class AdditionalDirectoryDecorator extends FuseEnvironmentDecorator {
 
 	private String createdDirectoryName;
 
@@ -16,7 +16,7 @@ public class AdditionalDirectoryDecorator extends FuseEnvironmentDecorator{
 		createdDirectoryName = envVar.get(EnvironmentVariable.MOUNTNAME);
 		try {
 			createDirIfNotExist(
-					Paths.get(parent.getMountPoint(),"/", createdDirectoryName)
+					Paths.get(parent.getMountPoint(), "/", createdDirectoryName)
 			);
 		} catch (IOException e) {
 			throw new CommandFailedException(e);
@@ -26,11 +26,11 @@ public class AdditionalDirectoryDecorator extends FuseEnvironmentDecorator{
 	private void createDirIfNotExist(Path p) throws IOException {
 		try {
 			if (Files.isDirectory(p)) {
-					if (Files.newDirectoryStream(p).iterator().hasNext()) {
-						return;
-					} else {
-						throw new DirectoryNotEmptyException("Directory not empty.");
-					}
+				if (Files.newDirectoryStream(p).iterator().hasNext()) {
+					return;
+				} else {
+					throw new DirectoryNotEmptyException("Directory not empty.");
+				}
 			} else {
 				Files.createDirectory(p);
 			}
@@ -46,7 +46,7 @@ public class AdditionalDirectoryDecorator extends FuseEnvironmentDecorator{
 
 	@Override
 	public String getMountPoint() {
-		return parent.getMountPoint()+"/"+ createdDirectoryName;
+		return parent.getMountPoint() + "/" + createdDirectoryName;
 	}
 
 	@Override
@@ -55,14 +55,14 @@ public class AdditionalDirectoryDecorator extends FuseEnvironmentDecorator{
 	}
 
 	@Override
-	public void cleanUp() throws CommandFailedException{
+	public void cleanUp() throws CommandFailedException {
 		parent.cleanUp();
 		//delete additional dir
 		try {
-			Files.deleteIfExists(Paths.get(parent.getMountPoint(),"/", createdDirectoryName));
+			Files.deleteIfExists(Paths.get(parent.getMountPoint(), "/", createdDirectoryName));
 		} catch (IOException e) {
 			//LOG.warn("Could not delete mount directory of vault " + vaultSettings.mountName().get());
-			throw new CommandFailedException(e);
+			throw new CommandFailedException("Could not delete additional directory.");
 		}
 	}
 

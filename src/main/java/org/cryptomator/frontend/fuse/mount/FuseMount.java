@@ -28,8 +28,8 @@ public class FuseMount {
 		this.canBeEnhanced = true;
 	}
 
-	public void mount(String mountSource, EnvironmentVariables envVar, String... additionalMountParameters ) throws CommandFailedException {
-		try(FuseNioAdapter fs = AdapterFactory.createReadWriteAdapter(Paths.get(mountSource))){
+	public void mount(Path mountSource, EnvironmentVariables envVar, String... additionalMountParameters) throws CommandFailedException {
+		try (FuseNioAdapter fs = AdapterFactory.createReadWriteAdapter(mountSource)) {
 			adapter = fs;
 			environment.makeEnvironment(envVar);
 			try {
@@ -44,31 +44,36 @@ public class FuseMount {
 		}
 	}
 
-	public void unmount() throws CommandFailedException{
-		try {
-			adapter.umount();
-		} catch(Exception e){
-			throw new CommandFailedException(e);
+	public void unmount() throws CommandFailedException {
+		if (adapter != null) {
+			try {
+				adapter.umount();
+			} catch (Exception e) {
+				throw new CommandFailedException(e);
+			}
 		}
 	}
 
-	public void cleanUp() throws CommandFailedException{
-			environment.cleanUp();
+	public void cleanUp() throws CommandFailedException {
+		environment.cleanUp();
 	}
 
-	public void useExtraMountDir(){
-		try{
+	public void useExtraMountDir() {
+		try {
 			enhanceEnvironment(new AdditionalDirectoryDecorator());
-		} catch (IllegalStateException e){
+		} catch (IllegalStateException e) {
 			LOG.warn("Already mounted, please unmount & clean the MountObject before trying to enhance again.");
 		}
 	}
 
-	private void enhanceEnvironment(FuseEnvironmentDecorator fed){
-		if (canBeEnhanced){
+	public String getMountPath() {
+		return environment.getMountPoint();
+	}
+
+	private void enhanceEnvironment(FuseEnvironmentDecorator fed) {
+		if (canBeEnhanced) {
 			environment = fed.setParent(environment);
-		}
-		else{
+		} else {
 			throw new IllegalStateException("Environment Already in use!");
 		}
 
