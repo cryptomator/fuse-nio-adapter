@@ -10,8 +10,6 @@ import java.util.ArrayList;
 
 public class WindowsFuseEnvironment implements FuseEnvironment {
 
-	private static final String AUTOASSIGN_DRRIVE_LETTER = "*";
-
 	private Path root;
 	private String mountName;
 
@@ -33,6 +31,10 @@ public class WindowsFuseEnvironment implements FuseEnvironment {
 		mountName = envVar.getOrDefault(EnvironmentVariable.MOUNTNAME, "vault");
 	}
 
+	/**
+	 * TODO: measure the performance effect of FileInfoTimeout
+	 * @return
+	 */
 	@Override
 	public String[] getMountParameters() {
 		ArrayList<String> mountOptions = new ArrayList<>(8);
@@ -40,7 +42,7 @@ public class WindowsFuseEnvironment implements FuseEnvironment {
 		mountOptions.add("-ouid=-1");
 		mountOptions.add("-ogid=-1");
 		mountOptions.add("-ovolname=" + mountName);
-		//mountOptions.add("-oFileInfoTimeout=-1");
+		mountOptions.add("-oFileInfoTimeout=5000");
 		return mountOptions.toArray(new String[mountOptions.size()]);
 	}
 
