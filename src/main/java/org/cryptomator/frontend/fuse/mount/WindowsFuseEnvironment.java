@@ -33,6 +33,7 @@ public class WindowsFuseEnvironment implements FuseEnvironment {
 
 	/**
 	 * TODO: measure the performance effect of FileInfoTimeout
+	 *
 	 * @return
 	 */
 	@Override

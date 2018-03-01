@@ -4,7 +4,7 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
-public class EnvironmentVariables extends HashMap<EnvironmentVariable, String>{
+public class EnvironmentVariables extends HashMap<EnvironmentVariable, String> {
 
 	private EnvironmentVariables(Map<EnvironmentVariable, String> params) {
 		super(params);
@@ -26,19 +26,19 @@ public class EnvironmentVariables extends HashMap<EnvironmentVariable, String>{
 		}
 
 		/**
-		 * TODO: should Paths.get be used here?
+		 * Adds a MountPath to the EnvironmentVariables
 		 * @param value
 		 * @return
 		 */
 		public EnvironmentVariablesBuilder withMountPath(String value) {
-			return with(EnvironmentVariable.MOUNTPATH, Paths.get(value).toAbsolutePath().toString());
+			return with(EnvironmentVariable.MOUNTPATH, value);
 		}
 
 		public EnvironmentVariablesBuilder withMountName(String value) {
 			return with(EnvironmentVariable.MOUNTNAME, value);
 		}
 
-		public EnvironmentVariables build(){
+		public EnvironmentVariables build() {
 			return new EnvironmentVariables(params);
 		}
 

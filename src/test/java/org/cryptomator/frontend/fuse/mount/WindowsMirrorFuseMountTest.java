@@ -1,5 +1,8 @@
 package org.cryptomator.frontend.fuse.mount;
 
+import org.cryptomator.cryptofs.CryptoFileSystem;
+import org.cryptomator.cryptofs.CryptoFileSystemProperties;
+import org.cryptomator.cryptofs.CryptoFileSystemProvider;
 import org.cryptomator.frontend.fuse.FuseNioAdapter;
 
 import java.io.IOException;
@@ -20,8 +23,11 @@ public class WindowsMirrorFuseMountTest {
 			System.out.println("Enter path to the directory you want to mirror:");
 			Path p = Paths.get(scanner.nextLine());
 			if (Files.isDirectory(p)) {
-				FuseMount fm = DaggerFuseMountComponent.create().fuseMount();
-				EnvironmentVariables envVars = EnvironmentVariables.create().withMountName("tresor").withMountPath("J:\\").build();
+				FuseMount fm = MountFactory.createMountObject();
+				EnvironmentVariables envVars = EnvironmentVariables.create()
+						.withMountName("FuseMirror")
+						.withMountPath("J:\\")
+						.build();
 				try {
 					fm.mount(p.toAbsolutePath(), envVars);
 					System.out.println("Mounted successfully. Enter anything to stop the server...");
