@@ -13,11 +13,10 @@ public class EnvironmentVariablesTest {
 	public void testEnvironmentVariablesBuilder(){
 		String mountPath = "/home/testuser/mnt";
 		String mountName = "coolStuff";
-		Path comparePath = Paths.get(mountPath).toAbsolutePath();
 		EnvironmentVariables envVars = EnvironmentVariables.create().withMountName(mountName).withMountPath(mountPath).build();
 		Assertions.assertNotNull(envVars.get(EnvironmentVariable.MOUNTPATH));
 		Assertions.assertNotNull(envVars.get(EnvironmentVariable.MOUNTNAME));
 		Assertions.assertEquals(mountName, envVars.get(EnvironmentVariable.MOUNTNAME));
-		Assertions.assertEquals(comparePath.toString(), envVars.get(EnvironmentVariable.MOUNTPATH));
+		Assertions.assertEquals(mountPath.toString(), envVars.get(EnvironmentVariable.MOUNTPATH));
 	}
 }
