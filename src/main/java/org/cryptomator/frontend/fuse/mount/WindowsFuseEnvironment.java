@@ -7,11 +7,14 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
 
 public class WindowsFuseEnvironment implements FuseEnvironment {
 
-	private Path root;
+
+	private Path mountPath;
 	private String mountName;
+	private ProcessBuilder revealCommand;
 
 	@Inject
 	public WindowsFuseEnvironment() {
@@ -24,11 +27,12 @@ public class WindowsFuseEnvironment implements FuseEnvironment {
 			throw new CommandFailedException("No drive Letter given.");
 		}
 		try {
-			root = Paths.get(rootString).toAbsolutePath();
+			this.mountPath = Paths.get(rootString).toAbsolutePath();
 		} catch (InvalidPathException e) {
 			throw new CommandFailedException(e);
 		}
-		mountName = envVar.getOrDefault(EnvironmentVariable.MOUNTNAME, "vault");
+		this.mountName = envVar.getOrDefault(EnvironmentVariable.MOUNTNAME, "vault");
+		this.revealCommand = new ProcessBuilder("explorer", "/root," + mountPath.toString());
 	}
 
 	/**
@@ -49,12 +53,16 @@ public class WindowsFuseEnvironment implements FuseEnvironment {
 
 	@Override
 	public String getMountPoint() {
-		return root.toString();
+		return mountPath.toString();
 	}
 
 	@Override
 	public void revealMountPathInFilesystemmanager() throws CommandFailedException {
-		throw new CommandFailedException("Not Implemented");
+		try {
+			ProcessUtil.startAndWaitFor(revealCommand, 5, TimeUnit.SECONDS);
+		} catch (ProcessUtil.CommandTimeoutException e) {
+			throw new CommandFailedException(e.getMessage());
+		}
 	}
 
 	@Override
