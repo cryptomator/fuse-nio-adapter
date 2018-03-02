@@ -1,10 +1,12 @@
 package org.cryptomator.frontend.fuse.mount;
 
 import java.io.IOException;
-import java.nio.file.DirectoryNotEmptyException;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.DirectoryNotEmptyException;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -32,17 +34,19 @@ public class AdditionalDirectoryDecorator extends FuseEnvironmentDecorator {
 			throw new CommandFailedException(e);
 		}
 		List<String> commands = parent.getRevealCommands();
-		commands.get(commands.size()).concat("/" + createdDirectoryName);
+		commands.set(commands.size() - 1, parent.getMountPoint() + "/" + createdDirectoryName + "/");
 		this.revealCommand = new ProcessBuilder(commands);
 	}
 
 	private void createDirIfNotExist(Path p) throws IOException {
 		try {
 			if (Files.isDirectory(p)) {
-				if (Files.newDirectoryStream(p).iterator().hasNext()) {
-					return;
-				} else {
-					throw new DirectoryNotEmptyException("Directory not empty.");
+				try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(p)) {
+					if (!dirStream.iterator().hasNext()) {
+						return;
+					} else {
+						throw new DirectoryNotEmptyException("Directory not empty.");
+					}
 				}
 			} else {
 				Files.createDirectory(p);
@@ -81,7 +85,7 @@ public class AdditionalDirectoryDecorator extends FuseEnvironmentDecorator {
 		parent.cleanUp();
 		//delete additional dir
 		try {
-			Files.deleteIfExists(Paths.get(parent.getMountPoint(), "/", createdDirectoryName));
+			Files.delete(Paths.get(parent.getMountPoint(), "/", createdDirectoryName));
 		} catch (IOException e) {
 			//LOG.warn("Could not delete mount directory of vault " + vaultSettings.mountName().get());
 			throw new CommandFailedException("Could not delete additional directory.");
