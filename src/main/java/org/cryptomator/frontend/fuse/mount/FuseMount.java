@@ -1,6 +1,6 @@
 package org.cryptomator.frontend.fuse.mount;
 
-import org.apache.commons.lang3.ArrayUtils;
+import com.google.common.collect.ObjectArrays;
 import org.cryptomator.frontend.fuse.AdapterFactory;
 import org.cryptomator.frontend.fuse.FuseNioAdapter;
 import org.slf4j.Logger;
@@ -34,7 +34,7 @@ public class FuseMount {
 			environment.makeEnvironment(envVar);
 			try {
 				canBeEnhanced = false;
-				adapter.mount(Paths.get(environment.getMountPoint()), false, false, ArrayUtils.addAll(environment.getMountParameters(), additionalMountParameters));
+				adapter.mount(Paths.get(environment.getMountPoint()), false, false, ObjectArrays.concat(environment.getMountParameters(), additionalMountParameters, String.class));
 			} catch (Exception e) {
 				throw new CommandFailedException("Unable to mount Filesystem.", e);
 			}

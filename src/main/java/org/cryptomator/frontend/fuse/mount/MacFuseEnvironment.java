@@ -1,7 +1,5 @@
 package org.cryptomator.frontend.fuse.mount;
 
-import org.apache.commons.lang3.SystemUtils;
-
 import javax.inject.Inject;
 import java.io.IOException;
 import java.nio.file.InvalidPathException;
@@ -107,7 +105,7 @@ public class MacFuseEnvironment implements FuseEnvironment {
 	 */
 	@Override
 	public boolean isApplicable() {
-		return SystemUtils.IS_OS_MAC;
+		return System.getProperty("os.name").toLowerCase().contains("mac");
 	}
 
 }

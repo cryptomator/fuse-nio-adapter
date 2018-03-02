@@ -1,7 +1,6 @@
 package org.cryptomator.frontend.fuse.mount;
 
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.SystemUtils;
+import com.google.common.collect.ObjectArrays;
 
 import javax.inject.Inject;
 import java.io.IOException;
@@ -34,7 +33,7 @@ public class LinuxFuseEnvironment implements FuseEnvironment {
 			throw new CommandFailedException(e);
 		}
 		String[] command = envVars.getOrDefault(EnvironmentVariable.REVEALCOMMAND, DEFAULT_REVEALCOMMAND_LINUX).split("\\s+");
-		this.revealCommand = new ProcessBuilder(ArrayUtils.addAll(command, mountPoint.toString()));
+		this.revealCommand = new ProcessBuilder(ObjectArrays.concat(command, mountPoint.toString()));
 	}
 
 	@Override
@@ -102,7 +101,7 @@ public class LinuxFuseEnvironment implements FuseEnvironment {
 
 	@Override
 	public boolean isApplicable() {
-		return SystemUtils.IS_OS_LINUX;
+		return System.getProperty("os.name").toLowerCase().contains("linux");
 	}
 
 }
