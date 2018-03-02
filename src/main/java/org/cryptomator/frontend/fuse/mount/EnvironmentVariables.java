@@ -1,6 +1,5 @@
 package org.cryptomator.frontend.fuse.mount;
 
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,6 +26,7 @@ public class EnvironmentVariables extends HashMap<EnvironmentVariable, String> {
 
 		/**
 		 * Adds a MountPath to the EnvironmentVariables
+		 *
 		 * @param value
 		 * @return
 		 */
@@ -36,6 +36,10 @@ public class EnvironmentVariables extends HashMap<EnvironmentVariable, String> {
 
 		public EnvironmentVariablesBuilder withMountName(String value) {
 			return with(EnvironmentVariable.MOUNTNAME, value);
+		}
+
+		public EnvironmentVariablesBuilder withRevealCommand(String value) {
+			return with(EnvironmentVariable.REVEALCOMMAND, value);
 		}
 
 		public EnvironmentVariables build() {

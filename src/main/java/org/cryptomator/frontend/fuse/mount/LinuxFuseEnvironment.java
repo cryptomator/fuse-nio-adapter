@@ -1,5 +1,6 @@
 package org.cryptomator.frontend.fuse.mount;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.SystemUtils;
 
 import javax.inject.Inject;
@@ -15,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 public class LinuxFuseEnvironment implements FuseEnvironment {
 
 	private static final String DEFAULT_MOUNTROOT_LINUX = System.getProperty("user.home") + ".Cryptomator";
+	private static final String DEFAULT_REVEALCOMMAND_LINUX = "xdg-open";
 
 	private Path mountPoint;
 	private ProcessBuilder revealCommand;
@@ -31,7 +33,8 @@ public class LinuxFuseEnvironment implements FuseEnvironment {
 		} catch (InvalidPathException e) {
 			throw new CommandFailedException(e);
 		}
-		this.revealCommand = new ProcessBuilder("xdg-open", mountPoint.toString());
+		String[] command = envVars.getOrDefault(EnvironmentVariable.REVEALCOMMAND, DEFAULT_REVEALCOMMAND_LINUX).split("\\s+");
+		this.revealCommand = new ProcessBuilder(ArrayUtils.addAll(command, mountPoint.toString()));
 	}
 
 	@Override
