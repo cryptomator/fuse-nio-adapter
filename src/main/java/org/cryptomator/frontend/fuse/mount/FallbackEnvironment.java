@@ -1,6 +1,11 @@
 package org.cryptomator.frontend.fuse.mount;
 
-public class FallbackEnvironment implements FuseEnvironment{
+import java.util.List;
+
+/**
+ * TODO: Implement it!
+ */
+public class FallbackEnvironment implements FuseEnvironment {
 
 	@Override
 	public void makeEnvironment(EnvironmentVariables envVars) throws CommandFailedException {
@@ -20,6 +25,11 @@ public class FallbackEnvironment implements FuseEnvironment{
 	@Override
 	public void revealMountPathInFilesystemmanager() throws CommandFailedException {
 
+	}
+
+	@Override
+	public List<String> getRevealCommands() {
+		return null;
 	}
 
 	@Override

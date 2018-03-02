@@ -5,11 +5,21 @@ import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class AdditionalDirectoryDecorator extends FuseEnvironmentDecorator {
 
 	private String createdDirectoryName;
+	private ProcessBuilder revealCommand;
 
+	/**
+	 * Assumption: the last paraemter of a command is the mount path
+	 *
+	 * @param envVar
+	 * @throws CommandFailedException
+	 */
 	@Override
 	public void makeEnvironment(EnvironmentVariables envVar) throws CommandFailedException {
 		parent.makeEnvironment(envVar);
@@ -21,6 +31,9 @@ public class AdditionalDirectoryDecorator extends FuseEnvironmentDecorator {
 		} catch (IOException e) {
 			throw new CommandFailedException(e);
 		}
+		List<String> commands = parent.getRevealCommands();
+		commands.get(commands.size()).concat("/" + createdDirectoryName);
+		this.revealCommand = new ProcessBuilder(commands);
 	}
 
 	private void createDirIfNotExist(Path p) throws IOException {
@@ -51,7 +64,16 @@ public class AdditionalDirectoryDecorator extends FuseEnvironmentDecorator {
 
 	@Override
 	public void revealMountPathInFilesystemmanager() throws CommandFailedException {
-		parent.revealMountPathInFilesystemmanager();
+		try {
+			ProcessUtil.startAndWaitFor(revealCommand, 5, TimeUnit.SECONDS);
+		} catch (ProcessUtil.CommandTimeoutException e) {
+			throw new CommandFailedException(e.getMessage());
+		}
+	}
+
+	@Override
+	public List<String> getRevealCommands() {
+		return new ArrayList<>(parent.getRevealCommands());
 	}
 
 	@Override

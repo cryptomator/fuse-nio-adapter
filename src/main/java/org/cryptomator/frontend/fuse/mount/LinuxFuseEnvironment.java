@@ -8,6 +8,7 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 
@@ -85,6 +86,11 @@ public class LinuxFuseEnvironment implements FuseEnvironment {
 		} catch (ProcessUtil.CommandTimeoutException e) {
 			throw new CommandFailedException(e.getMessage());
 		}
+	}
+
+	@Override
+	public List<String> getRevealCommands() {
+		return new ArrayList<>(revealCommand.command());
 	}
 
 	@Override

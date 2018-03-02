@@ -7,6 +7,7 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class WindowsFuseEnvironment implements FuseEnvironment {
@@ -32,7 +33,7 @@ public class WindowsFuseEnvironment implements FuseEnvironment {
 			throw new CommandFailedException(e);
 		}
 		this.mountName = envVar.getOrDefault(EnvironmentVariable.MOUNTNAME, "vault");
-		this.revealCommand = new ProcessBuilder("explorer", "/root," + mountPoint.toString());
+		this.revealCommand = new ProcessBuilder("explorer", "/root,", mountPoint.toString());
 	}
 
 	/**
@@ -63,6 +64,11 @@ public class WindowsFuseEnvironment implements FuseEnvironment {
 		} catch (ProcessUtil.CommandTimeoutException e) {
 			throw new CommandFailedException(e.getMessage());
 		}
+	}
+
+	@Override
+	public List<String> getRevealCommands() {
+		return new ArrayList<>(revealCommand.command());
 	}
 
 	@Override

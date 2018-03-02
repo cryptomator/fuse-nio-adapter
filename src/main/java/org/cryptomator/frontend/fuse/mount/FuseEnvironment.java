@@ -1,5 +1,7 @@
 package org.cryptomator.frontend.fuse.mount;
 
+import java.util.List;
+
 public interface FuseEnvironment {
 
 	void makeEnvironment(EnvironmentVariables envVar) throws CommandFailedException;
@@ -8,14 +10,11 @@ public interface FuseEnvironment {
 
 	String getMountPoint();
 
-	/**
-	 * TODO: implement it in subclasses!
-	 *
-	 * @throws CommandFailedException
-	 */
 	default void revealMountPathInFilesystemmanager() throws CommandFailedException {
 		throw new CommandFailedException("Not implemented.");
 	}
+
+	List<String> getRevealCommands();
 
 	void cleanUp() throws CommandFailedException;
 
