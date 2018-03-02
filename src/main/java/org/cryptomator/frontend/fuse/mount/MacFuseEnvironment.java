@@ -4,7 +4,9 @@ import org.apache.commons.lang3.SystemUtils;
 
 import javax.inject.Inject;
 import java.io.IOException;
-import java.nio.file.*;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
@@ -14,7 +16,7 @@ public class MacFuseEnvironment implements FuseEnvironment {
 	private static final String DEFAULT_MOUNTROOT_MAC = System.getProperty("user.home") + "Library/Application Support/Cryptomator";
 
 	private ProcessBuilder revealCommand;
-	private Path mountPath;
+	private Path mountPoint;
 	private String mountName;
 
 	@Inject
@@ -25,12 +27,12 @@ public class MacFuseEnvironment implements FuseEnvironment {
 	public void makeEnvironment(EnvironmentVariables envVars) throws CommandFailedException {
 		String rootString = envVars.getOrDefault(EnvironmentVariable.MOUNTPATH, DEFAULT_MOUNTROOT_MAC);
 		try {
-			this.mountPath = Paths.get(rootString).toAbsolutePath();
+			this.mountPoint = Paths.get(rootString).toAbsolutePath();
 		} catch (InvalidPathException e) {
 			throw new CommandFailedException(e);
 		}
 		this.mountName = envVars.getOrDefault(EnvironmentVariable.MOUNTNAME, "vault");
-		this.revealCommand = new ProcessBuilder("open", mountPath.toString());
+		this.revealCommand = new ProcessBuilder("open", mountPoint.toString());
 	}
 
 	@Override
@@ -75,7 +77,7 @@ public class MacFuseEnvironment implements FuseEnvironment {
 
 	@Override
 	public String getMountPoint() {
-		return mountPath.toString();
+		return mountPoint.toString();
 	}
 
 	@Override
@@ -101,4 +103,5 @@ public class MacFuseEnvironment implements FuseEnvironment {
 	public boolean isApplicable() {
 		return SystemUtils.IS_OS_MAC;
 	}
+
 }

@@ -1,6 +1,6 @@
 package org.cryptomator.frontend.fuse.mount;
 
-public interface FuseEnvironment  {
+public interface FuseEnvironment {
 
 	void makeEnvironment(EnvironmentVariables envVar) throws CommandFailedException;
 
@@ -10,6 +10,7 @@ public interface FuseEnvironment  {
 
 	/**
 	 * TODO: implement it in subclasses!
+	 *
 	 * @throws CommandFailedException
 	 */
 	default void revealMountPathInFilesystemmanager() throws CommandFailedException {
@@ -18,7 +19,7 @@ public interface FuseEnvironment  {
 
 	void cleanUp() throws CommandFailedException;
 
-	default boolean isApplicable(){
+	default boolean isApplicable() {
 		return false;
 	}
 

@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit;
 public class WindowsFuseEnvironment implements FuseEnvironment {
 
 
-	private Path mountPath;
+	private Path mountPoint;
 	private String mountName;
 	private ProcessBuilder revealCommand;
 
@@ -27,12 +27,12 @@ public class WindowsFuseEnvironment implements FuseEnvironment {
 			throw new CommandFailedException("No drive Letter given.");
 		}
 		try {
-			this.mountPath = Paths.get(rootString).toAbsolutePath();
+			this.mountPoint = Paths.get(rootString).toAbsolutePath();
 		} catch (InvalidPathException e) {
 			throw new CommandFailedException(e);
 		}
 		this.mountName = envVar.getOrDefault(EnvironmentVariable.MOUNTNAME, "vault");
-		this.revealCommand = new ProcessBuilder("explorer", "/root," + mountPath.toString());
+		this.revealCommand = new ProcessBuilder("explorer", "/root," + mountPoint.toString());
 	}
 
 	/**
@@ -53,7 +53,7 @@ public class WindowsFuseEnvironment implements FuseEnvironment {
 
 	@Override
 	public String getMountPoint() {
-		return mountPath.toString();
+		return mountPoint.toString();
 	}
 
 	@Override
@@ -79,4 +79,5 @@ public class WindowsFuseEnvironment implements FuseEnvironment {
 	public boolean isApplicable() {
 		return SystemUtils.IS_OS_WINDOWS;
 	}
+
 }

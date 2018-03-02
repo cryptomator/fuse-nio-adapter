@@ -4,7 +4,9 @@ import org.apache.commons.lang3.SystemUtils;
 
 import javax.inject.Inject;
 import java.io.IOException;
-import java.nio.file.*;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
@@ -13,7 +15,8 @@ public class LinuxFuseEnvironment implements FuseEnvironment {
 
 	private static final String DEFAULT_MOUNTROOT_LINUX = System.getProperty("user.home") + ".Cryptomator";
 
-	private Path root;
+	private Path mountPoint;
+	private ProcessBuilder revealCommand;
 
 	@Inject
 	public LinuxFuseEnvironment() {
@@ -23,10 +26,11 @@ public class LinuxFuseEnvironment implements FuseEnvironment {
 	public void makeEnvironment(EnvironmentVariables envVars) throws CommandFailedException {
 		String rootString = envVars.getOrDefault(EnvironmentVariable.MOUNTPATH, DEFAULT_MOUNTROOT_LINUX);
 		try {
-			root = Paths.get(rootString).toAbsolutePath();
+			mountPoint = Paths.get(rootString).toAbsolutePath();
 		} catch (InvalidPathException e) {
 			throw new CommandFailedException(e);
 		}
+		this.revealCommand = new ProcessBuilder("xdg-open", mountPoint.toString());
 	}
 
 	@Override
@@ -71,12 +75,16 @@ public class LinuxFuseEnvironment implements FuseEnvironment {
 
 	@Override
 	public String getMountPoint() {
-		return this.root.toString();
+		return this.mountPoint.toString();
 	}
 
 	@Override
 	public void revealMountPathInFilesystemmanager() throws CommandFailedException {
-		throw new CommandFailedException("Not implemented.");
+		try {
+			ProcessUtil.startAndWaitFor(revealCommand, 5, TimeUnit.SECONDS);
+		} catch (ProcessUtil.CommandTimeoutException e) {
+			throw new CommandFailedException(e.getMessage());
+		}
 	}
 
 	@Override
@@ -87,4 +95,5 @@ public class LinuxFuseEnvironment implements FuseEnvironment {
 	public boolean isApplicable() {
 		return SystemUtils.IS_OS_LINUX;
 	}
+
 }
