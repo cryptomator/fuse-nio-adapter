@@ -19,6 +19,7 @@ public class LinuxFuseEnvironment implements FuseEnvironment {
 
 	private Path mountPoint;
 	private ProcessBuilder revealCommand;
+	private boolean usesIndividualRevealCommand;
 
 	@Inject
 	public LinuxFuseEnvironment() {
@@ -34,6 +35,7 @@ public class LinuxFuseEnvironment implements FuseEnvironment {
 		}
 		String[] command = envVars.getOrDefault(EnvironmentVariable.REVEALCOMMAND, DEFAULT_REVEALCOMMAND_LINUX).split("\\s+");
 		this.revealCommand = new ProcessBuilder(ObjectArrays.concat(command, mountPoint.toString()));
+		this.usesIndividualRevealCommand = envVars.containsKey(EnvironmentVariable.REVEALCOMMAND);
 	}
 
 	@Override
@@ -83,10 +85,18 @@ public class LinuxFuseEnvironment implements FuseEnvironment {
 
 	@Override
 	public void revealMountPathInFilesystemmanager() throws CommandFailedException {
-		try {
-			ProcessUtil.startAndWaitFor(revealCommand, 5, TimeUnit.SECONDS);
-		} catch (ProcessUtil.CommandTimeoutException e) {
-			throw new CommandFailedException(e.getMessage());
+		if (usesIndividualRevealCommand) {
+			try {
+				revealCommand.start();
+			} catch (IOException e) {
+				throw new CommandFailedException("Individual RevealCommand failed: " + e.getMessage());
+			}
+		} else {
+			try {
+				ProcessUtil.startAndWaitFor(revealCommand, 5, TimeUnit.SECONDS);
+			} catch (ProcessUtil.CommandTimeoutException e) {
+				throw new CommandFailedException(e.getMessage());
+			}
 		}
 	}
 
