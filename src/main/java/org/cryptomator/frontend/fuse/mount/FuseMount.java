@@ -54,6 +54,10 @@ public class FuseMount {
 		}
 	}
 
+	public void reveal() throws CommandFailedException {
+		environment.revealMountPathInFilesystemmanager();
+	}
+
 	public void cleanUp() throws CommandFailedException {
 		environment.cleanUp();
 	}
