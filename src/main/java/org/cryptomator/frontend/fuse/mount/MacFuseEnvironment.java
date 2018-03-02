@@ -13,6 +13,7 @@ public class MacFuseEnvironment implements FuseEnvironment {
 
 	private static final String DEFAULT_MOUNTROOT_MAC = System.getProperty("user.home") + "Library/Application Support/Cryptomator";
 
+	private ProcessBuilder revealCommand;
 	private Path mountPath;
 	private String mountName;
 
@@ -24,11 +25,12 @@ public class MacFuseEnvironment implements FuseEnvironment {
 	public void makeEnvironment(EnvironmentVariables envVars) throws CommandFailedException {
 		String rootString = envVars.getOrDefault(EnvironmentVariable.MOUNTPATH, DEFAULT_MOUNTROOT_MAC);
 		try {
-			mountPath = Paths.get(rootString).toAbsolutePath();
+			this.mountPath = Paths.get(rootString).toAbsolutePath();
 		} catch (InvalidPathException e) {
 			throw new CommandFailedException(e);
 		}
-		mountName = envVars.getOrDefault(EnvironmentVariable.MOUNTNAME, "vault");
+		this.mountName = envVars.getOrDefault(EnvironmentVariable.MOUNTNAME, "vault");
+		this.revealCommand = new ProcessBuilder("open", mountPath.toString());
 	}
 
 	@Override
@@ -78,7 +80,11 @@ public class MacFuseEnvironment implements FuseEnvironment {
 
 	@Override
 	public void revealMountPathInFilesystemmanager() throws CommandFailedException {
-		throw new CommandFailedException("Not implemented.");
+		try {
+			ProcessUtil.startAndWaitFor(revealCommand, 5, TimeUnit.SECONDS);
+		} catch (ProcessUtil.CommandTimeoutException e) {
+			throw new CommandFailedException(e.getMessage());
+		}
 	}
 
 
