@@ -22,7 +22,7 @@ before_deploy:
 - jdk_switcher use oraclejdk9
 deploy:
 - provider: script # RELEASES
-  script: mvn clean versions:set -DnewVersion=${TRAVIS_TAG} deploy -DskipTests -Prelease --settings settings.xml
+  script: mvn clean versions:set -DnewVersion=${TRAVIS_TAG} deploy -DskipTests -Prelease
   skip_cleanup: true
   on:
     repo: cryptomator/fuse-nio-adapter
