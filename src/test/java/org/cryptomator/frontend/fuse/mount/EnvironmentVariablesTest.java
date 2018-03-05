@@ -2,10 +2,6 @@ package org.cryptomator.frontend.fuse.mount;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.openjdk.tools.javac.util.Assert;
-
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 public class EnvironmentVariablesTest {
 
