@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.cryptomator</groupId>
 	<artifactId>fuse-nio-adapter</artifactId>
-	<version>0.1.0-SNAPSHOT</version>
+	<version>0.1.0</version>
 	<name>FUSE-NIO-Adapter</name>
 	<url>https://github.com/cryptomator/fuse-nio-adapter</url>
 
@@ -14,10 +14,9 @@
 	</scm>
 
 	<properties>
-		<java.version>1.8</java.version>
 		<jnrfuse.version>0.5.1</jnrfuse.version>
 		<dagger.version>2.12</dagger.version>
-		<guava.version>23.4-jre</guava.version>
+		<guava.version>23.6-jre</guava.version>
 		<slf4j.version>1.7.25</slf4j.version>
 		<junit.jupiter.version>5.0.2</junit.jupiter.version>
 		<junit.platform.version>1.0.2</junit.platform.version>
@@ -64,13 +63,6 @@
 			<groupId>com.google.dagger</groupId>
 			<artifactId>dagger</artifactId>
 			<version>${dagger.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>com.google.dagger</groupId>
-			<artifactId>dagger-compiler</artifactId>
-			<version>${dagger.version}</version>
-			<scope>provided</scope>
-			<optional>true</optional>
 		</dependency>
 
 		<!-- Guava -->
@@ -120,9 +112,17 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.7.0</version>
 				<configuration>
-					<source>${java.version}</source>
-					<target>${java.version}</target>
+					<source>9</source>
+					<target>9</target>
+					<release>9</release>
 					<showWarnings>true</showWarnings>
+					<annotationProcessorPaths>
+						<path>
+							<groupId>com.google.dagger</groupId>
+							<artifactId>dagger-compiler</artifactId>
+							<version>${dagger.version}</version>
+						</path>
+					</annotationProcessorPaths>
 				</configuration>
 			</plugin>
 			<plugin>
@@ -152,13 +152,15 @@
 					<plugin>
 						<groupId>org.owasp</groupId>
 						<artifactId>dependency-check-maven</artifactId>
-						<version>3.0.2</version>
+						<version>3.1.1</version>
 						<configuration>
 							<cveValidForHours>24</cveValidForHours>
 							<failBuildOnCVSS>0</failBuildOnCVSS>
 							<skipTestScope>true</skipTestScope>
 							<detail>true</detail>
-							<suppressionFile>suppression.xml</suppressionFile>
+							<suppressionFiles>
+								<suppressionFile>suppression.xml</suppressionFile>
+							</suppressionFiles>
 						</configuration>
 						<executions>
 							<execution>
@@ -174,20 +176,6 @@
 
 		<profile>
 			<id>coverage</id>
-			<dependencies>
-				<dependency>
-					<groupId>com.codacy</groupId>
-					<artifactId>codacy-coverage-reporter</artifactId>
-					<version>2.0.1</version>
-					<classifier>assembly</classifier>
-					<exclusions>
-						<exclusion>
-							<groupId>*</groupId>
-							<artifactId>*</artifactId>
-						</exclusion>
-					</exclusions>
-				</dependency>
-			</dependencies>
 			<build>
 				<plugins>
 					<plugin>
@@ -203,25 +191,41 @@
 							</execution>
 						</executions>
 					</plugin>
+				</plugins>
+			</build>
+		</profile>
+
+		<profile>
+			<id>release</id>
+			<distributionManagement>
+				<repository>
+					<id>bintray-jcenter</id>
+					<url>https://api.bintray.com/maven/cryptomator/maven/fuse-nio-adapter/;publish=1</url>
+				</repository>
+			</distributionManagement>
+			<build>
+				<plugins>
 					<plugin>
-						<groupId>org.codehaus.mojo</groupId>
-						<artifactId>exec-maven-plugin</artifactId>
-						<version>1.6.0</version>
+						<artifactId>maven-source-plugin</artifactId>
+						<version>3.0.1</version>
 						<executions>
 							<execution>
-								<phase>verify</phase>
+								<id>attach-sources</id>
 								<goals>
-									<goal>java</goal>
+									<goal>jar-no-fork</goal>
 								</goals>
-								<configuration>
-									<mainClass>com.codacy.CodacyCoverageReporter</mainClass>
-									<arguments>
-										<argument>-l</argument>
-										<argument>Java</argument>
-										<argument>-r</argument>
-										<argument>${project.build.directory}/site/jacoco/jacoco.xml</argument>
-									</arguments>
-								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<artifactId>maven-javadoc-plugin</artifactId>
+						<version>2.10.4</version>
+						<executions>
+							<execution>
+								<id>attach-javadocs</id>
+								<goals>
+									<goal>jar</goal>
+								</goals>
 							</execution>
 						</executions>
 					</plugin>
