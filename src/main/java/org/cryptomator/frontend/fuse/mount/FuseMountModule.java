@@ -4,15 +4,11 @@ import dagger.Module;
 import dagger.Provides;
 import dagger.multibindings.IntoSet;
 
+import java.util.Optional;
 import java.util.Set;
 
 @Module
-public class EnvironmentModule {
-
-	@Provides
-	static FallbackEnvironment provideFallbackEnvironment() {
-		return new FallbackEnvironment();
-	}
+public class FuseMountModule {
 
 	@Provides
 	@IntoSet
@@ -33,8 +29,13 @@ public class EnvironmentModule {
 	}
 
 	@Provides
-	static FuseEnvironment provideEnvironment(FallbackEnvironment fallback, Set<FuseEnvironment> envs) {
-		return envs.stream().filter(FuseEnvironment::isApplicable).findFirst().orElse(fallback);
+	static Optional<FuseEnvironment> provideEnvironment(Set<FuseEnvironment> envs) {
+		return envs.stream().filter(FuseEnvironment::isApplicable).findFirst();
+	}
+
+	@Provides
+	static Optional<FuseMount> provideFuseMount(Optional<FuseEnvironment> environment) {
+		return environment.map(FuseMount::new);
 	}
 
 }

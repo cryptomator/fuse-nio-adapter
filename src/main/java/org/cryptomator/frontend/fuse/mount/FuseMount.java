@@ -21,7 +21,6 @@ public class FuseMount {
 	/**
 	 * @param environment
 	 */
-	@Inject
 	public FuseMount(FuseEnvironment environment) {
 		this.environment = environment;
 	}

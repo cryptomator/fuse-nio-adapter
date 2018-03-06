@@ -8,7 +8,7 @@ public class LinuxEnvironmentTest {
 
 	public static void main(String[] args) {
 		if (IS_LINUX) {
-			FuseEnvironment env = DaggerEnvironmentComponent.create().fuseEnvironment();
+			FuseEnvironment env = DaggerEnvironmentComponent.create().fuseEnvironment().get();
 			EnvironmentVariables envVars = EnvironmentVariables.create()
 					.withMountName("yolo")
 					.withMountPath("/home/")
