@@ -17,7 +17,6 @@ public class FuseMount {
 
 	private FuseNioAdapter adapter;
 	private FuseEnvironment environment;
-	private boolean canBeEnhanced;
 
 	/**
 	 * @param environment
@@ -25,7 +24,6 @@ public class FuseMount {
 	@Inject
 	public FuseMount(FuseEnvironment environment) {
 		this.environment = environment;
-		this.canBeEnhanced = true;
 	}
 
 	public void mount(Path mountSource, EnvironmentVariables envVar, String... additionalMountParameters) throws CommandFailedException {
@@ -33,7 +31,6 @@ public class FuseMount {
 			adapter = fs;
 			environment.makeEnvironment(envVar);
 			try {
-				canBeEnhanced = false;
 				adapter.mount(Paths.get(environment.getMountPoint()), false, false, ObjectArrays.concat(environment.getMountParameters(), additionalMountParameters, String.class));
 			} catch (Exception e) {
 				throw new CommandFailedException("Unable to mount Filesystem.", e);
@@ -62,25 +59,8 @@ public class FuseMount {
 		environment.cleanUp();
 	}
 
-	public void useExtraMountDir() {
-		try {
-			enhanceEnvironment(new AdditionalDirectoryDecorator());
-		} catch (IllegalStateException e) {
-			LOG.warn("Already mounted, please unmount & clean the MountObject before trying to enhance again.");
-		}
-	}
-
 	public String getMountPath() {
 		return environment.getMountPoint();
-	}
-
-	private void enhanceEnvironment(FuseEnvironmentDecorator fed) {
-		if (canBeEnhanced) {
-			environment = fed.setParent(environment);
-		} else {
-			throw new IllegalStateException("Environment Already in use!");
-		}
-
 	}
 
 }
