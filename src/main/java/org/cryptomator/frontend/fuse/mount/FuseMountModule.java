@@ -12,29 +12,29 @@ public class FuseMountModule {
 
 	@Provides
 	@IntoSet
-	static FuseEnvironment provideWindowsFuseEnvironment() {
-		return new WindowsFuseEnvironment();
+	static FuseEnvironmentFactory provideWindowsFuseEnvironment() {
+		return new WindowsFuseEnvironmentFactory();
 	}
 
 	@Provides
 	@IntoSet
-	static FuseEnvironment provideLinuxEnvironment() {
-		return new LinuxFuseEnvironment();
+	static FuseEnvironmentFactory provideLinuxEnvironment() {
+		return new LinuxFuseEnvironmentFactory();
 	}
 
 	@Provides
 	@IntoSet
-	static FuseEnvironment provideMacFuseEnvironment() {
-		return new MacFuseEnvironment();
+	static FuseEnvironmentFactory provideMacFuseEnvironment() {
+		return new MacFuseEnvironmentFactory();
 	}
 
 	@Provides
-	static Optional<FuseEnvironment> provideEnvironment(Set<FuseEnvironment> envs) {
-		return envs.stream().filter(FuseEnvironment::isApplicable).findFirst();
+	static Optional<FuseEnvironmentFactory> provideEnvironment(Set<FuseEnvironmentFactory> envs) {
+		return envs.stream().filter(FuseEnvironmentFactory::isApplicable).findFirst();
 	}
 
 	@Provides
-	static Optional<FuseMount> provideFuseMount(Optional<FuseEnvironment> environment) {
+	static Optional<FuseMount> provideFuseMount(Optional<FuseEnvironmentFactory> environment) {
 		return environment.map(FuseMount::new);
 	}
 

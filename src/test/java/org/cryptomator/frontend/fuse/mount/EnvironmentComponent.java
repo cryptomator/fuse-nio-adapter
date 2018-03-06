@@ -7,5 +7,5 @@ import java.util.Optional;
 @Component(modules=FuseMountModule.class)
 public interface EnvironmentComponent {
 
-	Optional<FuseEnvironment> fuseEnvironment();
+	Optional<FuseEnvironmentFactory> fuseEnvironmentFactory();
 }

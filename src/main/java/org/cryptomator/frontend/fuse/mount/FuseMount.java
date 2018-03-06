@@ -3,32 +3,28 @@ package org.cryptomator.frontend.fuse.mount;
 import com.google.common.collect.ObjectArrays;
 import org.cryptomator.frontend.fuse.AdapterFactory;
 import org.cryptomator.frontend.fuse.FuseNioAdapter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class FuseMount {
 
-	public static final Logger LOG = LoggerFactory.getLogger(FuseMount.class);
-
+	private final FuseEnvironmentFactory environmentFactory;
 
 	private FuseNioAdapter adapter;
 	private FuseEnvironment environment;
 
 	/**
-	 * @param environment
+	 * @param environmentFactory
 	 */
-	public FuseMount(FuseEnvironment environment) {
-		this.environment = environment;
+	public FuseMount(FuseEnvironmentFactory environmentFactory) {
+		this.environmentFactory = environmentFactory;
 	}
 
 	public void mount(Path mountSource, EnvironmentVariables envVar, String... additionalMountParameters) throws CommandFailedException {
 		try (FuseNioAdapter fs = AdapterFactory.createReadWriteAdapter(mountSource)) {
 			adapter = fs;
-			environment.makeEnvironment(envVar);
+			environment = environmentFactory.create(envVar);
 			try {
 				adapter.mount(Paths.get(environment.getMountPoint()), false, false, ObjectArrays.concat(environment.getMountParameters(), additionalMountParameters, String.class));
 			} catch (Exception e) {
