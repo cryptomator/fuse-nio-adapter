@@ -4,6 +4,7 @@ import com.google.common.collect.ObjectArrays;
 
 import javax.inject.Inject;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -14,7 +15,8 @@ import java.util.concurrent.TimeUnit;
 
 public class LinuxFuseEnvironment implements FuseEnvironment {
 
-	private static final String DEFAULT_MOUNTROOT_LINUX = System.getProperty("user.home") + ".Cryptomator";
+	private static final Path USER_HOME = Paths.get(System.getProperty("user.home"));
+	private static final Path DEFAULT_MOUNTROOT_LINUX = USER_HOME.resolve(".Cryptomator");
 	private static final String DEFAULT_REVEALCOMMAND_LINUX = "xdg-open";
 
 	private Path mountPoint;
@@ -27,7 +29,7 @@ public class LinuxFuseEnvironment implements FuseEnvironment {
 
 	@Override
 	public void makeEnvironment(EnvironmentVariables envVars) throws CommandFailedException {
-		String rootString = envVars.getOrDefault(EnvironmentVariable.MOUNTPATH, DEFAULT_MOUNTROOT_LINUX);
+		String rootString = envVars.getOrDefault(EnvironmentVariable.MOUNTPATH, DEFAULT_MOUNTROOT_LINUX.toString());
 		try {
 			mountPoint = Paths.get(rootString).toAbsolutePath();
 		} catch (InvalidPathException e) {
@@ -43,8 +45,8 @@ public class LinuxFuseEnvironment implements FuseEnvironment {
 		ArrayList<String> mountOptions = new ArrayList<>(8);
 		mountOptions.add(("-oatomic_o_trunc"));
 		try {
-			mountOptions.add("-ouid=" + getUIdOrGID("uid"));
-			mountOptions.add("-ogid=" + getUIdOrGID("gid"));
+			mountOptions.add("-ouid=" + Files.getAttribute(USER_HOME, "unix:uid"));
+			mountOptions.add("-ogid=" + Files.getAttribute(USER_HOME, "unix:gid"));
 		} catch (IOException e) {
 			e.printStackTrace();
 			throw new CommandFailedException(e);
@@ -52,30 +54,6 @@ public class LinuxFuseEnvironment implements FuseEnvironment {
 		mountOptions.add("-oauto_unmount");
 		mountOptions.add("-ofsname=CryptoFs");
 		return mountOptions.toArray(new String[mountOptions.size()]);
-	}
-
-	private String getUIdOrGID(String idtype) throws IOException {
-		String id;
-		String parameter;
-		switch (idtype) {
-			case "uid":
-				parameter = "-u";
-				break;
-			case "gid":
-				parameter = "-g";
-				break;
-			default:
-				throw new IllegalArgumentException("Unkown ID type");
-		}
-		Process getId = new ProcessBuilder("sh", "-c", "id " + parameter).start();
-		Scanner s = new Scanner(getId.getInputStream()).useDelimiter("\\A");
-		try {
-			getId.waitFor(1000, TimeUnit.MILLISECONDS);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-		id = s.nextLine();
-		return id;
 	}
 
 	@Override
