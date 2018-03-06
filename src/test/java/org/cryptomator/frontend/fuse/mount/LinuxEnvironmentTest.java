@@ -8,14 +8,13 @@ public class LinuxEnvironmentTest {
 
 	public static void main(String[] args) {
 		if (IS_LINUX) {
-			FuseEnvironment env = DaggerEnvironmentComponent.create().fuseEnvironment();
 			EnvironmentVariables envVars = EnvironmentVariables.create()
 					.withMountName("yolo")
 					.withMountPath("/home/")
 					.withRevealCommand("nautilus")
 					.build();
 			try {
-				env.makeEnvironment(envVars);
+				FuseEnvironment env = DaggerEnvironmentComponent.create().fuseEnvironmentFactory().get().create(envVars);
 				env.revealMountPathInFilesystemmanager();
 				System.out.println("Wait for it...");
 				System.in.read();

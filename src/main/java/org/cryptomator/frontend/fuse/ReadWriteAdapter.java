@@ -67,7 +67,7 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 	public int create(String path, @mode_t long mode, FuseFileInfo fi) {
 		try {
 			Set<OpenFlags> flags = bitMaskUtil.bitMaskToSet(OpenFlags.class, fi.flags.longValue());
-			LOG.info("createAndOpen {} with openOptions {}", path, flags);
+			LOG.debug("createAndOpen {} with openOptions {}", path, flags);
 			Path node = resolvePath(path);
 			if (fileStore.supportsFileAttributeView(PosixFileAttributeView.class)) {
 				FileAttribute<?> attrs = PosixFilePermissions.asFileAttribute(attrUtil.octalModeToPosixPermissions(mode));
@@ -84,13 +84,13 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 	@Override
 	public int open(String path, FuseFileInfo fi) {
 		Set<OpenFlags> flags = bitMaskUtil.bitMaskToSet(OpenFlags.class, fi.flags.longValue());
-		LOG.info("open {} with openOptions {}", path, flags);
+		LOG.debug("open {} with openOptions {}", path, flags);
 		return super.open(path, fi);
 	}
 
 	@Override
 	public int chown(String path, @uid_t long uid, @gid_t long gid) {
-		LOG.info("Ignoring chown(uid={}, gid={}) call. Files will be served with static uid/gid.", uid, gid);
+		LOG.warn("Ignoring chown(uid={}, gid={}) call. Files will be served with static uid/gid.", uid, gid);
 		return 0;
 	}
 

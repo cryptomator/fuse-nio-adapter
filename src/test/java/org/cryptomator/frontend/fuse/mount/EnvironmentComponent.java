@@ -5,9 +5,7 @@ import dagger.Component;
 import java.util.Optional;
 
 @Component(modules=FuseMountModule.class)
-public interface FuseMountComponent {
+public interface EnvironmentComponent {
 
-	Optional<FuseMount> fuseMount();
-
-
+	Optional<FuseEnvironmentFactory> fuseEnvironmentFactory();
 }

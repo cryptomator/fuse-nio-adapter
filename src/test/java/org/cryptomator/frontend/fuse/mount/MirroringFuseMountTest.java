@@ -12,7 +12,7 @@ public class MirroringFuseMountTest {
 			System.out.println("Enter path to the directory you want to mirror:");
 			Path p = Paths.get(scanner.nextLine());
 			if (Files.isDirectory(p)) {
-				FuseMount fm = MountFactory.createMountObject();
+				FuseMount fm = FuseMountFactory.createMountObject();
 				EnvironmentVariables envVars = EnvironmentVariables.create()
 						.withMountName("FuseMirror")
 						.withMountPath("J:\\")
