@@ -93,19 +93,11 @@ public class ReadOnlyFileHandler implements Closeable {
 		}
 	}
 
-	public int getattr(Path node, FileStat stat) {
-		try {
-			stat.st_mode.set(FileStat.S_IFREG | 0444);
-			BasicFileAttributes attr = Files.readAttributes(node, BasicFileAttributes.class);
-			attrUtil.copyBasicFileAttributesFromNioToFuse(attr, stat);
-			return 0;
-		} catch (UnsupportedOperationException | IllegalArgumentException e) {
-			LOG.error("getattr failed.", e);
-			return -ErrorCodes.EIO();
-		} catch (IOException e) {
-			LOG.error("getattr failed.", e);
-			return -ErrorCodes.EIO();
-		}
+	public int getattr(Path node, BasicFileAttributes attrs, FileStat stat) {
+		LOG.debug("getattr {}", node);
+		stat.st_mode.set(FileStat.S_IFREG | 0444);
+		attrUtil.copyBasicFileAttributesFromNioToFuse(attrs, stat);
+		return 0;
 	}
 
 	@Override

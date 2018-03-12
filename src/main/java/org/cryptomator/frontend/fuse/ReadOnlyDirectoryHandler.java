@@ -34,12 +34,11 @@ public class ReadOnlyDirectoryHandler {
 		this.attrUtil = attrUtil;
 	}
 
-	public int getattr(Path path, FileStat stat) {
+	public int getattr(Path path, BasicFileAttributes attrs, FileStat stat) {
 		stat.st_mode.set(FileStat.S_IFDIR | 0555);
 		long nlinks;
 		try {
-			BasicFileAttributes attr = Files.readAttributes(path, BasicFileAttributes.class);
-			attrUtil.copyBasicFileAttributesFromNioToFuse(attr, stat);
+			attrUtil.copyBasicFileAttributesFromNioToFuse(attrs, stat);
 			nlinks = 2 + countSubDirs(path);
 		} catch (IOException e) {
 			nlinks = 2;
@@ -58,20 +57,28 @@ public class ReadOnlyDirectoryHandler {
 
 	public int readdir(Path path, Pointer buf, FuseFillDir filler, long offset, FuseFileInfo fi) throws IOException {
 		// fill in names and basic file attributes - however only the filetype is used...
-//		Files.walkFileTree(node, EnumSet.noneOf(FileVisitOption.class), 1, new SimpleFileVisitor<Path>() {
+//		try {
+//			Files.walkFileTree(path, EnumSet.noneOf(FileVisitOption.class), 1, new SimpleFileVisitor<Path>() {
 //
-//			@Override
-//			public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-//				FileStat stat = attrUtil.basicFileAttributesToFileStat(attrs);
-//				if (attrs.isDirectory()) {
-//					stat.st_mode.set(FileStat.S_IFDIR | FileStat.ALL_READ | FileStat.S_IXUGO);
-//				} else {
-//					stat.st_mode.set(FileStat.S_IFREG | FileStat.ALL_READ);
+//				@Override
+//				public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+//					FileStat stat = attrUtil.basicFileAttributesToFileStat(attrs);
+//					if (attrs.isDirectory()) {
+//						stat.st_mode.set(FileStat.S_IFDIR | FileStat.ALL_READ | FileStat.S_IXUGO);
+//					} else {
+//						stat.st_mode.set(FileStat.S_IFREG | FileStat.ALL_READ);
+//					}
+//					if (filler.apply(buf, file.getFileName().toString(), stat, 0) != 0) {
+//						throw new FillerBufferIsFullException();
+//					} else {
+//						return FileVisitResult.CONTINUE;
+//					}
 //				}
-//				filter.apply(buf, file.getFileName().toString(), stat, 0);
-//				return FileVisitResult.CONTINUE;
-//			}
-//		});
+//			});
+//			return 0;
+//		} catch (FillerBufferIsFullException e) {
+//			return -ErrorCodes.ENOMEM();
+//		}
 
 		// just fill in names, getattr gets called for each entry anyway
 		try (DirectoryStream<Path> ds = Files.newDirectoryStream(path)) {

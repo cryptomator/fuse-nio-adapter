@@ -2,6 +2,7 @@ package org.cryptomator.frontend.fuse;
 
 import java.nio.file.FileStore;
 import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.PosixFileAttributeView;
 
 import javax.inject.Inject;
@@ -20,8 +21,8 @@ public class ReadWriteDirectoryHandler extends ReadOnlyDirectoryHandler {
 	}
 
 	@Override
-	public int getattr(Path node, FileStat stat) {
-		int result = super.getattr(node, stat);
+	public int getattr(Path node, BasicFileAttributes attrs, FileStat stat) {
+		int result = super.getattr(node, attrs, stat);
 		if (result == 0 && fileStore.supportsFileAttributeView(PosixFileAttributeView.class)) {
 			stat.st_mode.set(FileStat.S_IFDIR | 0755);
 		} else if (result == 0) {
