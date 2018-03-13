@@ -104,7 +104,8 @@ public class ReadWriteFileHandler extends ReadOnlyFileHandler implements Closeab
 	}
 
 	public int truncate(Path path, long size) {
-		try (FileChannel fc = FileChannel.open(path, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING)) {
+		try (FileChannel fc = FileChannel.open(path, StandardOpenOption.WRITE)) {
+			fc.truncate(size);
 			return 0;
 		} catch (IOException e) {
 			LOG.error("Truncating file feild.", e);
