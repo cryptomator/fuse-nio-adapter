@@ -2,6 +2,7 @@ package org.cryptomator.frontend.fuse;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.AccessMode;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileStore;
@@ -12,6 +13,7 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.util.EnumSet;
 import java.util.Set;
 
 import javax.inject.Inject;
@@ -47,6 +49,11 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 		this.fileHandler = fileHandler;
 		this.attrUtil = attrUtil;
 		this.bitMaskUtil = bitMaskUtil;
+	}
+
+	@Override
+	protected int checkAccess(Path path, Set<AccessMode> requiredAccessModes) {
+		return checkAccess(path, requiredAccessModes, EnumSet.noneOf(AccessMode.class));
 	}
 
 	@Override
