@@ -94,7 +94,6 @@ public class ReadOnlyFileHandler implements Closeable {
 	}
 
 	public int getattr(Path node, BasicFileAttributes attrs, FileStat stat) {
-		LOG.debug("getattr {}", node);
 		stat.st_mode.set(FileStat.S_IFREG | 0444);
 		attrUtil.copyBasicFileAttributesFromNioToFuse(attrs, stat);
 		return 0;

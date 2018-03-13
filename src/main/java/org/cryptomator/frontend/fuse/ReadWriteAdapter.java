@@ -74,8 +74,8 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 	public int create(String path, @mode_t long mode, FuseFileInfo fi) {
 		try {
 			Set<OpenFlags> flags = bitMaskUtil.bitMaskToSet(OpenFlags.class, fi.flags.longValue());
-			LOG.debug("createAndOpen {} with openOptions {}", path, flags);
 			Path node = resolvePath(path);
+			LOG.trace("createAndOpen {} with openOptions {}", node, flags);
 			if (fileStore.supportsFileAttributeView(PosixFileAttributeView.class)) {
 				FileAttribute<?> attrs = PosixFilePermissions.asFileAttribute(attrUtil.octalModeToPosixPermissions(mode));
 				return fileHandler.createAndOpen(node, fi, attrs);
@@ -86,13 +86,6 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 			LOG.error("create failed.", e);
 			return -ErrorCodes.EIO();
 		}
-	}
-
-	@Override
-	public int open(String path, FuseFileInfo fi) {
-		Set<OpenFlags> flags = bitMaskUtil.bitMaskToSet(OpenFlags.class, fi.flags.longValue());
-		LOG.debug("open {} with openOptions {}", path, flags);
-		return super.open(path, fi);
 	}
 
 	@Override
