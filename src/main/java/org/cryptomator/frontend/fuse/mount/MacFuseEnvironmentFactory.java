@@ -59,8 +59,8 @@ public class MacFuseEnvironmentFactory implements FuseEnvironmentFactory {
 		}
 
 		@Override
-		public String getMountPoint() {
-			return mountPoint.toString();
+		public Path getMountPoint() {
+			return mountPoint;
 		}
 
 		@Override

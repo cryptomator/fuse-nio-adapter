@@ -26,7 +26,7 @@ public class FuseMount {
 			adapter = fs;
 			environment = environmentFactory.create(envVar);
 			try {
-				adapter.mount(Paths.get(environment.getMountPoint()), false, false, ObjectArrays.concat(environment.getMountParameters(), additionalMountParameters, String.class));
+				adapter.mount(Paths.get(environment.getMountPoint().toString()), false, false, ObjectArrays.concat(environment.getMountParameters(), additionalMountParameters, String.class));
 			} catch (Exception e) {
 				throw new CommandFailedException("Unable to mount Filesystem.", e);
 			}
@@ -54,7 +54,7 @@ public class FuseMount {
 		environment.cleanUp();
 	}
 
-	public String getMountPath() {
+	public Path getMountPoint() {
 		return environment.getMountPoint();
 	}
 

@@ -60,8 +60,8 @@ public class LinuxFuseEnvironmentFactory implements FuseEnvironmentFactory {
 		}
 
 		@Override
-		public String getMountPoint() {
-			return this.mountPoint.toString();
+		public Path getMountPoint() {
+			return mountPoint;
 		}
 
 		@Override

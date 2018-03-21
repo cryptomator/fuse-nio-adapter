@@ -1,12 +1,12 @@
 package org.cryptomator.frontend.fuse.mount;
 
-import java.util.List;
+import java.nio.file.Path;
 
 public interface FuseEnvironment {
 
 	String[] getMountParameters() throws CommandFailedException;
 
-	String getMountPoint();
+	Path getMountPoint();
 
 	default void revealMountPathInFilesystemmanager() throws CommandFailedException {
 		throw new CommandFailedException("Not implemented.");
