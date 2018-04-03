@@ -1,27 +1,29 @@
 package org.cryptomator.frontend.fuse.mount;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Objects;
 
 public class LinuxEnvironmentTest {
 
 	public static final boolean IS_LINUX = System.getProperty("os.name").toLowerCase().contains("linux");
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException {
 		if (IS_LINUX) {
+			Path mountPoint = Files.createTempDirectory("fuse-mount");
 			EnvironmentVariables envVars = EnvironmentVariables.create()
 					.withMountName("yolo")
-					.withMountPath("/home/")
+					.withMountPath(mountPoint)
 					.withRevealCommand("nautilus")
 					.build();
-			try {
-				FuseEnvironment env = DaggerEnvironmentComponent.create().fuseEnvironmentFactory().get().create(envVars);
-				env.revealMountPathInFilesystemmanager();
+			Path tmp = Paths.get("/tmp");
+			try (Mount mnt = FuseMountFactory.getMounter().mount(tmp, envVars)) {
+				mnt.revealInFileManager();
 				System.out.println("Wait for it...");
 				System.in.read();
-				env.cleanUp();
-			} catch (CommandFailedException e) {
-				e.printStackTrace();
-			} catch (IOException e) {
+			} catch (IOException | CommandFailedException e) {
 				e.printStackTrace();
 			}
 		} else {

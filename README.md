@@ -1,6 +1,7 @@
 [![Build Status](https://travis-ci.org/cryptomator/fuse-nio-adapter.svg?branch=master)](https://travis-ci.org/cryptomator/fuse-nio-adapter)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/47914e82b4c54f39b6150c24b83d7d09)](https://www.codacy.com/app/cryptomator/fuse-nio-adapter?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=cryptomator/fuse-nio-adapter&amp;utm_campaign=Badge_Grade)
 [![Codacy Badge](https://api.codacy.com/project/badge/Coverage/47914e82b4c54f39b6150c24b83d7d09)](https://www.codacy.com/app/cryptomator/fuse-nio-adapter?utm_source=github.com&utm_medium=referral&utm_content=cryptomator/fuse-nio-adapter&utm_campaign=Badge_Coverage)
+[![Known Vulnerabilities](https://snyk.io/test/github/cryptomator/fuse-nio-adapter/badge.svg)](https://snyk.io/test/github/cryptomator/fuse-nio-adapter)
 
 # fuse-nio-adapter
 Provides directory contents specified by a `java.nio.file.Path` via a FUSE filesystem.

@@ -8,6 +8,9 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Set;
 
 import javax.inject.Inject;
@@ -86,10 +89,16 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 		}
 	}
 
-	protected int checkAccess(Path path, Set<AccessMode> accessModes) {
+	protected int checkAccess(Path path, Set<AccessMode> requiredAccessModes) {
+		return checkAccess(path, requiredAccessModes, EnumSet.of(AccessMode.WRITE));
+	}
+
+	protected int checkAccess(Path path, Set<AccessMode> requiredAccessModes, Set<AccessMode> deniedAccessModes) {
 		try {
-			// TODO return -EACCES, if accessMode contains WRITE
-			path.getFileSystem().provider().checkAccess(path, Iterables.toArray(accessModes, AccessMode.class));
+			if (!Collections.disjoint(requiredAccessModes, deniedAccessModes)) {
+				throw new AccessDeniedException(path.toString());
+			}
+			path.getFileSystem().provider().checkAccess(path, Iterables.toArray(requiredAccessModes, AccessMode.class));
 			return 0;
 		} catch (NoSuchFileException e) {
 			return -ErrorCodes.ENOENT();
@@ -105,14 +114,16 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 	public int getattr(String path, FileStat stat) {
 		try {
 			Path node = resolvePath(path);
-			if (Files.isDirectory(node)) {
-				return dirHandler.getattr(node, stat);
-			} else if (Files.exists(node)) {
-				return fileHandler.getattr(node, stat);
+			BasicFileAttributes attrs = Files.readAttributes(node, BasicFileAttributes.class);
+			if (attrs.isDirectory()) {
+				return dirHandler.getattr(node, attrs, stat);
 			} else {
-				return -ErrorCodes.ENOENT();
+				return fileHandler.getattr(node, attrs, stat);
 			}
-		} catch (RuntimeException e) {
+		} catch (NoSuchFileException e) {
+			// see Files.notExists
+			return -ErrorCodes.ENOENT();
+		} catch (IOException | RuntimeException e) {
 			LOG.error("getattr failed.", e);
 			return -ErrorCodes.EIO();
 		}

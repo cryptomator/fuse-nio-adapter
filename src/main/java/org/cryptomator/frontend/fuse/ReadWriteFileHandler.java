@@ -11,6 +11,7 @@ import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributeView;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.PosixFileAttributeView;
@@ -42,8 +43,8 @@ public class ReadWriteFileHandler extends ReadOnlyFileHandler implements Closeab
 	}
 
 	@Override
-	public int getattr(Path node, FileStat stat) {
-		int result = super.getattr(node, stat);
+	public int getattr(Path node, BasicFileAttributes attrs, FileStat stat) {
+		int result = super.getattr(node, attrs, stat);
 		if (result == 0 && fileStore.supportsFileAttributeView(PosixFileAttributeView.class)) {
 			stat.st_mode.set(FileStat.S_IFREG | 0644);
 		} else if (result == 0) {
@@ -103,7 +104,8 @@ public class ReadWriteFileHandler extends ReadOnlyFileHandler implements Closeab
 	}
 
 	public int truncate(Path path, long size) {
-		try (FileChannel fc = FileChannel.open(path, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING)) {
+		try (FileChannel fc = FileChannel.open(path, StandardOpenOption.WRITE)) {
+			fc.truncate(size);
 			return 0;
 		} catch (IOException e) {
 			LOG.error("Truncating file feild.", e);

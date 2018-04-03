@@ -8,34 +8,29 @@ import java.util.Optional;
 import java.util.Set;
 
 @Module
-public class FuseMountModule {
+class FuseMountModule {
 
 	@Provides
 	@IntoSet
-	static FuseEnvironmentFactory provideWindowsFuseEnvironment() {
-		return new WindowsFuseEnvironmentFactory();
-	}
-
-	@Provides
-	@IntoSet
-	static FuseEnvironmentFactory provideLinuxEnvironment() {
-		return new LinuxFuseEnvironmentFactory();
+	static Mounter provideWindowsFuseEnvironment() {
+		return new WindowsMounter();
 	}
 
 	@Provides
 	@IntoSet
-	static FuseEnvironmentFactory provideMacFuseEnvironment() {
-		return new MacFuseEnvironmentFactory();
+	static Mounter provideLinuxEnvironment() {
+		return new LinuxMounter();
 	}
 
 	@Provides
-	static Optional<FuseEnvironmentFactory> provideEnvironment(Set<FuseEnvironmentFactory> envs) {
-		return envs.stream().filter(FuseEnvironmentFactory::isApplicable).findFirst();
+	@IntoSet
+	static Mounter provideMacFuseEnvironment() {
+		return new MacMounter();
 	}
 
 	@Provides
-	static Optional<FuseMount> provideFuseMount(Optional<FuseEnvironmentFactory> environment) {
-		return environment.map(FuseMount::new);
+	static Optional<Mounter> provideEnvironment(Set<Mounter> envs) {
+		return envs.stream().filter(Mounter::isApplicable).findFirst();
 	}
 
 }

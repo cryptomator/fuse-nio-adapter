@@ -2,6 +2,7 @@ package org.cryptomator.frontend.fuse;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.AccessMode;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileStore;
@@ -12,6 +13,7 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.util.EnumSet;
 import java.util.Set;
 
 import javax.inject.Inject;
@@ -50,6 +52,11 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 	}
 
 	@Override
+	protected int checkAccess(Path path, Set<AccessMode> requiredAccessModes) {
+		return checkAccess(path, requiredAccessModes, EnumSet.noneOf(AccessMode.class));
+	}
+
+	@Override
 	public int mkdir(String path, @mode_t long mode) {
 		Path node = resolvePath(path);
 		try {
@@ -67,8 +74,8 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 	public int create(String path, @mode_t long mode, FuseFileInfo fi) {
 		try {
 			Set<OpenFlags> flags = bitMaskUtil.bitMaskToSet(OpenFlags.class, fi.flags.longValue());
-			LOG.debug("createAndOpen {} with openOptions {}", path, flags);
 			Path node = resolvePath(path);
+			LOG.trace("createAndOpen {} with openOptions {}", node, flags);
 			if (fileStore.supportsFileAttributeView(PosixFileAttributeView.class)) {
 				FileAttribute<?> attrs = PosixFilePermissions.asFileAttribute(attrUtil.octalModeToPosixPermissions(mode));
 				return fileHandler.createAndOpen(node, fi, attrs);
@@ -79,13 +86,6 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 			LOG.error("create failed.", e);
 			return -ErrorCodes.EIO();
 		}
-	}
-
-	@Override
-	public int open(String path, FuseFileInfo fi) {
-		Set<OpenFlags> flags = bitMaskUtil.bitMaskToSet(OpenFlags.class, fi.flags.longValue());
-		LOG.debug("open {} with openOptions {}", path, flags);
-		return super.open(path, fi);
 	}
 
 	@Override
