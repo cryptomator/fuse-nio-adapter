@@ -26,31 +26,21 @@ class LinuxMounter implements Mounter {
 		return System.getProperty("os.name").toLowerCase().contains("linux");
 	}
 
-	private static class LinuxMount implements Mount {
+	private static class LinuxMount extends AbstractMount {
 
 		private static final Path USER_HOME = Paths.get(System.getProperty("user.home"));
 		private static final String DEFAULT_REVEALCOMMAND_LINUX = "xdg-open";
 
-		private final Path mountPoint;
 		private final ProcessBuilder revealCommand;
-		private final FuseNioAdapter fuseAdapter;
 
 		private LinuxMount(Path directory, EnvironmentVariables envVars) {
-			mountPoint = envVars.getMountPath().toAbsolutePath();
+			super(directory, envVars);
 			String[] command = envVars.getRevealCommand().orElse(DEFAULT_REVEALCOMMAND_LINUX).split("\\s+");
-			this.revealCommand = new ProcessBuilder(ObjectArrays.concat(command, mountPoint.toString()));
-			this.fuseAdapter = AdapterFactory.createReadWriteAdapter(directory);
+			this.revealCommand = new ProcessBuilder(ObjectArrays.concat(command, envVars.getMountPath().toString()));
 		}
 
-		private void mount(String... additionalMountParams) throws CommandFailedException {
-			try {
-				fuseAdapter.mount(mountPoint, false, false, ObjectArrays.concat(getMountParameters(), additionalMountParams, String.class));
-			} catch (Exception e) {
-				throw new CommandFailedException(e);
-			}
-		}
-
-		private String[] getMountParameters() {
+		@Override
+		protected String[] getMountParameters() {
 			ArrayList<String> mountOptions = new ArrayList<>(8);
 			mountOptions.add(("-oatomic_o_trunc"));
 			try {
@@ -69,14 +59,5 @@ class LinuxMounter implements Mounter {
 			ProcessUtil.startAndWaitFor(revealCommand, 5, TimeUnit.SECONDS);
 		}
 
-		@Override
-		public void close() throws CommandFailedException {
-			try {
-				fuseAdapter.umount();
-				fuseAdapter.close();
-			} catch (Exception e) {
-				throw new CommandFailedException(e);
-			}
-		}
 	}
 }

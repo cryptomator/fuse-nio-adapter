@@ -19,50 +19,30 @@ class WindowsMounter implements Mounter {
 		return mount;
 	}
 
-	/**
-	 * TODO: we should check more!
-	 *
-	 * @return
-	 */
 	@Override
 	public boolean isApplicable() {
-		return System.getProperty("os.name").toLowerCase().contains("windows");
+		return System.getProperty("os.name").toLowerCase().contains("windows"); // TODO check for WinFSP
 	}
 
-	private static class WindowsMount implements Mount {
+	private static class WindowsMount extends AbstractMount {
 
-		private final Path mountPoint;
 		private final String mountName;
 		private final ProcessBuilder revealCommand;
-		private final FuseNioAdapter fuseAdapter;
 
 		private WindowsMount(Path directory, EnvironmentVariables envVars) {
-			this.mountPoint = envVars.getMountPath().toAbsolutePath();
+			super(directory, envVars);
 			this.mountName = envVars.getMountName().orElse("vault");
-			this.revealCommand = new ProcessBuilder("explorer", "/root,", mountPoint.toString());
-			this.fuseAdapter = AdapterFactory.createReadWriteAdapter(directory);
+			this.revealCommand = new ProcessBuilder("explorer", "/root,", envVars.getMountPath().toString());
 		}
 
-		private void mount(String... additionalMountParams) throws CommandFailedException {
-			try {
-				fuseAdapter.mount(mountPoint, false, false, ObjectArrays.concat(getMountParameters(), additionalMountParams, String.class));
-			} catch (Exception e) {
-				throw new CommandFailedException(e);
-			}
-		}
-
-		/**
-		 * TODO: measure the performance effect of FileInfoTimeout
-		 *
-		 * @return
-		 */
-		private String[] getMountParameters() {
+		@Override
+		protected String[] getMountParameters() {
 			ArrayList<String> mountOptions = new ArrayList<>(8);
 			mountOptions.add(("-oatomic_o_trunc"));
 			mountOptions.add("-ouid=-1");
 			mountOptions.add("-ogid=-1");
 			mountOptions.add("-ovolname=" + mountName);
-			mountOptions.add("-oFileInfoTimeout=5000");
+			mountOptions.add("-oFileInfoTimeout=5000"); // TODO: measure the performance effect of FileInfoTimeout
 			return mountOptions.toArray(new String[mountOptions.size()]);
 		}
 
@@ -71,14 +51,5 @@ class WindowsMounter implements Mounter {
 			ProcessUtil.startAndWaitFor(revealCommand, 5, TimeUnit.SECONDS);
 		}
 
-		@Override
-		public void close() throws CommandFailedException {
-			try {
-				fuseAdapter.umount();
-				fuseAdapter.close();
-			} catch (Exception e) {
-				throw new CommandFailedException(e);
-			}
-		}
 	}
 }

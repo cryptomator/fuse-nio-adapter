@@ -29,31 +29,21 @@ class MacMounter implements Mounter {
 		return System.getProperty("os.name").toLowerCase().contains("mac") && Files.exists(Paths.get("/usr/local/lib/libosxfuse.2.dylib"));
 	}
 
-	private static class MacMount implements Mount {
+	private static class MacMount extends AbstractMount {
 
 		private static final Path USER_HOME = Paths.get(System.getProperty("user.home"));
 
-		private final Path mountPoint;
 		private final String mountName;
 		private final ProcessBuilder revealCommand;
-		private final FuseNioAdapter fuseAdapter;
 
 		private MacMount(Path directory, EnvironmentVariables envVars) {
-			this.mountPoint = envVars.getMountPath().toAbsolutePath();
+			super(directory, envVars);
 			this.mountName = envVars.getMountName().orElse("vault");
-			this.revealCommand = new ProcessBuilder("open", "\"" + mountPoint.toString() + "\"");
-			this.fuseAdapter = AdapterFactory.createReadWriteAdapter(directory);
+			this.revealCommand = new ProcessBuilder("open", "\"" + envVars.getMountPath().toString() + "\"");
 		}
 
-		private void mount(String... additionalMountParams) throws CommandFailedException {
-			try {
-				fuseAdapter.mount(mountPoint, false, false, ObjectArrays.concat(getMountParameters(), additionalMountParams, String.class));
-			} catch (Exception e) {
-				throw new CommandFailedException(e);
-			}
-		}
-
-		private String[] getMountParameters() {
+		@Override
+		protected String[] getMountParameters() {
 			ArrayList<String> mountOptions = new ArrayList<>(8);
 			mountOptions.add(("-oatomic_o_trunc"));
 			try {
@@ -72,15 +62,6 @@ class MacMounter implements Mounter {
 			ProcessUtil.startAndWaitFor(revealCommand, 5, TimeUnit.SECONDS);
 		}
 
-		@Override
-		public void close() throws CommandFailedException {
-			try {
-				fuseAdapter.umount();
-				fuseAdapter.close();
-			} catch (Exception e) {
-				throw new CommandFailedException(e);
-			}
-		}
 	}
 
 }
