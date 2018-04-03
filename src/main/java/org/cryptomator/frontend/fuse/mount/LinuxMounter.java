@@ -10,11 +10,11 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
-public class LinuxFuseEnvironmentFactory implements FuseEnvironmentFactory {
+public class LinuxMounter implements Mounter {
 
 	@Override
-	public FuseEnvironment create(EnvironmentVariables envVars) throws CommandFailedException {
-		return new LinuxFuseEnvironment(envVars);
+	public Mount create(EnvironmentVariables envVars) throws CommandFailedException {
+		return new LinuxMount(envVars);
 	}
 
 	@Override
@@ -22,7 +22,7 @@ public class LinuxFuseEnvironmentFactory implements FuseEnvironmentFactory {
 		return System.getProperty("os.name").toLowerCase().contains("linux");
 	}
 
-	private static class LinuxFuseEnvironment implements FuseEnvironment {
+	private static class LinuxMount implements Mount {
 
 		private static final Path USER_HOME = Paths.get(System.getProperty("user.home"));
 		private static final String DEFAULT_REVEALCOMMAND_LINUX = "xdg-open";
@@ -31,7 +31,7 @@ public class LinuxFuseEnvironmentFactory implements FuseEnvironmentFactory {
 		private final ProcessBuilder revealCommand;
 		private final boolean usesIndividualRevealCommand;
 
-		private LinuxFuseEnvironment(EnvironmentVariables envVars) throws CommandFailedException {
+		private LinuxMount(EnvironmentVariables envVars) throws CommandFailedException {
 			String rootString = envVars.get(EnvironmentVariable.MOUNTPATH);
 			try {
 				mountPoint = Paths.get(rootString).toAbsolutePath();

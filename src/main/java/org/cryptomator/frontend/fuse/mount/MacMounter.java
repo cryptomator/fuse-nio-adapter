@@ -8,11 +8,11 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
-public class MacFuseEnvironmentFactory implements FuseEnvironmentFactory {
+public class MacMounter implements Mounter {
 
 	@Override
-	public FuseEnvironment create(EnvironmentVariables envVars) throws CommandFailedException {
-		return new MacFuseEnvironment(envVars);
+	public Mount create(EnvironmentVariables envVars) throws CommandFailedException {
+		return new MacMount(envVars);
 	}
 
 	/**
@@ -23,7 +23,7 @@ public class MacFuseEnvironmentFactory implements FuseEnvironmentFactory {
 		return System.getProperty("os.name").toLowerCase().contains("mac") && Files.exists(Paths.get("/usr/local/lib/libosxfuse.2.dylib"));
 	}
 
-	private static class MacFuseEnvironment implements FuseEnvironment {
+	private static class MacMount implements Mount {
 
 		private static final Path USER_HOME = Paths.get(System.getProperty("user.home"));
 
@@ -31,7 +31,7 @@ public class MacFuseEnvironmentFactory implements FuseEnvironmentFactory {
 		private final String mountName;
 		private final ProcessBuilder revealCommand;
 
-		private MacFuseEnvironment(EnvironmentVariables envVars) throws CommandFailedException {
+		private MacMount(EnvironmentVariables envVars) throws CommandFailedException {
 			String rootString = envVars.get(EnvironmentVariable.MOUNTPATH);
 			try {
 				this.mountPoint = Paths.get(rootString).toAbsolutePath();

@@ -14,7 +14,7 @@ public class LinuxEnvironmentTest {
 					.withRevealCommand("nautilus")
 					.build();
 			try {
-				FuseEnvironment env = DaggerEnvironmentComponent.create().fuseEnvironmentFactory().get().create(envVars);
+				Mount env = DaggerEnvironmentComponent.create().fuseEnvironmentFactory().get().create(envVars);
 				env.revealMountPathInFilesystemmanager();
 				System.out.println("Wait for it...");
 				System.in.read();

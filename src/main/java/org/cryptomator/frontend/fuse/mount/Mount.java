@@ -2,7 +2,7 @@ package org.cryptomator.frontend.fuse.mount;
 
 import java.nio.file.Path;
 
-public interface FuseEnvironment {
+public interface Mount {
 
 	String[] getMountParameters() throws CommandFailedException;
 

@@ -6,11 +6,11 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
-public class WindowsFuseEnvironmentFactory implements FuseEnvironmentFactory {
+public class WindowsMounter implements Mounter {
 
 	@Override
-	public FuseEnvironment create(EnvironmentVariables envVars) throws CommandFailedException {
-		return new WindowsFuseEnvironment(envVars);
+	public Mount create(EnvironmentVariables envVars) throws CommandFailedException {
+		return new WindowsMount(envVars);
 	}
 
 	/**
@@ -23,13 +23,13 @@ public class WindowsFuseEnvironmentFactory implements FuseEnvironmentFactory {
 		return System.getProperty("os.name").toLowerCase().contains("windows");
 	}
 
-	private static class WindowsFuseEnvironment implements FuseEnvironment {
+	private static class WindowsMount implements Mount {
 
 		private final Path mountPoint;
 		private final String mountName;
 		private final ProcessBuilder revealCommand;
 
-		private WindowsFuseEnvironment(EnvironmentVariables envVar) throws CommandFailedException {
+		private WindowsMount(EnvironmentVariables envVar) throws CommandFailedException {
 			String rootString = envVar.get(EnvironmentVariable.MOUNTPATH);
 			if (rootString == null) {
 				throw new CommandFailedException("No drive Letter given.");

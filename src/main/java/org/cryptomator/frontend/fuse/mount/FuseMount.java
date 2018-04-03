@@ -9,15 +9,15 @@ import java.nio.file.Paths;
 
 public class FuseMount {
 
-	private final FuseEnvironmentFactory environmentFactory;
+	private final Mounter environmentFactory;
 
 	private FuseNioAdapter adapter;
-	private FuseEnvironment environment;
+	private Mount environment;
 
 	/**
 	 * @param environmentFactory
 	 */
-	public FuseMount(FuseEnvironmentFactory environmentFactory) {
+	public FuseMount(Mounter environmentFactory) {
 		this.environmentFactory = environmentFactory;
 	}
 
