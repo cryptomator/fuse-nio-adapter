@@ -6,7 +6,7 @@ public class FuseMountFactory {
 
 	/**
 	 * @return Mounter applicable on the current OS.
-	 * @throws FuseNotSupportedException if the underlying os does not support FUSE or the specific FUSE driver could not be found
+	 * @throws FuseNotSupportedException if the underlying OS does not support FUSE or the specific FUSE driver could not be found
 	 */
 	public static Mounter getMounter() throws FuseNotSupportedException {
 		return COMP.applicableMounter().orElseThrow(FuseNotSupportedException::new);

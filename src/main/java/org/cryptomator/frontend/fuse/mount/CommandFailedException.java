@@ -10,8 +10,4 @@ public class CommandFailedException extends Exception {
 		super(cause);
 	}
 
-	public CommandFailedException(String message, Throwable cause) {
-		super(message, cause);
-	}
-
 }

@@ -10,7 +10,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
-public class WindowsMounter implements Mounter {
+class WindowsMounter implements Mounter {
 
 	@Override
 	public Mount mount(Path directory, EnvironmentVariables envVars, String... additionalMountParams) throws CommandFailedException {
@@ -36,12 +36,8 @@ public class WindowsMounter implements Mounter {
 		private final ProcessBuilder revealCommand;
 		private final FuseNioAdapter fuseAdapter;
 
-		private WindowsMount(Path directory, EnvironmentVariables envVars) throws CommandFailedException {
-			try {
-				this.mountPoint = envVars.getMountPath().toAbsolutePath();
-			} catch (InvalidPathException e) {
-				throw new CommandFailedException(e);
-			}
+		private WindowsMount(Path directory, EnvironmentVariables envVars) {
+			this.mountPoint = envVars.getMountPath().toAbsolutePath();
 			this.mountName = envVars.getMountName().orElse("vault");
 			this.revealCommand = new ProcessBuilder("explorer", "/root,", mountPoint.toString());
 			this.fuseAdapter = AdapterFactory.createReadWriteAdapter(directory);
@@ -72,11 +68,7 @@ public class WindowsMounter implements Mounter {
 
 		@Override
 		public void revealInFileManager() throws CommandFailedException {
-			try {
-				ProcessUtil.startAndWaitFor(revealCommand, 5, TimeUnit.SECONDS);
-			} catch (ProcessUtil.CommandTimeoutException e) {
-				throw new CommandFailedException(e.getMessage());
-			}
+			ProcessUtil.startAndWaitFor(revealCommand, 5, TimeUnit.SECONDS);
 		}
 
 		@Override

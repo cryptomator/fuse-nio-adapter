@@ -8,7 +8,7 @@ import java.util.Optional;
 import java.util.Set;
 
 @Module
-public class FuseMountModule {
+class FuseMountModule {
 
 	@Provides
 	@IntoSet

@@ -1,7 +1,6 @@
 package org.cryptomator.frontend.fuse.mount;
 
 import java.nio.file.Path;
-import java.util.Objects;
 import java.util.Optional;
 
 public class EnvironmentVariables {
@@ -15,8 +14,6 @@ public class EnvironmentVariables {
 		this.mountName = mountName;
 		this.revealCommand = revealCommand;
 	}
-
-
 
 	public static EnvironmentVariablesBuilder create() {
 		return new EnvironmentVariablesBuilder();

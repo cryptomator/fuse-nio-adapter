@@ -12,7 +12,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
-public class MacMounter implements Mounter {
+class MacMounter implements Mounter {
 
 	@Override
 	public Mount mount(Path directory, EnvironmentVariables envVars, String... additionalMountParams) throws CommandFailedException {
@@ -69,11 +69,7 @@ public class MacMounter implements Mounter {
 
 		@Override
 		public void revealInFileManager() throws CommandFailedException {
-			try {
-				ProcessUtil.startAndWaitFor(revealCommand, 5, TimeUnit.SECONDS);
-			} catch (ProcessUtil.CommandTimeoutException e) {
-				throw new CommandFailedException(e.getMessage());
-			}
+			ProcessUtil.startAndWaitFor(revealCommand, 5, TimeUnit.SECONDS);
 		}
 
 		@Override
