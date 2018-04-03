@@ -1,8 +1,10 @@
 package org.cryptomator.frontend.fuse.mount;
 
+import java.nio.file.Path;
+
 public interface Mounter {
 
-	Mount create(EnvironmentVariables envVars) throws CommandFailedException;
+	Mount mount(Path directory, EnvironmentVariables envVars, String... additionalMountParams) throws CommandFailedException;
 
 	boolean isApplicable();
 

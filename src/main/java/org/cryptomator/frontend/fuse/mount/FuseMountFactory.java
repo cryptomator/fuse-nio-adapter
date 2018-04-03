@@ -2,14 +2,18 @@ package org.cryptomator.frontend.fuse.mount;
 
 public class FuseMountFactory {
 
+	private static FuseMountComponent COMP = DaggerFuseMountComponent.create();
+
 	/**
-	 * Creates a FuseMount object
-	 *
-	 * @return fm - FuseMount object
+	 * @return Mounter applicable on the current OS.
 	 * @throws FuseNotSupportedException if the underlying os does not support FUSE or the specific FUSE driver could not be found
 	 */
-	public static FuseMount createMountObject() throws FuseNotSupportedException {
-		return DaggerFuseMountComponent.create().fuseMount().orElseThrow(FuseNotSupportedException::new);
+	public static Mounter getMounter() throws FuseNotSupportedException {
+		return COMP.applicableMounter().orElseThrow(FuseNotSupportedException::new);
+	}
+
+	public static boolean isFuseSupported() {
+		return COMP.applicableMounter().isPresent();
 	}
 
 }

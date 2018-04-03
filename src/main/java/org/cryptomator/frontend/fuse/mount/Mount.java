@@ -2,16 +2,10 @@ package org.cryptomator.frontend.fuse.mount;
 
 import java.nio.file.Path;
 
-public interface Mount {
-
-	String[] getMountParameters() throws CommandFailedException;
+public interface Mount extends AutoCloseable {
 
 	Path getMountPoint();
 
-	default void revealMountPathInFilesystemmanager() throws CommandFailedException {
-		throw new CommandFailedException("Not implemented.");
-	}
-
-	void cleanUp() throws CommandFailedException;
+	void revealMountPathInFilesystemmanager() throws CommandFailedException;
 
 }

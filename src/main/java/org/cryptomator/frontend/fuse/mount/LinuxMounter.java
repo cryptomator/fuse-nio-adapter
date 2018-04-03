@@ -1,8 +1,11 @@
 package org.cryptomator.frontend.fuse.mount;
 
 import com.google.common.collect.ObjectArrays;
+import org.cryptomator.frontend.fuse.AdapterFactory;
+import org.cryptomator.frontend.fuse.FuseNioAdapter;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
@@ -13,8 +16,10 @@ import java.util.concurrent.TimeUnit;
 public class LinuxMounter implements Mounter {
 
 	@Override
-	public Mount create(EnvironmentVariables envVars) throws CommandFailedException {
-		return new LinuxMount(envVars);
+	public Mount mount(Path directory, EnvironmentVariables envVars, String... additionalMountParams) throws CommandFailedException {
+		LinuxMount mount = new LinuxMount(directory, envVars);
+		mount.mount(additionalMountParams);
+		return mount;
 	}
 
 	@Override
@@ -30,29 +35,29 @@ public class LinuxMounter implements Mounter {
 		private final Path mountPoint;
 		private final ProcessBuilder revealCommand;
 		private final boolean usesIndividualRevealCommand;
+		private final FuseNioAdapter fuseAdapter;
 
-		private LinuxMount(EnvironmentVariables envVars) throws CommandFailedException {
+		private LinuxMount(Path directory, EnvironmentVariables envVars) {
 			String rootString = envVars.get(EnvironmentVariable.MOUNTPATH);
-			try {
-				mountPoint = Paths.get(rootString).toAbsolutePath();
-			} catch (InvalidPathException e) {
-				throw new CommandFailedException(e);
-			}
+			mountPoint = Paths.get(rootString).toAbsolutePath();
 			String[] command = envVars.getOrDefault(EnvironmentVariable.REVEALCOMMAND, DEFAULT_REVEALCOMMAND_LINUX).split("\\s+");
 			this.revealCommand = new ProcessBuilder(ObjectArrays.concat(command, mountPoint.toString()));
 			this.usesIndividualRevealCommand = envVars.containsKey(EnvironmentVariable.REVEALCOMMAND);
+			this.fuseAdapter = AdapterFactory.createReadWriteAdapter(directory);
 		}
 
-		@Override
-		public String[] getMountParameters() throws CommandFailedException {
+		private void mount(String... additionalMountParams) {
+			fuseAdapter.mount(mountPoint, false, false, ObjectArrays.concat(getMountParameters(), additionalMountParams, String.class));
+		}
+
+		private String[] getMountParameters() {
 			ArrayList<String> mountOptions = new ArrayList<>(8);
 			mountOptions.add(("-oatomic_o_trunc"));
 			try {
 				mountOptions.add("-ouid=" + Files.getAttribute(USER_HOME, "unix:uid"));
 				mountOptions.add("-ogid=" + Files.getAttribute(USER_HOME, "unix:gid"));
 			} catch (IOException e) {
-				e.printStackTrace();
-				throw new CommandFailedException(e);
+				throw new UncheckedIOException(e);
 			}
 			mountOptions.add("-oauto_unmount");
 			mountOptions.add("-ofsname=CryptoFs");
@@ -82,8 +87,9 @@ public class LinuxMounter implements Mounter {
 		}
 
 		@Override
-		public void cleanUp() {
+		public void close() throws Exception {
+			fuseAdapter.umount();
+			fuseAdapter.close();
 		}
-
 	}
 }

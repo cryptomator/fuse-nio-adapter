@@ -1,6 +1,7 @@
 package org.cryptomator.frontend.fuse.mount;
 
-import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class LinuxEnvironmentTest {
 
@@ -13,15 +14,14 @@ public class LinuxEnvironmentTest {
 					.withMountPath("/home/")
 					.withRevealCommand("nautilus")
 					.build();
-			try {
-				Mount env = DaggerEnvironmentComponent.create().fuseEnvironmentFactory().get().create(envVars);
-				env.revealMountPathInFilesystemmanager();
+			Path tmp = Paths.get("/tmp");
+			try (Mount mnt = FuseMountFactory.getMounter().mount(tmp, envVars)) {
+				mnt.revealMountPathInFilesystemmanager();
 				System.out.println("Wait for it...");
 				System.in.read();
-				env.cleanUp();
 			} catch (CommandFailedException e) {
 				e.printStackTrace();
-			} catch (IOException e) {
+			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		} else {

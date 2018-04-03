@@ -1,6 +1,11 @@
 package org.cryptomator.frontend.fuse.mount;
 
+import com.google.common.collect.ObjectArrays;
+import org.cryptomator.frontend.fuse.AdapterFactory;
+import org.cryptomator.frontend.fuse.FuseNioAdapter;
+
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
@@ -10,9 +15,12 @@ import java.util.concurrent.TimeUnit;
 
 public class MacMounter implements Mounter {
 
+
 	@Override
-	public Mount create(EnvironmentVariables envVars) throws CommandFailedException {
-		return new MacMount(envVars);
+	public Mount mount(Path directory, EnvironmentVariables envVars, String... additionalMountParams) throws CommandFailedException {
+		MacMount mount = new MacMount(directory, envVars);
+		mount.mount(additionalMountParams);
+		return mount;
 	}
 
 	/**
@@ -30,28 +38,28 @@ public class MacMounter implements Mounter {
 		private final Path mountPoint;
 		private final String mountName;
 		private final ProcessBuilder revealCommand;
+		private final FuseNioAdapter fuseAdapter;
 
-		private MacMount(EnvironmentVariables envVars) throws CommandFailedException {
+		private MacMount(Path directory, EnvironmentVariables envVars) {
 			String rootString = envVars.get(EnvironmentVariable.MOUNTPATH);
-			try {
-				this.mountPoint = Paths.get(rootString).toAbsolutePath();
-			} catch (InvalidPathException e) {
-				throw new CommandFailedException(e);
-			}
+			this.mountPoint = Paths.get(rootString).toAbsolutePath();
 			this.mountName = envVars.get(EnvironmentVariable.MOUNTNAME);
 			this.revealCommand = new ProcessBuilder("open", "\"" + mountPoint.toString() + "\"");
+			this.fuseAdapter = AdapterFactory.createReadWriteAdapter(directory);
 		}
 
-		@Override
-		public String[] getMountParameters() throws CommandFailedException {
+		private void mount(String... additionalMountParams) {
+			fuseAdapter.mount(mountPoint, false, false, ObjectArrays.concat(getMountParameters(), additionalMountParams, String.class));
+		}
+
+		private String[] getMountParameters() {
 			ArrayList<String> mountOptions = new ArrayList<>(8);
 			mountOptions.add(("-oatomic_o_trunc"));
 			try {
 				mountOptions.add("-ouid=" + Files.getAttribute(USER_HOME, "unix:uid"));
 				mountOptions.add("-ogid=" + Files.getAttribute(USER_HOME, "unix:gid"));
 			} catch (IOException e) {
-				e.printStackTrace();
-				throw new CommandFailedException(e);
+				throw new UncheckedIOException(e);
 			}
 			mountOptions.add("-ovolname=" + mountName);
 			mountOptions.add("-oauto_xattr");
@@ -72,11 +80,11 @@ public class MacMounter implements Mounter {
 			}
 		}
 
-
 		@Override
-		public void cleanUp() {
+		public void close() throws Exception {
+			fuseAdapter.umount();
+			fuseAdapter.close();
 		}
-
 	}
 
 }

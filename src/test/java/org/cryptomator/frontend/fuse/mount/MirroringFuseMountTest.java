@@ -11,22 +11,22 @@ public class MirroringFuseMountTest {
 		try (Scanner scanner = new Scanner(System.in)) {
 			System.out.println("Enter path to the directory you want to mirror:");
 			Path p = Paths.get(scanner.nextLine());
+			System.out.println("Enter mount point:");
+			Path m = Paths.get(scanner.nextLine());
 			if (Files.isDirectory(p)) {
-				FuseMount fm = FuseMountFactory.createMountObject();
+				Mounter mounter = FuseMountFactory.getMounter();
 				EnvironmentVariables envVars = EnvironmentVariables.create()
 						.withMountName("FuseMirror")
-						.withMountPath("J:\\")
+						.withMountPath(m.toString())
 						.build();
-				try {
-					fm.mount(p.toAbsolutePath(), envVars);
+				try (Mount mnt = mounter.mount(p, envVars)) {
 					System.out.println("Mounted successfully. Enter anything to stop the server...");
-					fm.reveal();
+					mnt.revealMountPathInFilesystemmanager();
 					System.in.read();
-					fm.unmount();
-					System.out.println("Unmounted successfully. Exiting...");
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
+				System.out.println("Unmounted successfully. Exiting...");
 			} else {
 				System.err.println("Invalid directory.");
 			}

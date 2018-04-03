@@ -33,10 +33,4 @@ public class FuseMountModule {
 		return envs.stream().filter(Mounter::isApplicable).findFirst();
 	}
 
-	@Provides
-	static Optional<FuseMount> provideFuseMount(Optional<Mounter> environment) {
-		return environment.map(FuseMount::new);
-
-	}
-
 }
