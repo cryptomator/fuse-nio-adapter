@@ -36,23 +36,23 @@ public class WindowsMounter implements Mounter {
 		private final ProcessBuilder revealCommand;
 		private final FuseNioAdapter fuseAdapter;
 
-		private WindowsMount(Path directory, EnvironmentVariables envVar) throws CommandFailedException {
-			String rootString = envVar.get(EnvironmentVariable.MOUNTPATH);
-			if (rootString == null) {
-				throw new CommandFailedException("No drive Letter given.");
-			}
+		private WindowsMount(Path directory, EnvironmentVariables envVars) throws CommandFailedException {
 			try {
-				this.mountPoint = Paths.get(rootString).toAbsolutePath();
+				this.mountPoint = envVars.getMountPath().toAbsolutePath();
 			} catch (InvalidPathException e) {
 				throw new CommandFailedException(e);
 			}
-			this.mountName = envVar.getOrDefault(EnvironmentVariable.MOUNTNAME, "vault");
+			this.mountName = envVars.getMountName().orElse("vault");
 			this.revealCommand = new ProcessBuilder("explorer", "/root,", mountPoint.toString());
 			this.fuseAdapter = AdapterFactory.createReadWriteAdapter(directory);
 		}
 
-		private void mount(String... additionalMountParams) {
-			fuseAdapter.mount(mountPoint, false, false, ObjectArrays.concat(getMountParameters(), additionalMountParams, String.class));
+		private void mount(String... additionalMountParams) throws CommandFailedException {
+			try {
+				fuseAdapter.mount(mountPoint, false, false, ObjectArrays.concat(getMountParameters(), additionalMountParams, String.class));
+			} catch (Exception e) {
+				throw new CommandFailedException(e);
+			}
 		}
 
 		/**
@@ -71,12 +71,7 @@ public class WindowsMounter implements Mounter {
 		}
 
 		@Override
-		public Path getMountPoint() {
-			return mountPoint;
-		}
-
-		@Override
-		public void revealMountPathInFilesystemmanager() throws CommandFailedException {
+		public void revealInFileManager() throws CommandFailedException {
 			try {
 				ProcessUtil.startAndWaitFor(revealCommand, 5, TimeUnit.SECONDS);
 			} catch (ProcessUtil.CommandTimeoutException e) {
@@ -85,9 +80,13 @@ public class WindowsMounter implements Mounter {
 		}
 
 		@Override
-		public void close() throws Exception {
-			fuseAdapter.umount();
-			fuseAdapter.close();
+		public void close() throws CommandFailedException {
+			try {
+				fuseAdapter.umount();
+				fuseAdapter.close();
+			} catch (Exception e) {
+				throw new CommandFailedException(e);
+			}
 		}
 	}
 }

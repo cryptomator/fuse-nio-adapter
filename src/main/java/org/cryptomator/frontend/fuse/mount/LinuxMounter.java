@@ -7,7 +7,6 @@ import org.cryptomator.frontend.fuse.FuseNioAdapter;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
-import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -34,20 +33,21 @@ public class LinuxMounter implements Mounter {
 
 		private final Path mountPoint;
 		private final ProcessBuilder revealCommand;
-		private final boolean usesIndividualRevealCommand;
 		private final FuseNioAdapter fuseAdapter;
 
 		private LinuxMount(Path directory, EnvironmentVariables envVars) {
-			String rootString = envVars.get(EnvironmentVariable.MOUNTPATH);
-			mountPoint = Paths.get(rootString).toAbsolutePath();
-			String[] command = envVars.getOrDefault(EnvironmentVariable.REVEALCOMMAND, DEFAULT_REVEALCOMMAND_LINUX).split("\\s+");
+			mountPoint = envVars.getMountPath().toAbsolutePath();
+			String[] command = envVars.getRevealCommand().orElse(DEFAULT_REVEALCOMMAND_LINUX).split("\\s+");
 			this.revealCommand = new ProcessBuilder(ObjectArrays.concat(command, mountPoint.toString()));
-			this.usesIndividualRevealCommand = envVars.containsKey(EnvironmentVariable.REVEALCOMMAND);
 			this.fuseAdapter = AdapterFactory.createReadWriteAdapter(directory);
 		}
 
-		private void mount(String... additionalMountParams) {
-			fuseAdapter.mount(mountPoint, false, false, ObjectArrays.concat(getMountParameters(), additionalMountParams, String.class));
+		private void mount(String... additionalMountParams) throws CommandFailedException {
+			try {
+				fuseAdapter.mount(mountPoint, false, false, ObjectArrays.concat(getMountParameters(), additionalMountParams, String.class));
+			} catch (Exception e) {
+				throw new CommandFailedException(e);
+			}
 		}
 
 		private String[] getMountParameters() {
@@ -65,31 +65,22 @@ public class LinuxMounter implements Mounter {
 		}
 
 		@Override
-		public Path getMountPoint() {
-			return mountPoint;
-		}
-
-		@Override
-		public void revealMountPathInFilesystemmanager() throws CommandFailedException {
-			if (usesIndividualRevealCommand) {
-				try {
-					revealCommand.start();
-				} catch (IOException e) {
-					throw new CommandFailedException("Individual RevealCommand failed: " + e.getMessage());
-				}
-			} else {
-				try {
-					ProcessUtil.startAndWaitFor(revealCommand, 5, TimeUnit.SECONDS);
-				} catch (ProcessUtil.CommandTimeoutException e) {
-					throw new CommandFailedException(e.getMessage());
-				}
+		public void revealInFileManager() throws CommandFailedException {
+			try {
+				ProcessUtil.startAndWaitFor(revealCommand, 5, TimeUnit.SECONDS);
+			} catch (ProcessUtil.CommandTimeoutException e) {
+				throw new CommandFailedException(e.getMessage());
 			}
 		}
 
 		@Override
-		public void close() throws Exception {
-			fuseAdapter.umount();
-			fuseAdapter.close();
+		public void close() throws CommandFailedException {
+			try {
+				fuseAdapter.umount();
+				fuseAdapter.close();
+			} catch (Exception e) {
+				throw new CommandFailedException(e);
+			}
 		}
 	}
 }

@@ -1,49 +1,62 @@
 package org.cryptomator.frontend.fuse.mount;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.nio.file.Path;
+import java.util.Objects;
+import java.util.Optional;
 
-public class EnvironmentVariables extends HashMap<EnvironmentVariable, String> {
+public class EnvironmentVariables {
 
-	private EnvironmentVariables(Map<EnvironmentVariable, String> params) {
-		super(params);
+	private final Path mountPath;
+	private final Optional<String> mountName;
+	private final Optional<String> revealCommand;
+
+	private EnvironmentVariables(Path mountPath, Optional<String> mountName, Optional<String> revealCommand) {
+		this.mountPath = mountPath;
+		this.mountName = mountName;
+		this.revealCommand = revealCommand;
 	}
+
+
 
 	public static EnvironmentVariablesBuilder create() {
 		return new EnvironmentVariablesBuilder();
 	}
 
+	public Path getMountPath() {
+		return mountPath;
+	}
+
+	public Optional<String> getMountName() {
+		return mountName;
+	}
+
+	public Optional<String> getRevealCommand() {
+		return revealCommand;
+	}
+
 	public static class EnvironmentVariablesBuilder {
 
-		private final Map<EnvironmentVariable, String> params = new HashMap<>();
+		private Path mountPath = null;
+		private Optional<String> mountName = Optional.empty();
+		private Optional<String> revealCommand = Optional.empty();
 
-		private EnvironmentVariablesBuilder with(EnvironmentVariable key, String value) {
-			if (value != null) {
-				params.put(key, value);
-			}
+		public EnvironmentVariablesBuilder withMountPath(Path mountPath) {
+			this.mountPath = mountPath;
 			return this;
 		}
 
-		/**
-		 * Adds a MountPath to the EnvironmentVariables
-		 *
-		 * @param value
-		 * @return
-		 */
-		public EnvironmentVariablesBuilder withMountPath(String value) {
-			return with(EnvironmentVariable.MOUNTPATH, value);
+		public EnvironmentVariablesBuilder withMountName(String mountName) {
+			this.mountName = Optional.ofNullable(mountName);
+			return this;
 		}
 
-		public EnvironmentVariablesBuilder withMountName(String value) {
-			return with(EnvironmentVariable.MOUNTNAME, value);
-		}
-
-		public EnvironmentVariablesBuilder withRevealCommand(String value) {
-			return with(EnvironmentVariable.REVEALCOMMAND, value);
+		public EnvironmentVariablesBuilder withRevealCommand(String revealCommand) {
+			this.revealCommand = Optional.ofNullable(revealCommand);
+			return this;
 		}
 
 		public EnvironmentVariables build() {
-			return new EnvironmentVariables(params);
+			return new EnvironmentVariables(mountPath, mountName, revealCommand);
 		}
 
 	}

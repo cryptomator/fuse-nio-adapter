@@ -1,11 +1,19 @@
 package org.cryptomator.frontend.fuse.mount;
 
-import java.nio.file.Path;
-
 public interface Mount extends AutoCloseable {
 
-	Path getMountPoint();
+	/**
+	 * Attempts to reveal the mounted FUSE volume in the operating system's default file manager.
+	 *
+	 * @throws CommandFailedException
+	 */
+	void revealInFileManager() throws CommandFailedException;
 
-	void revealMountPathInFilesystemmanager() throws CommandFailedException;
+	/**
+	 * Unmounts the FUSE volume and releases corresponding resources.
+	 *
+	 * @throws CommandFailedException
+	 */
+	void close() throws CommandFailedException;
 
 }

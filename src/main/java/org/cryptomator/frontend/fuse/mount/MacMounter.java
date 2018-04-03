@@ -7,14 +7,12 @@ import org.cryptomator.frontend.fuse.FuseNioAdapter;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
-import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
 public class MacMounter implements Mounter {
-
 
 	@Override
 	public Mount mount(Path directory, EnvironmentVariables envVars, String... additionalMountParams) throws CommandFailedException {
@@ -41,15 +39,18 @@ public class MacMounter implements Mounter {
 		private final FuseNioAdapter fuseAdapter;
 
 		private MacMount(Path directory, EnvironmentVariables envVars) {
-			String rootString = envVars.get(EnvironmentVariable.MOUNTPATH);
-			this.mountPoint = Paths.get(rootString).toAbsolutePath();
-			this.mountName = envVars.get(EnvironmentVariable.MOUNTNAME);
+			this.mountPoint = envVars.getMountPath().toAbsolutePath();
+			this.mountName = envVars.getMountName().orElse("vault");
 			this.revealCommand = new ProcessBuilder("open", "\"" + mountPoint.toString() + "\"");
 			this.fuseAdapter = AdapterFactory.createReadWriteAdapter(directory);
 		}
 
-		private void mount(String... additionalMountParams) {
-			fuseAdapter.mount(mountPoint, false, false, ObjectArrays.concat(getMountParameters(), additionalMountParams, String.class));
+		private void mount(String... additionalMountParams) throws CommandFailedException {
+			try {
+				fuseAdapter.mount(mountPoint, false, false, ObjectArrays.concat(getMountParameters(), additionalMountParams, String.class));
+			} catch (Exception e) {
+				throw new CommandFailedException(e);
+			}
 		}
 
 		private String[] getMountParameters() {
@@ -67,12 +68,7 @@ public class MacMounter implements Mounter {
 		}
 
 		@Override
-		public Path getMountPoint() {
-			return mountPoint;
-		}
-
-		@Override
-		public void revealMountPathInFilesystemmanager() throws CommandFailedException {
+		public void revealInFileManager() throws CommandFailedException {
 			try {
 				ProcessUtil.startAndWaitFor(revealCommand, 5, TimeUnit.SECONDS);
 			} catch (ProcessUtil.CommandTimeoutException e) {
@@ -81,9 +77,13 @@ public class MacMounter implements Mounter {
 		}
 
 		@Override
-		public void close() throws Exception {
-			fuseAdapter.umount();
-			fuseAdapter.close();
+		public void close() throws CommandFailedException {
+			try {
+				fuseAdapter.umount();
+				fuseAdapter.close();
+			} catch (Exception e) {
+				throw new CommandFailedException(e);
+			}
 		}
 	}
 

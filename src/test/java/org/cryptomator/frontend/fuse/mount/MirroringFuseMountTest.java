@@ -1,5 +1,6 @@
 package org.cryptomator.frontend.fuse.mount;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -17,13 +18,13 @@ public class MirroringFuseMountTest {
 				Mounter mounter = FuseMountFactory.getMounter();
 				EnvironmentVariables envVars = EnvironmentVariables.create()
 						.withMountName("FuseMirror")
-						.withMountPath(m.toString())
+						.withMountPath(m)
 						.build();
 				try (Mount mnt = mounter.mount(p, envVars)) {
 					System.out.println("Mounted successfully. Enter anything to stop the server...");
-					mnt.revealMountPathInFilesystemmanager();
+					mnt.revealInFileManager();
 					System.in.read();
-				} catch (Exception e) {
+				} catch (IOException | CommandFailedException e) {
 					e.printStackTrace();
 				}
 				System.out.println("Unmounted successfully. Exiting...");
