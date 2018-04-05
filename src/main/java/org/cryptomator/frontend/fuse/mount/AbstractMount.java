@@ -16,23 +16,28 @@ abstract class AbstractMount implements Mount {
 		this.fuseAdapter = AdapterFactory.createReadWriteAdapter(directory);
 	}
 
-	protected void mount(String... additionalMountParams) throws CommandFailedException {
+	protected void mount(String... additionalFuseOptions) throws CommandFailedException {
 		try {
-			fuseAdapter.mount(envVars.getMountPath(), false, false, ObjectArrays.concat(getMountParameters(), additionalMountParams, String.class));
+			fuseAdapter.mount(envVars.getMountPath(), false, false, ObjectArrays.concat(getFuseOptions(), additionalFuseOptions, String.class));
 		} catch (Exception e) {
 			throw new CommandFailedException(e);
 		}
 	}
 
-	protected abstract String[] getMountParameters();
+	protected abstract String[] getFuseOptions();
 
 	@Override
 	public void close() throws CommandFailedException {
 		try {
 			fuseAdapter.umount();
-			fuseAdapter.close();
 		} catch (Exception e) {
 			throw new CommandFailedException(e);
+		} finally {
+			try {
+				fuseAdapter.close();
+			} catch (Exception e) {
+				throw new CommandFailedException(e);
+			}
 		}
 	}
 

@@ -40,7 +40,7 @@ class LinuxMounter implements Mounter {
 		}
 
 		@Override
-		protected String[] getMountParameters() {
+		protected String[] getFuseOptions() {
 			ArrayList<String> mountOptions = new ArrayList<>(8);
 			mountOptions.add(("-oatomic_o_trunc"));
 			try {
@@ -56,7 +56,8 @@ class LinuxMounter implements Mounter {
 
 		@Override
 		public void revealInFileManager() throws CommandFailedException {
-			ProcessUtil.startAndWaitFor(revealCommand, 5, TimeUnit.SECONDS);
+			Process proc = ProcessUtil.startAndWaitFor(revealCommand,5, TimeUnit.SECONDS);
+			ProcessUtil.assertExitValue(proc, 0);
 		}
 
 	}
