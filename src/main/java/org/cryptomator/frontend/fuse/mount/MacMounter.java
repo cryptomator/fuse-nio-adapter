@@ -1,9 +1,5 @@
 package org.cryptomator.frontend.fuse.mount;
 
-import com.google.common.collect.ObjectArrays;
-import org.cryptomator.frontend.fuse.AdapterFactory;
-import org.cryptomator.frontend.fuse.FuseNioAdapter;
-
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
@@ -55,12 +51,13 @@ class MacMounter implements Mounter {
 			}
 			mountOptions.add("-ovolname=" + mountName);
 			mountOptions.add("-oauto_xattr");
+			mountOptions.add("-onoappledouble");
 			return mountOptions.toArray(new String[mountOptions.size()]);
 		}
 
 		@Override
 		public void revealInFileManager() throws CommandFailedException {
-			Process proc = ProcessUtil.startAndWaitFor(revealCommand,5, TimeUnit.SECONDS);
+			Process proc = ProcessUtil.startAndWaitFor(revealCommand, 5, TimeUnit.SECONDS);
 			ProcessUtil.assertExitValue(proc, 0);
 		}
 
