@@ -53,7 +53,9 @@ class MacMounter implements Mounter {
 			}
 			mountOptions.add("-ovolname=" + mountName);
 			mountOptions.add("-oauto_xattr");
-			mountOptions.add("-onoappledouble");
+			// mountOptions.add("-onoappledouble");
+			mountOptions.add("-s");
+			mountOptions.add("-odefault_permissions");
 			return mountOptions.toArray(new String[mountOptions.size()]);
 		}
 
