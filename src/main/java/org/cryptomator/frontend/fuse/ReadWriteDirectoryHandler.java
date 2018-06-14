@@ -23,11 +23,7 @@ public class ReadWriteDirectoryHandler extends ReadOnlyDirectoryHandler {
 	@Override
 	public int getattr(Path node, BasicFileAttributes attrs, FileStat stat) {
 		int result = super.getattr(node, attrs, stat);
-		if (result == 0 && fileStore.supportsFileAttributeView(PosixFileAttributeView.class)) {
-			stat.st_mode.set(FileStat.S_IFDIR | 0755);
-		} else if (result == 0) {
-			stat.st_mode.set(FileStat.S_IFDIR | 0777);
-		}
+		stat.st_mode.set(FileStat.S_IFDIR | 0755);
 		return result;
 	}
 }

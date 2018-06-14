@@ -10,12 +10,6 @@ import java.util.Set;
 @Module
 class FuseMountModule {
 
-//	@Provides
-//	@IntoSet
-//	static Mounter provideWindowsFuseEnvironment() {
-//		return new WindowsMounter();
-//	}
-
 	@Provides
 	@IntoSet
 	static Mounter provideLinuxEnvironment() {
