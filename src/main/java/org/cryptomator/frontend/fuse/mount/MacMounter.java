@@ -44,18 +44,18 @@ class MacMounter implements Mounter {
 		@Override
 		protected String[] getFuseOptions() {
 			ArrayList<String> mountOptions = new ArrayList<>(8);
-			mountOptions.add(("-oatomic_o_trunc"));
 			try {
 				mountOptions.add("-ouid=" + Files.getAttribute(USER_HOME, "unix:uid"));
 				mountOptions.add("-ogid=" + Files.getAttribute(USER_HOME, "unix:gid"));
 			} catch (IOException e) {
 				throw new UncheckedIOException(e);
 			}
+			mountOptions.add("-oatomic_o_trunc");
 			mountOptions.add("-ovolname=" + mountName);
 			mountOptions.add("-oauto_xattr");
-			// mountOptions.add("-onoappledouble");
-			mountOptions.add("-s");
-			mountOptions.add("-odefault_permissions");
+			mountOptions.add("-onoappledouble"); // vastly impacts performance for some reason...
+			mountOptions.add("-s"); // otherwise we still have race conditions (especially when disableing noappledouble and copying dirs to mount)
+			mountOptions.add("-odefault_permissions"); // no idea what this does :D
 			return mountOptions.toArray(new String[mountOptions.size()]);
 		}
 
