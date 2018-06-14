@@ -14,6 +14,8 @@ import java.util.concurrent.TimeUnit;
 
 class LinuxMounter implements Mounter {
 
+	private static final boolean IS_LINUX = System.getProperty("os.name").toLowerCase().contains("linux");
+
 	@Override
 	public Mount mount(Path directory, EnvironmentVariables envVars, String... additionalMountParams) throws CommandFailedException {
 		LinuxMount mount = new LinuxMount(directory, envVars);
@@ -23,7 +25,7 @@ class LinuxMounter implements Mounter {
 
 	@Override
 	public boolean isApplicable() {
-		return System.getProperty("os.name").toLowerCase().contains("linux");
+		return IS_LINUX;
 	}
 
 	private static class LinuxMount extends AbstractMount {

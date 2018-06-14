@@ -10,11 +10,11 @@ import java.util.Set;
 @Module
 class FuseMountModule {
 
-	@Provides
-	@IntoSet
-	static Mounter provideWindowsFuseEnvironment() {
-		return new WindowsMounter();
-	}
+//	@Provides
+//	@IntoSet
+//	static Mounter provideWindowsFuseEnvironment() {
+//		return new WindowsMounter();
+//	}
 
 	@Provides
 	@IntoSet
@@ -30,7 +30,7 @@ class FuseMountModule {
 
 	@Provides
 	static Optional<Mounter> provideEnvironment(Set<Mounter> envs) {
-		return envs.stream().filter(Mounter::isApplicable).findFirst();
+		return envs.stream().filter(Mounter::isApplicable).findAny();
 	}
 
 }

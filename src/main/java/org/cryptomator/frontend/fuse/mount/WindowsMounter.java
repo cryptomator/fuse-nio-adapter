@@ -1,15 +1,10 @@
 package org.cryptomator.frontend.fuse.mount;
 
-import com.google.common.collect.ObjectArrays;
-import org.cryptomator.frontend.fuse.AdapterFactory;
-import org.cryptomator.frontend.fuse.FuseNioAdapter;
-
-import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
+@Deprecated
 class WindowsMounter implements Mounter {
 
 	@Override

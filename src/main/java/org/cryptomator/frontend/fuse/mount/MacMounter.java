@@ -10,6 +10,8 @@ import java.util.concurrent.TimeUnit;
 
 class MacMounter implements Mounter {
 
+	private static final boolean IS_MAC = System.getProperty("os.name").toLowerCase().contains("mac");
+
 	@Override
 	public Mount mount(Path directory, EnvironmentVariables envVars, String... additionalMountParams) throws CommandFailedException {
 		MacMount mount = new MacMount(directory, envVars);
@@ -22,7 +24,7 @@ class MacMounter implements Mounter {
 	 */
 	@Override
 	public boolean isApplicable() {
-		return System.getProperty("os.name").toLowerCase().contains("mac") && Files.exists(Paths.get("/usr/local/lib/libosxfuse.2.dylib"));
+		return IS_MAC && Files.exists(Paths.get("/usr/local/lib/libosxfuse.2.dylib"));
 	}
 
 	private static class MacMount extends AbstractMount {
