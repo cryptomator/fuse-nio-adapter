@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.cryptomator</groupId>
 	<artifactId>fuse-nio-adapter</artifactId>
-	<version>0.1.4</version>
+	<version>0.1.5</version>
 	<name>FUSE-NIO-Adapter</name>
 	<description>Access resources at a given NIO path via FUSE.</description>
 	<url>https://github.com/cryptomator/fuse-nio-adapter</url>
@@ -16,8 +16,11 @@
 
 	<properties>
 		<jnrfuse.version>0.5.1</jnrfuse.version>
+		<jnrffi.version>2.1.7</jnrffi.version>
+		<jnrconstants.version>0.9.9</jnrconstants.version>
+		<jnrposix.version>3.0.45</jnrposix.version>
 		<dagger.version>2.15</dagger.version>
-		<guava.version>24.0-jre</guava.version>
+		<guava.version>25.0-jre</guava.version>
 		<slf4j.version>1.7.25</slf4j.version>
 		<junit.jupiter.version>5.0.2</junit.jupiter.version>
 		<junit.platform.version>1.0.2</junit.platform.version>
@@ -50,6 +53,26 @@
 			<url>http://jcenter.bintray.com</url>
 		</repository>
 	</repositories>
+
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>com.github.jnr</groupId>
+				<artifactId>jnr-ffi</artifactId>
+				<version>${jnrffi.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.github.jnr</groupId>
+				<artifactId>jnr-constants</artifactId>
+				<version>${jnrconstants.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.github.jnr</groupId>
+				<artifactId>jnr-posix</artifactId>
+				<version>${jnrposix.version}</version>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 
 	<dependencies>
 		<!-- FUSE -->
