@@ -48,7 +48,7 @@
 
 	<repositories>
 		<repository>
-			<id>central</id>
+			<id>bintray</id>
 			<name>bintray</name>
 			<url>http://jcenter.bintray.com</url>
 		</repository>
@@ -176,7 +176,7 @@
 					<plugin>
 						<groupId>org.owasp</groupId>
 						<artifactId>dependency-check-maven</artifactId>
-						<version>3.1.2</version>
+						<version>3.2.1</version>
 						<configuration>
 							<cveValidForHours>24</cveValidForHours>
 							<failBuildOnCVSS>0</failBuildOnCVSS>
@@ -205,7 +205,7 @@
 					<plugin>
 						<groupId>org.jacoco</groupId>
 						<artifactId>jacoco-maven-plugin</artifactId>
-						<version>0.7.9</version>
+						<version>0.8.1</version>
 						<executions>
 							<execution>
 								<id>prepare-agent</id>
@@ -243,7 +243,7 @@
 					</plugin>
 					<plugin>
 						<artifactId>maven-javadoc-plugin</artifactId>
-						<version>2.10.4</version>
+						<version>3.0.1</version>
 						<executions>
 							<execution>
 								<id>attach-javadocs</id>
