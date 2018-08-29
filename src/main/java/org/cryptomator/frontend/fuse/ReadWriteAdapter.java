@@ -174,7 +174,7 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 		assert timespec.length == 2;
 		try {
 			Path node = resolvePath(path);
-			return fileHandler.utimens(node, timespec[0], timespec[1]);
+			return fileHandler.utimens(node, timespec[1], timespec[0]);
 		} catch (RuntimeException e) {
 			LOG.error("utimens failed.", e);
 			return -ErrorCodes.EIO();
