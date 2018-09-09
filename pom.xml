@@ -151,19 +151,12 @@
 			</plugin>
 			<plugin>
 				<artifactId>maven-surefire-plugin</artifactId>
-				<version>2.19.1</version> <!-- 2.20 causes memory leaks, see http://junit.org/junit5/docs/current/user-guide/#running-tests-build-maven -->
+				<version>2.22.0</version>
 				<configuration>
 					<includes>
 						<include>**/*Test.java</include>
 					</includes>
 				</configuration>
-				<dependencies>
-					<dependency>
-						<groupId>org.junit.platform</groupId>
-						<artifactId>junit-platform-surefire-provider</artifactId>
-						<version>${junit.platform.version}</version>
-					</dependency>
-				</dependencies>
 			</plugin>
 		</plugins>
 	</build>
