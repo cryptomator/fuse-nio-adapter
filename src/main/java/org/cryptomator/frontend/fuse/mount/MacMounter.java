@@ -43,7 +43,7 @@ class MacMounter implements Mounter {
 
 		@Override
 		protected String[] getFuseOptions() {
-			ArrayList<String> mountOptions = new ArrayList<>(8);
+			ArrayList<String> mountOptions = new ArrayList<>();
 			try {
 				mountOptions.add("-ouid=" + Files.getAttribute(USER_HOME, "unix:uid"));
 				mountOptions.add("-ogid=" + Files.getAttribute(USER_HOME, "unix:gid"));

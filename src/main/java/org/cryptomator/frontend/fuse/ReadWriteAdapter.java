@@ -90,7 +90,7 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 
 	@Override
 	public int chown(String path, @uid_t long uid, @gid_t long gid) {
-		LOG.warn("Ignoring chown(uid={}, gid={}) call. Files will be served with static uid/gid.", uid, gid);
+		LOG.trace("Ignoring chown(uid={}, gid={}) call. Files will be served with static uid/gid.", uid, gid);
 		return 0;
 	}
 
