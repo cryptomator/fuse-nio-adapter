@@ -148,6 +148,8 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 			return 0;
 		} catch (FileNotFoundException e) {
 			return -ErrorCodes.ENOENT();
+		} catch (DirectoryNotEmptyException e) {
+			return -ErrorCodes.ENOTEMPTY();
 		} catch (IOException e) {
 			LOG.error("Error deleting file: " + node, e);
 			return -ErrorCodes.EIO();
