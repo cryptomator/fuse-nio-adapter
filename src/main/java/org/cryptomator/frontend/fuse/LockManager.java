@@ -118,14 +118,14 @@ public class LockManager {
 		lockAncestors(parentPathComponents);
 		String path = PATH_JOINER.join(pathComponents);
 		getLock(pathLocks, path).writeLock().lock();
-		LOG.trace("Acquired READ PATH lock for {}", path);
+		LOG.trace("Acquired WRITE PATH lock for {}", path);
 		return new PathLockImpl(path, this::unlockPathWriteLock, this::lockDataForReading, this::lockDataForWriting);
 	}
 
 	private void unlockPathWriteLock(String absolutePath) {
 		List<String> pathComponents = PATH_SPLITTER.splitToList(absolutePath);
 		List<String> parentPathComponents = parentPathComponents(pathComponents);
-		LOG.trace("Released READ PATH lock for {}", absolutePath);
+		LOG.trace("Released WRITE PATH lock for {}", absolutePath);
 		getLock(pathLocks, absolutePath).writeLock().unlock();
 		removeLockIfUnused(pathLocks, absolutePath);
 		unlockAncestors(parentPathComponents);
@@ -149,7 +149,9 @@ public class LockManager {
 
 	// recusively acquire locks for parents first
 	private void lockAncestors(List<String> pathComponents) {
-		if (pathComponents.size() > 1) {
+		if (pathComponents.isEmpty()) {
+			return;
+		} else if (pathComponents.size() > 1) {
 			lockAncestors(parentPathComponents(pathComponents));
 		}
 		String path = PATH_JOINER.join(pathComponents);
@@ -158,6 +160,9 @@ public class LockManager {
 
 	// recusively release locks for children frist
 	private void unlockAncestors(List<String> pathComponents) {
+		if (pathComponents.isEmpty()) {
+			return;
+		}
 		String path = PATH_JOINER.join(pathComponents);
 		getLock(pathLocks, path).readLock().unlock();
 		removeLockIfUnused(pathLocks, path);
@@ -169,7 +174,7 @@ public class LockManager {
 	private ReadWriteLock getLock(ConcurrentMap<String, ReentrantReadWriteLock> map, String path) {
 		return map.computeIfAbsent(path, p -> {
 			LOG.trace("Creating Lock for {}", p);
-			return new ReentrantReadWriteLock(true);
+			return new ReentrantReadWriteLock();
 		});
 	}
 
