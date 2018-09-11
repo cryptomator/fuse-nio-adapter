@@ -21,6 +21,8 @@ import com.google.common.collect.Iterables;
 import jnr.ffi.Pointer;
 import jnr.ffi.types.off_t;
 import jnr.ffi.types.size_t;
+import org.cryptomator.frontend.fuse.LockManager.DataLock;
+import org.cryptomator.frontend.fuse.LockManager.PathLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.serce.jnrfuse.ErrorCodes;
@@ -40,14 +42,16 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 	private static final int BLOCKSIZE = 4096;
 	protected final Path root;
 	protected final FileStore fileStore;
+	protected final LockManager lockManager;
 	private final ReadOnlyDirectoryHandler dirHandler;
 	private final ReadOnlyFileHandler fileHandler;
 	private final FileAttributesUtil attrUtil;
 
 	@Inject
-	public ReadOnlyAdapter(@Named("root") Path root, FileStore fileStore, ReadOnlyDirectoryHandler dirHandler, ReadOnlyFileHandler fileHandler, FileAttributesUtil attrUtil) {
+	public ReadOnlyAdapter(@Named("root") Path root, FileStore fileStore, LockManager lockManager, ReadOnlyDirectoryHandler dirHandler, ReadOnlyFileHandler fileHandler, FileAttributesUtil attrUtil) {
 		this.root = root;
 		this.fileStore = fileStore;
+		this.lockManager = lockManager;
 		this.dirHandler = dirHandler;
 		this.fileHandler = fileHandler;
 		this.attrUtil = attrUtil;
@@ -112,7 +116,8 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 
 	@Override
 	public int getattr(String path, FileStat stat) {
-		try {
+		try (PathLock pathLock = lockManager.lockPathForReading(path);
+			 DataLock dataLock = pathLock.lockDataForReading()) {
 			Path node = resolvePath(path);
 			BasicFileAttributes attrs = Files.readAttributes(node, BasicFileAttributes.class);
 			if (attrs.isDirectory()) {
@@ -131,7 +136,8 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 
 	@Override
 	public int readdir(String path, Pointer buf, FuseFillDir filler, @off_t long offset, FuseFileInfo fi) {
-		try {
+		try (PathLock pathLock = lockManager.lockPathForReading(path);
+			 DataLock dataLock = pathLock.lockDataForReading()) {
 			Path node = resolvePath(path);
 			return dirHandler.readdir(node, buf, filler, offset, fi);
 		} catch (NotDirectoryException e) {
@@ -144,7 +150,8 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 
 	@Override
 	public int open(String path, FuseFileInfo fi) {
-		try {
+		try (PathLock pathLock = lockManager.lockPathForReading(path);
+			 DataLock dataLock = pathLock.lockDataForReading()) {
 			Path node = resolvePath(path);
 			// TODO do we need to distinguish files vs. dirs? https://github.com/libfuse/libfuse/wiki/Invariants
 			if (Files.isDirectory(node)) {
@@ -162,7 +169,8 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 
 	@Override
 	public int read(String path, Pointer buf, @size_t long size, @off_t long offset, FuseFileInfo fi) {
-		try {
+		try (PathLock pathLock = lockManager.lockPathForReading(path);
+			 DataLock dataLock = pathLock.lockDataForReading()) {
 			Path node = resolvePath(path);
 			assert Files.exists(node);
 			return fileHandler.read(node, buf, size, offset, fi);

@@ -43,6 +43,7 @@ class MacMounter implements Mounter {
 
 		@Override
 		protected String[] getFuseOptions() {
+			// see: https://github.com/osxfuse/osxfuse/wiki/Mount-options
 			ArrayList<String> mountOptions = new ArrayList<>();
 			try {
 				mountOptions.add("-ouid=" + Files.getAttribute(USER_HOME, "unix:uid"));
@@ -54,8 +55,8 @@ class MacMounter implements Mounter {
 			mountOptions.add("-ovolname=" + mountName);
 			mountOptions.add("-oauto_xattr");
 			mountOptions.add("-onoappledouble"); // vastly impacts performance for some reason...
-			mountOptions.add("-s"); // otherwise we still have race conditions (especially when disableing noappledouble and copying dirs to mount)
-			mountOptions.add("-odefault_permissions"); // no idea what this does :D
+			// mountOptions.add("-s"); // otherwise we still have race conditions (especially when disableing noappledouble and copying dirs to mount)
+			mountOptions.add("-odefault_permissions"); // let the kernel assume permissions based on file attributes etc
 			return mountOptions.toArray(new String[mountOptions.size()]);
 		}
 

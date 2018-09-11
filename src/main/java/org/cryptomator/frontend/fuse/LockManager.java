@@ -61,17 +61,21 @@ public class LockManager {
 
 	public PathLock lockPathForReading(String absolutePath) {
 		List<String> pathComponents = PATH_SPLITTER.splitToList(absolutePath);
-		Preconditions.checkArgument(!pathComponents.isEmpty(), "path must not be empty");
-		return lockPathForReading(pathComponents);
+		if (pathComponents.isEmpty()) {
+			return new NullPathLock(); // empy path (fs root) is not lockable
+		} else {
+			return lockPathForReading(pathComponents);
+		}
 	}
 
 	private PathLock lockPathForReading(List<String> pathComponents) {
+		assert !pathComponents.isEmpty();
 		List<String> parentPathComponents = parentPathComponents(pathComponents);
 		lockAncestors(parentPathComponents);
 		String path = PATH_JOINER.join(pathComponents);
 		getLock(pathLocks, path).readLock().lock();
 		LOG.trace("Acquired READ PATH lock for {}", path);
-		return new PathLock(path, this::unlockPathReadLock, this::lockDataForReading, this::lockDataForWriting);
+		return new PathLockImpl(path, this::unlockPathReadLock, this::lockDataForReading, this::lockDataForWriting);
 	}
 
 	private void unlockPathReadLock(String absolutePath) {
@@ -86,7 +90,7 @@ public class LockManager {
 	private DataLock lockDataForReading(String absolutePath) {
 		getLock(dataLocks, absolutePath).readLock().lock();
 		LOG.trace("Acquired READ DATA lock for {}", absolutePath);
-		return new DataLock(absolutePath, this::unlockDataReadLock);
+		return new DataLockImpl(absolutePath, this::unlockDataReadLock);
 	}
 
 	private void unlockDataReadLock(String absolutePath) {
@@ -101,17 +105,21 @@ public class LockManager {
 
 	public PathLock lockPathForWriting(String absolutePath) {
 		List<String> pathComponents = PATH_SPLITTER.splitToList(absolutePath);
-		Preconditions.checkArgument(!pathComponents.isEmpty(), "path must not be empty");
-		return lockPathForWriting(pathComponents);
+		if (pathComponents.isEmpty()) {
+			return new NullPathLock(); // empy path (fs root) is not lockable
+		} else {
+			return lockPathForWriting(pathComponents);
+		}
 	}
 
 	private PathLock lockPathForWriting(List<String> pathComponents) {
+		assert !pathComponents.isEmpty();
 		List<String> parentPathComponents = parentPathComponents(pathComponents);
 		lockAncestors(parentPathComponents);
 		String path = PATH_JOINER.join(pathComponents);
 		getLock(pathLocks, path).writeLock().lock();
 		LOG.trace("Acquired READ PATH lock for {}", path);
-		return new PathLock(path, this::unlockPathWriteLock, this::lockDataForReading, this::lockDataForWriting);
+		return new PathLockImpl(path, this::unlockPathWriteLock, this::lockDataForReading, this::lockDataForWriting);
 	}
 
 	private void unlockPathWriteLock(String absolutePath) {
@@ -126,7 +134,7 @@ public class LockManager {
 	private DataLock lockDataForWriting(String absolutePath) {
 		getLock(dataLocks, absolutePath).writeLock().lock();
 		LOG.trace("Acquired WRITE DATA lock for {}", absolutePath);
-		return new DataLock(absolutePath, this::unlockDataWriteLock);
+		return new DataLockImpl(absolutePath, this::unlockDataWriteLock);
 	}
 
 	private void unlockDataWriteLock(String absolutePath) {
@@ -191,24 +199,40 @@ public class LockManager {
 		return pathComponents.subList(0, pathComponents.size() - 1);
 	}
 
-	public static class PathLock implements AutoCloseable {
+	interface PathLock extends AutoCloseable {
+		DataLock lockDataForReading();
+
+		DataLock lockDataForWriting();
+
+		@Override
+		void close();
+	}
+
+	interface DataLock extends AutoCloseable {
+		@Override
+		void close();
+	}
+
+	private static class PathLockImpl implements PathLock {
 
 		private final String path;
 		private final Consumer<String> unlockFn;
 		private final Function<String, DataLock> readDataLockFn;
 		private final Function<String, DataLock> writeDataLockFn;
 
-		private PathLock(String path, Consumer<String> unlockFn, Function<String, DataLock> readDataLockFn, Function<String, DataLock> writeDataLockFn) {
+		private PathLockImpl(String path, Consumer<String> unlockFn, Function<String, DataLock> readDataLockFn, Function<String, DataLock> writeDataLockFn) {
 			this.path = path;
 			this.unlockFn = unlockFn;
 			this.readDataLockFn = readDataLockFn;
 			this.writeDataLockFn = writeDataLockFn;
 		}
 
+		@Override
 		public DataLock lockDataForReading() {
 			return readDataLockFn.apply(path);
 		}
 
+		@Override
 		public DataLock lockDataForWriting() {
 			return writeDataLockFn.apply(path);
 		}
@@ -219,12 +243,12 @@ public class LockManager {
 		}
 	}
 
-	public static class DataLock implements AutoCloseable {
+	private static class DataLockImpl implements DataLock {
 
 		private final String path;
 		private final Consumer<String> unlockFn;
 
-		private DataLock(String path, Consumer<String> unlockFn) {
+		private DataLockImpl(String path, Consumer<String> unlockFn) {
 			this.path = path;
 			this.unlockFn = unlockFn;
 		}
@@ -232,6 +256,24 @@ public class LockManager {
 		@Override
 		public void close() {
 			unlockFn.accept(path);
+		}
+	}
+
+	private static class NullPathLock implements PathLock {
+
+		@Override
+		public DataLock lockDataForReading() {
+			return () -> {};
+		}
+
+		@Override
+		public DataLock lockDataForWriting() {
+			return () -> {};
+		}
+
+		@Override
+		public void close() {
+			// no-op
 		}
 	}
 

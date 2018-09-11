@@ -26,6 +26,8 @@ import jnr.ffi.types.mode_t;
 import jnr.ffi.types.off_t;
 import jnr.ffi.types.size_t;
 import jnr.ffi.types.uid_t;
+import org.cryptomator.frontend.fuse.LockManager.DataLock;
+import org.cryptomator.frontend.fuse.LockManager.PathLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.serce.jnrfuse.ErrorCodes;
@@ -44,8 +46,8 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 	private final BitMaskEnumUtil bitMaskUtil;
 
 	@Inject
-	public ReadWriteAdapter(@Named("root") Path root, FileStore fileStore, ReadWriteDirectoryHandler dirHandler, ReadWriteFileHandler fileHandler, FileAttributesUtil attrUtil, BitMaskEnumUtil bitMaskUtil) {
-		super(root, fileStore, dirHandler, fileHandler, attrUtil);
+	public ReadWriteAdapter(@Named("root") Path root, FileStore fileStore, LockManager lockManager, ReadWriteDirectoryHandler dirHandler, ReadWriteFileHandler fileHandler, FileAttributesUtil attrUtil, BitMaskEnumUtil bitMaskUtil) {
+		super(root, fileStore, lockManager, dirHandler, fileHandler, attrUtil);
 		this.fileHandler = fileHandler;
 		this.attrUtil = attrUtil;
 		this.bitMaskUtil = bitMaskUtil;
@@ -59,7 +61,8 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 	@Override
 	public int mkdir(String path, @mode_t long mode) {
 		Path node = resolvePath(path);
-		try {
+		try (PathLock pathLock = lockManager.lockPathForWriting(path);
+			 DataLock dataLock = pathLock.lockDataForWriting()) {
 			Files.createDirectory(node);
 			return 0;
 		} catch (FileAlreadyExistsException e) {
@@ -72,7 +75,8 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 
 	@Override
 	public int create(String path, @mode_t long mode, FuseFileInfo fi) {
-		try {
+		try (PathLock pathLock = lockManager.lockPathForWriting(path);
+			 DataLock dataLock = pathLock.lockDataForWriting()) {
 			Set<OpenFlags> flags = bitMaskUtil.bitMaskToSet(OpenFlags.class, fi.flags.longValue());
 			Path node = resolvePath(path);
 			LOG.trace("createAndOpen {} with openOptions {}", node, flags);
@@ -96,7 +100,8 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 
 	@Override
 	public int chmod(String path, @mode_t long mode) {
-		try {
+		try (PathLock pathLock = lockManager.lockPathForReading(path);
+			 DataLock dataLock = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(path);
 			Files.setPosixFilePermissions(node, attrUtil.octalModeToPosixPermissions(mode));
 			return 0;
@@ -113,7 +118,8 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 
 	@Override
 	public int unlink(String path) {
-		try {
+		try (PathLock pathLock = lockManager.lockPathForWriting(path);
+			 DataLock dataLock = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(path);
 			assert !Files.isDirectory(node);
 			return delete(node);
@@ -125,7 +131,8 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 
 	@Override
 	public int rmdir(String path) {
-		try {
+		try (PathLock pathLock = lockManager.lockPathForWriting(path);
+			 DataLock dataLock = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(path);
 			assert Files.isDirectory(node);
 			return delete(node);
@@ -149,7 +156,10 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 
 	@Override
 	public int rename(String oldpath, String newpath) {
-		try {
+		try (PathLock oldPathLock = lockManager.lockPathForWriting(oldpath);
+			 DataLock oldDataLock = oldPathLock.lockDataForWriting();
+			 PathLock newPathLock = lockManager.lockPathForWriting(newpath);
+			 DataLock newDataLock = newPathLock.lockDataForWriting()) {
 			Path nodeOld = resolvePath(oldpath);
 			Path nodeNew = resolvePath(newpath);
 			Files.move(nodeOld, nodeNew, StandardCopyOption.REPLACE_EXISTING);
@@ -172,7 +182,8 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 		 * times[1] specifies the new "last modification time" (mtime).
 		 */
 		assert timespec.length == 2;
-		try {
+		try (PathLock pathLock = lockManager.lockPathForReading(path);
+			 DataLock dataLock = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(path);
 			return fileHandler.utimens(node, timespec[1], timespec[0]);
 		} catch (RuntimeException e) {
@@ -183,7 +194,8 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 
 	@Override
 	public int write(String path, Pointer buf, @size_t long size, @off_t long offset, FuseFileInfo fi) {
-		try {
+		try (PathLock pathLock = lockManager.lockPathForReading(path);
+			 DataLock dataLock = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(path);
 			return fileHandler.write(node, buf, size, offset, fi);
 		} catch (RuntimeException e) {
@@ -194,7 +206,8 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 
 	@Override
 	public int truncate(String path, @off_t long size) {
-		try {
+		try (PathLock pathLock = lockManager.lockPathForReading(path);
+			 DataLock dataLock = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(path);
 			return fileHandler.truncate(node, size);
 		} catch (RuntimeException e) {
@@ -205,7 +218,8 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 
 	@Override
 	public int ftruncate(String path, long size, FuseFileInfo fi) {
-		try {
+		try (PathLock pathLock = lockManager.lockPathForReading(path);
+			 DataLock dataLock = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(path);
 			return fileHandler.ftruncate(node, size, fi);
 		} catch (RuntimeException e) {
