@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -86,7 +87,9 @@ public class LockManagerTest {
 				});
 			}
 
-			done.await();
+			Assertions.assertTimeoutPreemptively(Duration.ofSeconds(10), () -> { // deadlock protection
+				done.await();
+			});
 			Assertions.assertEquals(numThreads, maxCounter.get());
 		}
 
@@ -116,7 +119,9 @@ public class LockManagerTest {
 				});
 			}
 
-			done.await();
+			Assertions.assertTimeoutPreemptively(Duration.ofSeconds(10), () -> { // deadlock protection
+				done.await();
+			});
 			Assertions.assertEquals(1, maxCounter.get());
 		}
 
@@ -153,7 +158,9 @@ public class LockManagerTest {
 				});
 			}
 
-			done.await();
+			Assertions.assertTimeoutPreemptively(Duration.ofSeconds(10), () -> { // deadlock protection
+				done.await();
+			});
 			Assertions.assertEquals(numThreads, maxCounter.get());
 		}
 
@@ -184,7 +191,9 @@ public class LockManagerTest {
 				});
 			}
 
-			done.await();
+			Assertions.assertTimeoutPreemptively(Duration.ofSeconds(10), () -> { // deadlock protection
+				done.await();
+			});
 			Assertions.assertEquals(1, maxCounter.get());
 		}
 
