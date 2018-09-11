@@ -175,7 +175,7 @@ public class LockManager {
 
 	private void removeLockIfUnused(ConcurrentMap<String, ReentrantReadWriteLock> map, String path) {
 		map.compute(path, (p, l) -> {
-			if (l.writeLock().tryLock()) { // if we can become the exlusive lock holder
+			if (l != null && l.writeLock().tryLock()) { // if we can become the exlusive lock holder
 				try {
 					if (!l.hasQueuedThreads()) { // and if nobody else is waiting for a lock
 						LOG.trace("Removing Lock for {}", p);
