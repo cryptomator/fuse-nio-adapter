@@ -70,12 +70,14 @@ public class LockManager {
 		lockAncestors(parentPathComponents);
 		String path = PATH_JOINER.join(pathComponents);
 		getLock(pathLocks, path).readLock().lock();
+		LOG.trace("Acquired READ PATH lock for {}", path);
 		return new PathLock(path, this::unlockPathReadLock, this::lockDataForReading, this::lockDataForWriting);
 	}
 
 	private void unlockPathReadLock(String absolutePath) {
 		List<String> pathComponents = PATH_SPLITTER.splitToList(absolutePath);
 		List<String> parentPathComponents = parentPathComponents(pathComponents);
+		LOG.trace("Released READ PATH lock for {}", absolutePath);
 		getLock(pathLocks, absolutePath).readLock().unlock();
 		removeLockIfUnused(pathLocks, absolutePath);
 		unlockAncestors(parentPathComponents);
@@ -83,10 +85,12 @@ public class LockManager {
 
 	private DataLock lockDataForReading(String absolutePath) {
 		getLock(dataLocks, absolutePath).readLock().lock();
+		LOG.trace("Acquired READ DATA lock for {}", absolutePath);
 		return new DataLock(absolutePath, this::unlockDataReadLock);
 	}
 
 	private void unlockDataReadLock(String absolutePath) {
+		LOG.trace("Released READ DATA lock for {}", absolutePath);
 		getLock(dataLocks, absolutePath).readLock().unlock();
 		removeLockIfUnused(dataLocks, absolutePath);
 	}
@@ -106,12 +110,14 @@ public class LockManager {
 		lockAncestors(parentPathComponents);
 		String path = PATH_JOINER.join(pathComponents);
 		getLock(pathLocks, path).writeLock().lock();
+		LOG.trace("Acquired READ PATH lock for {}", path);
 		return new PathLock(path, this::unlockPathWriteLock, this::lockDataForReading, this::lockDataForWriting);
 	}
 
 	private void unlockPathWriteLock(String absolutePath) {
 		List<String> pathComponents = PATH_SPLITTER.splitToList(absolutePath);
 		List<String> parentPathComponents = parentPathComponents(pathComponents);
+		LOG.trace("Released READ PATH lock for {}", absolutePath);
 		getLock(pathLocks, absolutePath).writeLock().unlock();
 		removeLockIfUnused(pathLocks, absolutePath);
 		unlockAncestors(parentPathComponents);
@@ -119,10 +125,12 @@ public class LockManager {
 
 	private DataLock lockDataForWriting(String absolutePath) {
 		getLock(dataLocks, absolutePath).writeLock().lock();
+		LOG.trace("Acquired WRITE DATA lock for {}", absolutePath);
 		return new DataLock(absolutePath, this::unlockDataWriteLock);
 	}
 
 	private void unlockDataWriteLock(String absolutePath) {
+		LOG.trace("Released WRITE DATA lock for {}", absolutePath);
 		getLock(dataLocks, absolutePath).writeLock().unlock();
 		removeLockIfUnused(dataLocks, absolutePath);
 	}
