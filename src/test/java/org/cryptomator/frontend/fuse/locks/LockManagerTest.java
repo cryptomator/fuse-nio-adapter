@@ -1,6 +1,5 @@
-package org.cryptomator.frontend.fuse;
+package org.cryptomator.frontend.fuse.locks;
 
-import org.cryptomator.frontend.fuse.LockManager.PathLock;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -44,8 +43,6 @@ public class LockManagerTest {
 					Assertions.assertTrue(lockManager.isPathLocked("/foo/bar"));
 					Assertions.assertTrue(lockManager.isPathLocked("/foo/bar/baz"));
 				}
-				System.gc();
-				lockManager.cleanup();
 				Assertions.assertTrue(lockManager.isPathLocked("/foo"));
 				Assertions.assertTrue(lockManager.isPathLocked("/foo/bar"));
 				Assertions.assertTrue(lockManager.isPathLocked("/foo/bar/baz"));
@@ -55,14 +52,10 @@ public class LockManagerTest {
 					Assertions.assertTrue(lockManager.isPathLocked("/foo/bar"));
 					Assertions.assertTrue(lockManager.isPathLocked("/foo/bar/baz"));
 				}
-				System.gc();
-				lockManager.cleanup();
 				Assertions.assertTrue(lockManager.isPathLocked("/foo"));
 				Assertions.assertTrue(lockManager.isPathLocked("/foo/bar"));
 				Assertions.assertTrue(lockManager.isPathLocked("/foo/bar/baz"));
 			}
-			System.gc();
-			lockManager.cleanup();
 			Assertions.assertFalse(lockManager.isPathLocked("/foo"));
 			Assertions.assertFalse(lockManager.isPathLocked("/foo/bar"));
 			Assertions.assertFalse(lockManager.isPathLocked("/foo/bar/baz"));
