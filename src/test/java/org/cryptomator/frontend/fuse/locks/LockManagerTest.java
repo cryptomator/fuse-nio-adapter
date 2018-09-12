@@ -127,76 +127,76 @@ public class LockManagerTest {
 
 	}
 
-//	@Nested
-//	@DisplayName("DataLocks")
-//	class DataLockTests {
-//
-//		@Test
-//		public void testMultipleReadLocks() throws InterruptedException {
-//			LockManager lockManager = new LockManager();
-//			int numThreads = 8;
-//			ExecutorService threadPool = Executors.newFixedThreadPool(numThreads);
-//			CountDownLatch done = new CountDownLatch(numThreads);
-//			AtomicInteger counter = new AtomicInteger();
-//			AtomicInteger maxCounter = new AtomicInteger();
-//
-//			for (int i = 0; i < numThreads; i++) {
-//				int threadnum = i;
-//				threadPool.submit(() -> {
-//					try (PathLock pathLock = lockManager.lockPathForReading("/foo/bar/baz"); //
-//						 DataLock dataLock = pathLock.lockDataForReading()) {
-//						LOG.debug("ENTER thread {}", threadnum);
-//						counter.incrementAndGet();
-//						Thread.sleep(50);
-//						maxCounter.set(Math.max(counter.get(), maxCounter.get()));
-//						counter.decrementAndGet();
-//						LOG.debug("LEAVE thread {}", threadnum);
-//					} catch (InterruptedException e) {
-//						LOG.error("thread interrupted", e);
-//					}
-//					done.countDown();
-//				});
-//			}
-//
-//			Assertions.assertTimeoutPreemptively(Duration.ofSeconds(10), () -> { // deadlock protection
-//				done.await();
-//			});
-//			Assertions.assertEquals(numThreads, maxCounter.get());
-//		}
-//
-//		@Test
-//		public void testMultipleWriteLocks() throws InterruptedException {
-//			LockManager lockManager = new LockManager();
-//			int numThreads = 8;
-//			ExecutorService threadPool = Executors.newFixedThreadPool(numThreads);
-//			CountDownLatch done = new CountDownLatch(numThreads);
-//			AtomicInteger counter = new AtomicInteger();
-//			AtomicInteger maxCounter = new AtomicInteger();
-//
-//			for (int i = 0; i < numThreads; i++) {
-//				int threadnum = i;
-//				threadPool.submit(() -> {
-//					try (PathLock pathLock = lockManager.lockPathForReading("/foo/bar/baz"); //
-//						 DataLock dataLock = pathLock.lockDataForWriting()) {
-//						LOG.debug("ENTER thread {}", threadnum);
-//						counter.incrementAndGet();
-//						Thread.sleep(10);
-//						maxCounter.set(Math.max(counter.get(), maxCounter.get()));
-//						counter.decrementAndGet();
-//						LOG.debug("LEAVE thread {}", threadnum);
-//					} catch (InterruptedException e) {
-//						LOG.error("thread interrupted", e);
-//					}
-//					done.countDown();
-//				});
-//			}
-//
-//			Assertions.assertTimeoutPreemptively(Duration.ofSeconds(10), () -> { // deadlock protection
-//				done.await();
-//			});
-//			Assertions.assertEquals(1, maxCounter.get());
-//		}
-//
-//	}
+	@Nested
+	@DisplayName("DataLocks")
+	class DataLockTests {
+
+		@Test
+		public void testMultipleReadLocks() throws InterruptedException {
+			LockManager lockManager = new LockManager();
+			int numThreads = 8;
+			ExecutorService threadPool = Executors.newFixedThreadPool(numThreads);
+			CountDownLatch done = new CountDownLatch(numThreads);
+			AtomicInteger counter = new AtomicInteger();
+			AtomicInteger maxCounter = new AtomicInteger();
+
+			for (int i = 0; i < numThreads; i++) {
+				int threadnum = i;
+				threadPool.submit(() -> {
+					try (PathLock pathLock = lockManager.createPathLock("/foo/bar/baz").forReading(); //
+						 DataLock dataLock = pathLock.lockDataForReading()) {
+						LOG.debug("ENTER thread {}", threadnum);
+						counter.incrementAndGet();
+						Thread.sleep(50);
+						maxCounter.set(Math.max(counter.get(), maxCounter.get()));
+						counter.decrementAndGet();
+						LOG.debug("LEAVE thread {}", threadnum);
+					} catch (InterruptedException e) {
+						LOG.error("thread interrupted", e);
+					}
+					done.countDown();
+				});
+			}
+
+			Assertions.assertTimeoutPreemptively(Duration.ofSeconds(10), () -> { // deadlock protection
+				done.await();
+			});
+			Assertions.assertEquals(numThreads, maxCounter.get());
+		}
+
+		@Test
+		public void testMultipleWriteLocks() throws InterruptedException {
+			LockManager lockManager = new LockManager();
+			int numThreads = 8;
+			ExecutorService threadPool = Executors.newFixedThreadPool(numThreads);
+			CountDownLatch done = new CountDownLatch(numThreads);
+			AtomicInteger counter = new AtomicInteger();
+			AtomicInteger maxCounter = new AtomicInteger();
+
+			for (int i = 0; i < numThreads; i++) {
+				int threadnum = i;
+				threadPool.submit(() -> {
+					try (PathLock pathLock = lockManager.createPathLock("/foo/bar/baz").forReading(); //
+						 DataLock dataLock = pathLock.lockDataForWriting()) {
+						LOG.debug("ENTER thread {}", threadnum);
+						counter.incrementAndGet();
+						Thread.sleep(10);
+						maxCounter.set(Math.max(counter.get(), maxCounter.get()));
+						counter.decrementAndGet();
+						LOG.debug("LEAVE thread {}", threadnum);
+					} catch (InterruptedException e) {
+						LOG.error("thread interrupted", e);
+					}
+					done.countDown();
+				});
+			}
+
+			Assertions.assertTimeoutPreemptively(Duration.ofSeconds(10), () -> { // deadlock protection
+				done.await();
+			});
+			Assertions.assertEquals(1, maxCounter.get());
+		}
+
+	}
 
 }

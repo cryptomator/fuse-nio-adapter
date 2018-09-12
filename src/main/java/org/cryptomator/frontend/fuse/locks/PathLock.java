@@ -2,13 +2,9 @@ package org.cryptomator.frontend.fuse.locks;
 
 public interface PathLock extends AutoCloseable {
 
-	default DataLock lockDataForReading() {
-		return null;
-	}
+	DataLock lockDataForReading();
 
-	default DataLock lockDataForWriting() {
-		return null;
-	}
+	DataLock lockDataForWriting();
 
 	@Override
 	void close();

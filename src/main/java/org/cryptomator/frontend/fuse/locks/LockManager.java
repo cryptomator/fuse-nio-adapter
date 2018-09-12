@@ -77,7 +77,7 @@ public class LockManager {
 		PathLockBuilder parentLockBuilder = createPathLock(parentPathComponents);
 		String path = FilePaths.toPath(pathComponents);
 		ReadWriteLock lock = pathLocks.getUnchecked(path);
-		return new PathLockBuilderImpl(path, Optional.ofNullable(parentLockBuilder), lock);
+		return new PathLockBuilderImpl(path, Optional.ofNullable(parentLockBuilder), lock, dataLocks::getUnchecked);
 	}
 
 	private void onLockRemoval(RemovalNotification<String, ReentrantReadWriteLock> notification) {
