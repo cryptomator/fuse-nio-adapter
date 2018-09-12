@@ -116,7 +116,7 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 
 	@Override
 	public int getattr(String path, FileStat stat) {
-		try (PathLock pathLock = lockManager.lockPathForReading(path);
+		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
 			 DataLock dataLock = pathLock.lockDataForReading()) {
 			Path node = resolvePath(path);
 			BasicFileAttributes attrs = Files.readAttributes(node, BasicFileAttributes.class);
@@ -136,7 +136,7 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 
 	@Override
 	public int readdir(String path, Pointer buf, FuseFillDir filler, @off_t long offset, FuseFileInfo fi) {
-		try (PathLock pathLock = lockManager.lockPathForReading(path);
+		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
 			 DataLock dataLock = pathLock.lockDataForReading()) {
 			Path node = resolvePath(path);
 			return dirHandler.readdir(node, buf, filler, offset, fi);
@@ -150,7 +150,7 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 
 	@Override
 	public int open(String path, FuseFileInfo fi) {
-		try (PathLock pathLock = lockManager.lockPathForReading(path);
+		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
 			 DataLock dataLock = pathLock.lockDataForReading()) {
 			Path node = resolvePath(path);
 			// TODO do we need to distinguish files vs. dirs? https://github.com/libfuse/libfuse/wiki/Invariants
@@ -169,7 +169,7 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 
 	@Override
 	public int read(String path, Pointer buf, @size_t long size, @off_t long offset, FuseFileInfo fi) {
-		try (PathLock pathLock = lockManager.lockPathForReading(path);
+		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
 			 DataLock dataLock = pathLock.lockDataForReading()) {
 			Path node = resolvePath(path);
 			assert Files.exists(node);

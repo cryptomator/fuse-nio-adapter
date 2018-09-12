@@ -1,5 +1,22 @@
 package org.cryptomator.frontend.fuse;
 
+import jnr.constants.platform.OpenFlags;
+import jnr.ffi.Pointer;
+import jnr.ffi.types.gid_t;
+import jnr.ffi.types.mode_t;
+import jnr.ffi.types.off_t;
+import jnr.ffi.types.size_t;
+import jnr.ffi.types.uid_t;
+import org.cryptomator.frontend.fuse.LockManager.DataLock;
+import org.cryptomator.frontend.fuse.LockManager.PathLock;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import ru.serce.jnrfuse.ErrorCodes;
+import ru.serce.jnrfuse.struct.FuseFileInfo;
+import ru.serce.jnrfuse.struct.Timespec;
+
+import javax.inject.Inject;
+import javax.inject.Named;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.AccessMode;
@@ -15,24 +32,6 @@ import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.EnumSet;
 import java.util.Set;
-
-import javax.inject.Inject;
-import javax.inject.Named;
-
-import jnr.constants.platform.OpenFlags;
-import jnr.ffi.Pointer;
-import jnr.ffi.types.gid_t;
-import jnr.ffi.types.mode_t;
-import jnr.ffi.types.off_t;
-import jnr.ffi.types.size_t;
-import jnr.ffi.types.uid_t;
-import org.cryptomator.frontend.fuse.LockManager.DataLock;
-import org.cryptomator.frontend.fuse.LockManager.PathLock;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import ru.serce.jnrfuse.ErrorCodes;
-import ru.serce.jnrfuse.struct.FuseFileInfo;
-import ru.serce.jnrfuse.struct.Timespec;
 
 /**
  * TODO: get the current user and save it as the file owner!
@@ -61,7 +60,7 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 	@Override
 	public int mkdir(String path, @mode_t long mode) {
 		Path node = resolvePath(path);
-		try (PathLock pathLock = lockManager.lockPathForWriting(path);
+		try (PathLock pathLock = lockManager.createPathLock(path).forWriting();
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
 			Files.createDirectory(node);
 			return 0;
@@ -75,7 +74,7 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 
 	@Override
 	public int create(String path, @mode_t long mode, FuseFileInfo fi) {
-		try (PathLock pathLock = lockManager.lockPathForWriting(path);
+		try (PathLock pathLock = lockManager.createPathLock(path).forWriting();
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
 			Set<OpenFlags> flags = bitMaskUtil.bitMaskToSet(OpenFlags.class, fi.flags.longValue());
 			Path node = resolvePath(path);
@@ -100,7 +99,7 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 
 	@Override
 	public int chmod(String path, @mode_t long mode) {
-		try (PathLock pathLock = lockManager.lockPathForReading(path);
+		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(path);
 			Files.setPosixFilePermissions(node, attrUtil.octalModeToPosixPermissions(mode));
@@ -118,7 +117,7 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 
 	@Override
 	public int unlink(String path) {
-		try (PathLock pathLock = lockManager.lockPathForWriting(path);
+		try (PathLock pathLock = lockManager.createPathLock(path).forWriting();
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(path);
 			assert !Files.isDirectory(node);
@@ -131,7 +130,7 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 
 	@Override
 	public int rmdir(String path) {
-		try (PathLock pathLock = lockManager.lockPathForWriting(path);
+		try (PathLock pathLock = lockManager.createPathLock(path).forWriting();
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(path);
 			assert Files.isDirectory(node);
@@ -158,9 +157,9 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 
 	@Override
 	public int rename(String oldpath, String newpath) {
-		try (PathLock oldPathLock = lockManager.lockPathForWriting(oldpath);
+		try (PathLock oldPathLock = lockManager.createPathLock(oldpath).forWriting();
 			 DataLock oldDataLock = oldPathLock.lockDataForWriting();
-			 PathLock newPathLock = lockManager.lockPathForWriting(newpath);
+			 PathLock newPathLock = lockManager.createPathLock(newpath).forWriting();
 			 DataLock newDataLock = newPathLock.lockDataForWriting()) {
 			Path nodeOld = resolvePath(oldpath);
 			Path nodeNew = resolvePath(newpath);
@@ -184,7 +183,7 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 		 * times[1] specifies the new "last modification time" (mtime).
 		 */
 		assert timespec.length == 2;
-		try (PathLock pathLock = lockManager.lockPathForReading(path);
+		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(path);
 			return fileHandler.utimens(node, timespec[1], timespec[0]);
@@ -196,7 +195,7 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 
 	@Override
 	public int write(String path, Pointer buf, @size_t long size, @off_t long offset, FuseFileInfo fi) {
-		try (PathLock pathLock = lockManager.lockPathForReading(path);
+		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(path);
 			return fileHandler.write(node, buf, size, offset, fi);
@@ -208,7 +207,7 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 
 	@Override
 	public int truncate(String path, @off_t long size) {
-		try (PathLock pathLock = lockManager.lockPathForReading(path);
+		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(path);
 			return fileHandler.truncate(node, size);
@@ -220,7 +219,7 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 
 	@Override
 	public int ftruncate(String path, long size, FuseFileInfo fi) {
-		try (PathLock pathLock = lockManager.lockPathForReading(path);
+		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(path);
 			return fileHandler.ftruncate(node, size, fi);
