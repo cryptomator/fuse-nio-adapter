@@ -183,7 +183,8 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 
 	@Override
 	public int release(String path, FuseFileInfo fi) {
-		try {
+		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
+			 DataLock dataLock = pathLock.lockDataForReading()) {
 			Path node = resolvePath(path);
 			return fileHandler.release(node, fi);
 		} catch (RuntimeException e) {

@@ -144,6 +144,7 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 
 	private int delete(Path node) {
 		try {
+			// TODO: recursively check for open file handles
 			Files.delete(node);
 			return 0;
 		} catch (FileNotFoundException e) {
@@ -162,6 +163,7 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 			 DataLock oldDataLock = oldPathLock.lockDataForWriting();
 			 PathLock newPathLock = lockManager.createPathLock(newpath).forWriting();
 			 DataLock newDataLock = newPathLock.lockDataForWriting()) {
+			// TODO: recursively check for open file handles
 			Path nodeOld = resolvePath(oldpath);
 			Path nodeNew = resolvePath(newpath);
 			Files.move(nodeOld, nodeNew, StandardCopyOption.REPLACE_EXISTING);
