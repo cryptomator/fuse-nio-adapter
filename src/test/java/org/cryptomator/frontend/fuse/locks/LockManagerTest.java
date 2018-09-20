@@ -76,7 +76,7 @@ public class LockManagerTest {
 					try (PathLock lock = lockManager.createPathLock("/foo/bar/baz").forReading()) {
 						LOG.debug("ENTER thread {}", threadnum);
 						counter.incrementAndGet();
-						Thread.sleep(50);
+						Thread.sleep(200);
 						maxCounter.set(Math.max(counter.get(), maxCounter.get()));
 						counter.decrementAndGet();
 						LOG.debug("LEAVE thread {}", threadnum);
