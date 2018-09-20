@@ -7,8 +7,8 @@ import jnr.ffi.types.mode_t;
 import jnr.ffi.types.off_t;
 import jnr.ffi.types.size_t;
 import jnr.ffi.types.uid_t;
-import org.cryptomator.frontend.fuse.locks.LockManager;
 import org.cryptomator.frontend.fuse.locks.DataLock;
+import org.cryptomator.frontend.fuse.locks.LockManager;
 import org.cryptomator.frontend.fuse.locks.PathLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +22,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.AccessMode;
 import java.nio.file.DirectoryNotEmptyException;
+import java.nio.file.DirectoryStream;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileStore;
 import java.nio.file.Files;
@@ -134,6 +135,7 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 		try (PathLock pathLock = lockManager.createPathLock(path).forWriting();
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(path);
+			LOG.trace("rmdir() is called for {}.", node);
 			assert Files.isDirectory(node);
 			return delete(node);
 		} catch (RuntimeException e) {
@@ -145,6 +147,9 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 	private int delete(Path node) {
 		try {
 			// TODO: recursively check for open file handles
+			if (Files.isDirectory(node)) {
+				deleteAppleDoubleFiles(node);
+			}
 			Files.delete(node);
 			return 0;
 		} catch (FileNotFoundException e) {
@@ -154,6 +159,20 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 		} catch (IOException e) {
 			LOG.error("Error deleting file: " + node, e);
 			return -ErrorCodes.EIO();
+		}
+	}
+
+	/**
+	 * Method specialised for Macs due to the usage of the -noappledouble option in the {@link org.cryptomator.frontend.fuse.mount.MacMounter} and the possible existence of AppleDouble-Files.
+	 *
+	 * @param node the directory path for which is checked for such files
+	 * @throws IOException if a AppleDouble file cannot be deleted
+	 */
+	private void deleteAppleDoubleFiles(Path node) throws IOException {
+		try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(node)) {
+			for (Path p : directoryStream) {
+				Files.delete(p);
+			}
 		}
 	}
 
