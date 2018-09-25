@@ -163,13 +163,13 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 	}
 
 	/**
-	 * Method specialised for Macs due to the usage of the -noappledouble option in the {@link org.cryptomator.frontend.fuse.mount.MacMounter} and the possible existence of AppleDouble-Files.
+	 * Specialised method on MacOS due to the usage of the -noappledouble option in the {@link org.cryptomator.frontend.fuse.mount.MacMounter} and the possible existence of AppleDouble-Files.
 	 *
 	 * @param node the directory path for which is checked for such files
-	 * @throws IOException if a AppleDouble file cannot be deleted
+	 * @throws IOException if an AppleDouble file cannot be deleted or opening of a directory stream fails
 	 */
-	private void deleteAppleDoubleFiles(Path node) throws IOException {
-		try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(node)) {
+	private static void deleteAppleDoubleFiles(Path node) throws IOException {
+		try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(node, MacUtil::isAppleDouble)) {
 			for (Path p : directoryStream) {
 				Files.delete(p);
 			}
