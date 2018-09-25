@@ -163,13 +163,15 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 	}
 
 	/**
-	 * Specialised method on MacOS due to the usage of the -noappledouble option in the {@link org.cryptomator.frontend.fuse.mount.MacMounter} and the possible existence of AppleDouble-Files.
+	 * Specialised method on MacOS due to the usage of the <em>-noappledouble</em> option in the {@link org.cryptomator.frontend.fuse.mount.MacMounter} and the possible existence of AppleDouble or DSStore-Files.
 	 *
 	 * @param node the directory path for which is checked for such files
 	 * @throws IOException if an AppleDouble file cannot be deleted or opening of a directory stream fails
+	 *
+	 * @see <a href="https://github.com/osxfuse/osxfuse/wiki/Mount-options#noappledouble">OSXFuse Documentation of the <em>-noappledouble</em> option</a>
 	 */
 	private static void deleteAppleDoubleFiles(Path node) throws IOException {
-		try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(node, MacUtil::isAppleDouble)) {
+		try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(node, MacUtil::isAppleDoubleOrDStoreName)) {
 			for (Path p : directoryStream) {
 				Files.delete(p);
 			}
