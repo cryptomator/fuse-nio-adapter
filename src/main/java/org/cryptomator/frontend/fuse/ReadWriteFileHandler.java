@@ -34,6 +34,8 @@ import ru.serce.jnrfuse.struct.Timespec;
 public class ReadWriteFileHandler extends ReadOnlyFileHandler implements Closeable {
 
 	private static final Logger LOG = LoggerFactory.getLogger(ReadWriteFileHandler.class);
+	private static final long UTIME_NOW = -1l; // https://github.com/apple/darwin-xnu/blob/xnu-4570.1.46/bsd/sys/stat.h#L538
+	private static final long UTIME_OMIT = -2l; // https://github.com/apple/darwin-xnu/blob/xnu-4570.1.46/bsd/sys/stat.h#L539
 	private FileStore fileStore;
 
 	@Inject
@@ -130,8 +132,8 @@ public class ReadWriteFileHandler extends ReadOnlyFileHandler implements Closeab
 
 	public int utimens(Path node, Timespec mTimeSpec, Timespec aTimeSpec) {
 		try {
-			FileTime mTime = FileTime.from(Instant.ofEpochSecond(mTimeSpec.tv_sec.longValue(), mTimeSpec.tv_nsec.intValue()));
-			FileTime aTime = FileTime.from(Instant.ofEpochSecond(aTimeSpec.tv_sec.longValue(), aTimeSpec.tv_nsec.intValue()));
+			FileTime mTime = toFileTime(mTimeSpec);
+			FileTime aTime = toFileTime(aTimeSpec);
 			Files.getFileAttributeView(node, BasicFileAttributeView.class).setTimes(mTime, aTime, null);
 			return 0;
 		} catch (DateTimeException | ArithmeticException e) {
@@ -142,6 +144,18 @@ public class ReadWriteFileHandler extends ReadOnlyFileHandler implements Closeab
 		} catch (IOException e) {
 			LOG.error("Setting file access/modification times failed.", e);
 			return -ErrorCodes.EIO();
+		}
+	}
+
+	private FileTime toFileTime(Timespec timespec) {
+		long seconds = timespec.tv_sec.longValue();
+		long nanoseconds = timespec.tv_nsec.longValue();
+		if (nanoseconds == UTIME_NOW) {
+			return FileTime.from(Instant.now());
+		} else if (nanoseconds == UTIME_OMIT) {
+			return null;
+		} else {
+			return FileTime.from(Instant.ofEpochSecond(seconds, nanoseconds));
 		}
 	}
 }

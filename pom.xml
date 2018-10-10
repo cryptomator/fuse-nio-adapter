@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.cryptomator</groupId>
 	<artifactId>fuse-nio-adapter</artifactId>
-	<version>0.1.5</version>
+	<version>1.0.0</version>
 	<name>FUSE-NIO-Adapter</name>
 	<description>Access resources at a given NIO path via FUSE.</description>
 	<url>https://github.com/cryptomator/fuse-nio-adapter</url>
@@ -15,15 +15,14 @@
 	</scm>
 
 	<properties>
-		<jnrfuse.version>0.5.1</jnrfuse.version>
-		<jnrffi.version>2.1.7</jnrffi.version>
+		<jnrfuse.version>0.5.2.1</jnrfuse.version>
 		<jnrconstants.version>0.9.9</jnrconstants.version>
 		<jnrposix.version>3.0.45</jnrposix.version>
 		<dagger.version>2.15</dagger.version>
 		<guava.version>25.0-jre</guava.version>
 		<slf4j.version>1.7.25</slf4j.version>
-		<junit.jupiter.version>5.0.2</junit.jupiter.version>
-		<junit.platform.version>1.0.2</junit.platform.version>
+		<junit.jupiter.version>5.3.0</junit.jupiter.version>
+		<junit.platform.version>1.3.0</junit.platform.version>
 		<mockito.version>2.11.0</mockito.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
@@ -48,31 +47,11 @@
 
 	<repositories>
 		<repository>
-			<id>central</id>
+			<id>bintray</id>
 			<name>bintray</name>
 			<url>http://jcenter.bintray.com</url>
 		</repository>
 	</repositories>
-
-	<dependencyManagement>
-		<dependencies>
-			<dependency>
-				<groupId>com.github.jnr</groupId>
-				<artifactId>jnr-ffi</artifactId>
-				<version>${jnrffi.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>com.github.jnr</groupId>
-				<artifactId>jnr-constants</artifactId>
-				<version>${jnrconstants.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>com.github.jnr</groupId>
-				<artifactId>jnr-posix</artifactId>
-				<version>${jnrposix.version}</version>
-			</dependency>
-		</dependencies>
-	</dependencyManagement>
 
 	<dependencies>
 		<!-- FUSE -->
@@ -151,19 +130,12 @@
 			</plugin>
 			<plugin>
 				<artifactId>maven-surefire-plugin</artifactId>
-				<version>2.19.1</version> <!-- 2.20 causes memory leaks, see http://junit.org/junit5/docs/current/user-guide/#running-tests-build-maven -->
+				<version>2.22.0</version>
 				<configuration>
 					<includes>
 						<include>**/*Test.java</include>
 					</includes>
 				</configuration>
-				<dependencies>
-					<dependency>
-						<groupId>org.junit.platform</groupId>
-						<artifactId>junit-platform-surefire-provider</artifactId>
-						<version>${junit.platform.version}</version>
-					</dependency>
-				</dependencies>
 			</plugin>
 		</plugins>
 	</build>
@@ -176,7 +148,7 @@
 					<plugin>
 						<groupId>org.owasp</groupId>
 						<artifactId>dependency-check-maven</artifactId>
-						<version>3.1.2</version>
+						<version>3.2.1</version>
 						<configuration>
 							<cveValidForHours>24</cveValidForHours>
 							<failBuildOnCVSS>0</failBuildOnCVSS>
@@ -205,7 +177,7 @@
 					<plugin>
 						<groupId>org.jacoco</groupId>
 						<artifactId>jacoco-maven-plugin</artifactId>
-						<version>0.7.9</version>
+						<version>0.8.1</version>
 						<executions>
 							<execution>
 								<id>prepare-agent</id>
@@ -243,7 +215,7 @@
 					</plugin>
 					<plugin>
 						<artifactId>maven-javadoc-plugin</artifactId>
-						<version>2.10.4</version>
+						<version>3.0.1</version>
 						<executions>
 							<execution>
 								<id>attach-javadocs</id>
