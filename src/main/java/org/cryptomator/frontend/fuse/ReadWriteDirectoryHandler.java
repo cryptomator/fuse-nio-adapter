@@ -1,23 +1,17 @@
 package org.cryptomator.frontend.fuse;
 
-import java.nio.file.FileStore;
-import java.nio.file.Path;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.nio.file.attribute.PosixFileAttributeView;
+import ru.serce.jnrfuse.struct.FileStat;
 
 import javax.inject.Inject;
-
-import ru.serce.jnrfuse.struct.FileStat;
+import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
 
 @PerAdapter
 public class ReadWriteDirectoryHandler extends ReadOnlyDirectoryHandler {
 
-	private final FileStore fileStore;
-
 	@Inject
-	public ReadWriteDirectoryHandler(FileAttributesUtil attrUtil, FileStore fileStore) {
+	public ReadWriteDirectoryHandler(FileAttributesUtil attrUtil) {
 		super(attrUtil);
-		this.fileStore = fileStore;
 	}
 
 	@Override

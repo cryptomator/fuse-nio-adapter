@@ -12,18 +12,18 @@ class FuseMountModule {
 
 	@Provides
 	@IntoSet
-	static Mounter provideLinuxEnvironment() {
+	public static Mounter provideLinuxEnvironment() {
 		return new LinuxMounter();
 	}
 
 	@Provides
 	@IntoSet
-	static Mounter provideMacFuseEnvironment() {
+	public static Mounter provideMacFuseEnvironment() {
 		return new MacMounter();
 	}
 
 	@Provides
-	static Optional<Mounter> provideEnvironment(Set<Mounter> envs) {
+	public static Optional<Mounter> provideEnvironment(Set<Mounter> envs) {
 		return envs.stream().filter(Mounter::isApplicable).findAny();
 	}
 
