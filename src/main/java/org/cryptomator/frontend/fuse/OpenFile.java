@@ -44,13 +44,15 @@ public class OpenFile implements Closeable {
 			ByteBuffer bb = ByteBuffer.allocate(BUFFER_SIZE);
 			long pos = 0;
 			channel.position(offset);
+			LOG.trace("Attempting to read {}-{}:", offset, offset + num);
 			do {
 				long remaining = num - pos;
 				int read = readNext(bb, remaining);
 				if (read == -1) {
+					LOG.trace("Reached EOF");
 					return (int) pos; // reached EOF TODO: wtf cast
 				} else {
-					LOG.trace("Reading {}-{} ({}-{})", offset + pos, offset + pos + read, offset, offset + num);
+					LOG.trace("Reading {}-{}", offset + pos, offset + pos + read);
 					buf.put(pos, bb.array(), 0, read);
 					pos += read;
 				}

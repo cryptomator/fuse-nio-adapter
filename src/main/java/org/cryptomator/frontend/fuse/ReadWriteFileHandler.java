@@ -83,7 +83,9 @@ public class ReadWriteFileHandler extends ReadOnlyFileHandler implements Closeab
 			return -ErrorCodes.EBADFD();
 		}
 		try {
-			return file.write(buf, size, offset);
+			int bytesWritten = file.write(buf, size, offset);
+			LOG.trace("Wrote {} bytes to file {}", bytesWritten, path);
+			return bytesWritten;
 		} catch (IOException e) {
 			LOG.error("Writing to file failed.", e);
 			return -ErrorCodes.EIO();

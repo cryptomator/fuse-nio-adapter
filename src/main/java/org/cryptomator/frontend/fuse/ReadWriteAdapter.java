@@ -123,6 +123,7 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(path);
 			assert !Files.isDirectory(node);
+			LOG.info("Unlinking {}", path);
 			return delete(node);
 		} catch (RuntimeException e) {
 			LOG.error("unlink failed.", e);
@@ -135,7 +136,7 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 		try (PathLock pathLock = lockManager.createPathLock(path).forWriting();
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(path);
-			LOG.trace("rmdir() is called for {}.", node);
+			LOG.trace("rmdir {}.", path);
 			assert Files.isDirectory(node);
 			return delete(node);
 		} catch (RuntimeException e) {
@@ -187,6 +188,7 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 			// TODO: recursively check for open file handles
 			Path nodeOld = resolvePath(oldpath);
 			Path nodeNew = resolvePath(newpath);
+			LOG.info("Renaming {} to {}", oldpath, newpath);
 			Files.move(nodeOld, nodeNew, StandardCopyOption.REPLACE_EXISTING);
 			return 0;
 		} catch (FileNotFoundException e) {
