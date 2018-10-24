@@ -171,7 +171,7 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 	 *
 	 * @see <a href="https://github.com/osxfuse/osxfuse/wiki/Mount-options#noappledouble">OSXFuse Documentation of the <em>-noappledouble</em> option</a>
 	 */
-	private static void deleteAppleDoubleFiles(Path node) throws IOException {
+	private void deleteAppleDoubleFiles(Path node) throws IOException {
 		try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(node, MacUtil::isAppleDoubleOrDStoreName)) {
 			for (Path p : directoryStream) {
 				Files.delete(p);
