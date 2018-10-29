@@ -18,7 +18,6 @@ import ru.serce.jnrfuse.struct.Timespec;
 
 import javax.inject.Inject;
 import javax.inject.Named;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.AccessMode;
 import java.nio.file.DirectoryNotEmptyException;
@@ -61,9 +60,10 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 
 	@Override
 	public int mkdir(String path, @mode_t long mode) {
-		Path node = resolvePath(path);
 		try (PathLock pathLock = lockManager.createPathLock(path).forWriting();
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
+			Path node = resolvePath(path);
+			LOG.trace("mkdir {} ({})", path, mode);
 			Files.createDirectory(node);
 			return 0;
 		} catch (FileAlreadyExistsException e) {
@@ -78,9 +78,9 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 	public int create(String path, @mode_t long mode, FuseFileInfo fi) {
 		try (PathLock pathLock = lockManager.createPathLock(path).forWriting();
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
-			Set<OpenFlags> flags = bitMaskUtil.bitMaskToSet(OpenFlags.class, fi.flags.longValue());
 			Path node = resolvePath(path);
-			LOG.trace("createAndOpen {} with openOptions {}", node, flags);
+			Set<OpenFlags> flags = bitMaskUtil.bitMaskToSet(OpenFlags.class, fi.flags.longValue());
+			LOG.trace("create {} with flags {}", path, flags);
 			if (fileStore.supportsFileAttributeView(PosixFileAttributeView.class)) {
 				FileAttribute<?> attrs = PosixFilePermissions.asFileAttribute(attrUtil.octalModeToPosixPermissions(mode));
 				return fileHandler.createAndOpen(node, fi, attrs);
@@ -88,7 +88,7 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 				return fileHandler.createAndOpen(node, fi);
 			}
 		} catch (RuntimeException e) {
-			LOG.error("create failed.", e);
+			LOG.error("create " + path + " failed.", e);
 			return -ErrorCodes.EIO();
 		}
 	}
@@ -104,6 +104,7 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(path);
+			LOG.trace("chmod {} ({})", path, mode);
 			Files.setPosixFilePermissions(node, attrUtil.octalModeToPosixPermissions(mode));
 			return 0;
 		} catch (NoSuchFileException e) {
@@ -112,7 +113,7 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 			LOG.warn("Setting posix permissions not supported by underlying file system.");
 			return -ErrorCodes.ENOSYS();
 		} catch (IOException | RuntimeException e) {
-			LOG.error("chmod failed.", e);
+			LOG.error("chmod " + path + " failed.", e);
 			return -ErrorCodes.EIO();
 		}
 	}
@@ -122,11 +123,18 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 		try (PathLock pathLock = lockManager.createPathLock(path).forWriting();
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(path);
-			assert !Files.isDirectory(node);
-			LOG.info("Unlinking {}", path);
-			return delete(node);
-		} catch (RuntimeException e) {
-			LOG.error("unlink failed.", e);
+			if (Files.isDirectory(node)) {
+				LOG.error("unlink {} failed, node is a directory.", path);
+				return -ErrorCodes.EISDIR();
+			}
+			LOG.trace("unlink {}", path);
+			Files.delete(node);
+			return 0;
+		} catch (NoSuchFileException e) {
+			LOG.error("unlink {} failed, file not found.", path);
+			return -ErrorCodes.ENOENT();
+		} catch (IOException | RuntimeException e) {
+			LOG.error("unlink " + path + " failed.", e);
 			return -ErrorCodes.EIO();
 		}
 	}
@@ -136,29 +144,23 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 		try (PathLock pathLock = lockManager.createPathLock(path).forWriting();
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(path);
-			LOG.trace("rmdir {}.", path);
-			assert Files.isDirectory(node);
-			return delete(node);
-		} catch (RuntimeException e) {
-			LOG.error("rmdir failed.", e);
-			return -ErrorCodes.EIO();
-		}
-	}
-
-	private int delete(Path node) {
-		try {
-			// TODO: recursively check for open file handles
-			if (Files.isDirectory(node)) {
-				deleteAppleDoubleFiles(node);
+			if (!Files.isDirectory(node)) {
+				LOG.error("rmdir {} failed, node is not a directory.", path);
+				return -ErrorCodes.ENOTDIR();
 			}
+			LOG.trace("rmdir {}", path);
+			// TODO: recursively check for open file handles
+			deleteAppleDoubleFiles(node);
 			Files.delete(node);
 			return 0;
-		} catch (FileNotFoundException e) {
+		} catch (NoSuchFileException e) {
+			LOG.error("rmdir {} failed, file not found.", path);
 			return -ErrorCodes.ENOENT();
 		} catch (DirectoryNotEmptyException e) {
+			LOG.error("rmdir {} failed, directory not empty.", path);
 			return -ErrorCodes.ENOTEMPTY();
-		} catch (IOException e) {
-			LOG.error("Error deleting file: " + node, e);
+		} catch (IOException | RuntimeException e) {
+			LOG.error("rmdir " + path + " failed.", e);
 			return -ErrorCodes.EIO();
 		}
 	}
@@ -180,23 +182,25 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 	}
 
 	@Override
-	public int rename(String oldpath, String newpath) {
-		try (PathLock oldPathLock = lockManager.createPathLock(oldpath).forWriting();
+	public int rename(String oldPath, String newPath) {
+		try (PathLock oldPathLock = lockManager.createPathLock(oldPath).forWriting();
 			 DataLock oldDataLock = oldPathLock.lockDataForWriting();
-			 PathLock newPathLock = lockManager.createPathLock(newpath).forWriting();
+			 PathLock newPathLock = lockManager.createPathLock(newPath).forWriting();
 			 DataLock newDataLock = newPathLock.lockDataForWriting()) {
 			// TODO: recursively check for open file handles
-			Path nodeOld = resolvePath(oldpath);
-			Path nodeNew = resolvePath(newpath);
-			LOG.info("Renaming {} to {}", oldpath, newpath);
+			Path nodeOld = resolvePath(oldPath);
+			Path nodeNew = resolvePath(newPath);
+			LOG.trace("rename {} to {}", oldPath, newPath);
 			Files.move(nodeOld, nodeNew, StandardCopyOption.REPLACE_EXISTING);
 			return 0;
-		} catch (FileNotFoundException e) {
+		} catch (NoSuchFileException e) {
+			LOG.error("rename " + oldPath + " to " + newPath + " failed, file not found.", e);
 			return -ErrorCodes.ENOENT();
 		} catch (DirectoryNotEmptyException e) {
+			LOG.error("rename " + oldPath + " to " + newPath + " failed, directory not empty.", e);
 			return -ErrorCodes.ENOTEMPTY();
 		} catch (IOException | RuntimeException e) {
-			LOG.error("Renaming " + oldpath + " to " + newpath + " failed.", e);
+			LOG.error("rename " + oldPath + " to " + newPath + " failed.", e);
 			return -ErrorCodes.EIO();
 		}
 	}
@@ -212,9 +216,10 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(path);
+			LOG.trace("utimens {} (last modification {} sec {} nsec, last access {} sec {} nsec)", path, timespec[1].tv_sec.get(), timespec[1].tv_nsec.longValue(), timespec[0].tv_sec.get(), timespec[0].tv_nsec.longValue());
 			return fileHandler.utimens(node, timespec[1], timespec[0]);
 		} catch (RuntimeException e) {
-			LOG.error("utimens failed.", e);
+			LOG.error("utimens " + path + " failed.", e);
 			return -ErrorCodes.EIO();
 		}
 	}
@@ -226,7 +231,7 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 			Path node = resolvePath(path);
 			return fileHandler.write(node, buf, size, offset, fi);
 		} catch (RuntimeException e) {
-			LOG.error("write failed.", e);
+			LOG.error("write " + path + " failed.", e);
 			return -ErrorCodes.EIO();
 		}
 	}
@@ -236,9 +241,10 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(path);
+			LOG.trace("truncate {} {}", path, size);
 			return fileHandler.truncate(node, size);
 		} catch (RuntimeException e) {
-			LOG.error("truncate failed.", e);
+			LOG.error("truncate " + path + " failed.", e);
 			return -ErrorCodes.EIO();
 		}
 	}
@@ -248,9 +254,10 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(path);
+			LOG.trace("ftruncate {} {}", path, size);
 			return fileHandler.ftruncate(node, size, fi);
 		} catch (RuntimeException e) {
-			LOG.error("ftruncate failed.", e);
+			LOG.error("ftruncate " + path + " failed.", e);
 			return -ErrorCodes.EIO();
 		}
 	}
@@ -259,9 +266,10 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 	public int flush(String path, FuseFileInfo fi) {
 		try {
 			Path node = resolvePath(path);
+			LOG.trace("flush {}", path);
 			return fileHandler.flush(node, fi);
 		} catch (RuntimeException e) {
-			LOG.error("flush failed.", e);
+			LOG.error("flush " + path + " failed.", e);
 			return -ErrorCodes.EIO();
 		}
 	}
