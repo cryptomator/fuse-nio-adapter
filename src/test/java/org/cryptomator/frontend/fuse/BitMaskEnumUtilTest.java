@@ -14,10 +14,18 @@ public class BitMaskEnumUtilTest {
 
 	@ParameterizedTest
 	@MethodSource("argumentsProvider")
-	public void testBitMaskToSet(Set<TestEnum> expectedSet, long mask) {
+	public void testBitMaskToSet(Set<TestEnum> set, long mask) {
 		BitMaskEnumUtil util = new BitMaskEnumUtil();
-		Set<TestEnum> set = util.bitMaskToSet(TestEnum.class, mask);
-		Assertions.assertEquals(expectedSet, set);
+		Set<TestEnum> actual = util.bitMaskToSet(TestEnum.class, mask);
+		Assertions.assertEquals(set, actual);
+	}
+
+	@ParameterizedTest
+	@MethodSource("argumentsProvider")
+	public void testSetToBitMask(Set<TestEnum> set, long mask) {
+		BitMaskEnumUtil util = new BitMaskEnumUtil();
+		long actual = util.setToBitMask(set);
+		Assertions.assertEquals(mask, actual);
 	}
 
 	static Stream<Arguments> argumentsProvider() {

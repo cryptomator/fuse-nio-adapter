@@ -1,7 +1,7 @@
 language: java
 sudo: false
 jdk:
-- oraclejdk9
+- openjdk11
 env:
   global:
   - secure: "SvqhJ7cFF4Uir0rvngiZAsxhgYAFCdw1bVHfKtA2MAV5taAuGsN0Uij+kLUP0oxHmrKwbSoOlHmTOG6m6GYOmX9ALAgfVRI41vnZxzhhR6zdHq4Kx84rhIxGHAXhxY8GPJiN+ClyeEr/qf6Jb60XyydU7w1wO8a1y+AYSW/CK0HZ4qORVgHOmfMmP7sCmgaPwCCcNoq/5mW873XHbJUbVh4d0wNn6Pej9oKRgsShWCqb/ihQ4IqNQjSQO+nF9FAuqMVzFJhnoNempuHG6R98QUlHXZ4IERlYfWfwjg6OtXk369QMAbQQ3k8bheozgM7R1mRq/cfIyIWzqY29UjqGVChy918QvXLDpLtVeU8ThF5cPgsle8K2NdaHZutfYXFo7qVosIAAMwkory5WN+RX7W2DqXAFwZjn5SfHvPMTz3tFgvAfVkV3qQg/bdOI6vA1cLghd/ZPRiCoJVJ/EdxwDor/FH5wRW2XFPIkqSWjlv4TnAd8YoAUZ44iO0DyUgyrB6oVdNYhW+0ei0M181rkSLdg5yfDykQF324lIwMwoalDMK4LcTxcgFVdyLSZr0xVtJr9vmr3w2xoJfB18hufHKkqMZQ+kDlhAmAjZApmrAIRR22gqhJJNctTEbX4O2s2BbD93TuKhBQMMDYzfoM8s62NCQ3qUbPtQUECW5HbF+k=" # CODACY_PROJECT_TOKEN
@@ -12,14 +12,11 @@ install:
 script:
 - mvn clean test jacoco:report verify -Dsurefire.useFile=false -Pcoverage
 after_success:
-- jdk_switcher use oraclejdk8
-- curl -o ~/codacy-coverage-reporter-assembly-latest.jar https://oss.sonatype.org/service/local/repositories/releases/content/com/codacy/codacy-coverage-reporter/4.0.1/codacy-coverage-reporter-4.0.1-assembly.jar
-- $JAVA_HOME/bin/java -jar ~/codacy-coverage-reporter-assembly-latest.jar report -l Java -r target/site/jacoco/jacoco.xml
+- curl -o ~/codacy-coverage-reporter.jar https://oss.sonatype.org/service/local/repositories/releases/content/com/codacy/codacy-coverage-reporter/4.0.3/codacy-coverage-reporter-4.0.3-assembly.jar
+- $JAVA_HOME/bin/java -jar ~/codacy-coverage-reporter.jar report -l Java -r target/site/jacoco/jacoco.xml
 cache:
   directories:
   - $HOME/.m2
-before_deploy:
-- jdk_switcher use oraclejdk9
 deploy:
 - provider: script # RELEASES
   script: mvn clean versions:set -DnewVersion=${TRAVIS_TAG} deploy -DskipTests -Prelease

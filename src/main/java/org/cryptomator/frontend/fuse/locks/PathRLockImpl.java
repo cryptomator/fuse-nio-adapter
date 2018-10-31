@@ -15,7 +15,7 @@ class PathRLockImpl extends PathLockImpl {
 		super(path, parent, lock, dataLockSupplier);
 	}
 
-	static PathLockImpl create(String path, Optional<PathLock> parent, ReadWriteLock lock, Function<String, ReadWriteLock> dataLockSupplier) {
+	public static PathLockImpl create(String path, Optional<PathLock> parent, ReadWriteLock lock, Function<String, ReadWriteLock> dataLockSupplier) {
 		lock.readLock().lock();
 		LOG.trace("Acquired read path lock for '{}'", path);
 		return new PathRLockImpl(path, parent, lock, dataLockSupplier);

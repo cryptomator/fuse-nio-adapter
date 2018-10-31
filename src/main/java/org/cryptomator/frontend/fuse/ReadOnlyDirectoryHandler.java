@@ -1,5 +1,14 @@
 package org.cryptomator.frontend.fuse;
 
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Iterators;
+import jnr.ffi.Pointer;
+import ru.serce.jnrfuse.ErrorCodes;
+import ru.serce.jnrfuse.FuseFillDir;
+import ru.serce.jnrfuse.struct.FileStat;
+import ru.serce.jnrfuse.struct.FuseFileInfo;
+
+import javax.inject.Inject;
 import java.io.IOException;
 import java.nio.file.DirectoryIteratorException;
 import java.nio.file.DirectoryStream;
@@ -9,22 +18,9 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Iterator;
 
-import javax.inject.Inject;
-
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Iterators;
-import jnr.ffi.Pointer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import ru.serce.jnrfuse.ErrorCodes;
-import ru.serce.jnrfuse.FuseFillDir;
-import ru.serce.jnrfuse.struct.FileStat;
-import ru.serce.jnrfuse.struct.FuseFileInfo;
-
 @PerAdapter
 public class ReadOnlyDirectoryHandler {
 
-	private static final Logger LOG = LoggerFactory.getLogger(ReadOnlyDirectoryHandler.class);
 	private static final Path SAME_DIR = Paths.get(".");
 	private static final Path PARENT_DIR = Paths.get("..");
 	private final FileAttributesUtil attrUtil;

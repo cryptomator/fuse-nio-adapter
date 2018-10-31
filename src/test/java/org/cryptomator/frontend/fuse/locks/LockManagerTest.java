@@ -16,9 +16,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class LockManagerTest {
 
 	static {
+		System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug");
 		System.setProperty("org.slf4j.simpleLogger.showDateTime", "true");
 		System.setProperty("org.slf4j.simpleLogger.dateTimeFormat", "HH:mm:ss.SSS");
-		System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "trace");
 	}
 
 	private static final Logger LOG = LoggerFactory.getLogger(LockManagerTest.class);
@@ -74,12 +74,12 @@ public class LockManagerTest {
 				int threadnum = i;
 				threadPool.submit(() -> {
 					try (PathLock lock = lockManager.createPathLock("/foo/bar/baz").forReading()) {
-						LOG.debug("ENTER thread {}", threadnum);
+						LOG.trace("ENTER thread {}", threadnum);
 						counter.incrementAndGet();
 						Thread.sleep(200);
 						maxCounter.set(Math.max(counter.get(), maxCounter.get()));
 						counter.decrementAndGet();
-						LOG.debug("LEAVE thread {}", threadnum);
+						LOG.trace("LEAVE thread {}", threadnum);
 					} catch (InterruptedException e) {
 						LOG.error("thread interrupted", e);
 					}
@@ -106,12 +106,12 @@ public class LockManagerTest {
 				int threadnum = i;
 				threadPool.submit(() -> {
 					try (PathLock lock = lockManager.createPathLock("/foo/bar/baz").forWriting()) {
-						LOG.debug("ENTER thread {}", threadnum);
+						LOG.trace("ENTER thread {}", threadnum);
 						counter.incrementAndGet();
 						Thread.sleep(10);
 						maxCounter.set(Math.max(counter.get(), maxCounter.get()));
 						counter.decrementAndGet();
-						LOG.debug("LEAVE thread {}", threadnum);
+						LOG.trace("LEAVE thread {}", threadnum);
 					} catch (InterruptedException e) {
 						LOG.error("thread interrupted", e);
 					}
@@ -145,12 +145,12 @@ public class LockManagerTest {
 				threadPool.submit(() -> {
 					try (PathLock pathLock = lockManager.createPathLock("/foo/bar/baz").forReading(); //
 						 DataLock dataLock = pathLock.lockDataForReading()) {
-						LOG.debug("ENTER thread {}", threadnum);
+						LOG.trace("ENTER thread {}", threadnum);
 						counter.incrementAndGet();
 						Thread.sleep(50);
 						maxCounter.set(Math.max(counter.get(), maxCounter.get()));
 						counter.decrementAndGet();
-						LOG.debug("LEAVE thread {}", threadnum);
+						LOG.trace("LEAVE thread {}", threadnum);
 					} catch (InterruptedException e) {
 						LOG.error("thread interrupted", e);
 					}
@@ -178,12 +178,12 @@ public class LockManagerTest {
 				threadPool.submit(() -> {
 					try (PathLock pathLock = lockManager.createPathLock("/foo/bar/baz").forReading(); //
 						 DataLock dataLock = pathLock.lockDataForWriting()) {
-						LOG.debug("ENTER thread {}", threadnum);
+						LOG.trace("ENTER thread {}", threadnum);
 						counter.incrementAndGet();
 						Thread.sleep(10);
 						maxCounter.set(Math.max(counter.get(), maxCounter.get()));
 						counter.decrementAndGet();
-						LOG.debug("LEAVE thread {}", threadnum);
+						LOG.trace("LEAVE thread {}", threadnum);
 					} catch (InterruptedException e) {
 						LOG.error("thread interrupted", e);
 					}

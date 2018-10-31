@@ -75,9 +75,10 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 			stbuf.f_blocks.set(tBlocks);
 			stbuf.f_bavail.set(aBlocks);
 			stbuf.f_bfree.set(aBlocks);
+			LOG.trace("statfs {} ({} / {})", path, avail, total);
 			return 0;
 		} catch (IOException | RuntimeException e) {
-			LOG.error("statfs failed.", e);
+			LOG.error("statfs " + path + " failed.", e);
 			return -ErrorCodes.EIO();
 		}
 	}
@@ -121,6 +122,7 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 			 DataLock dataLock = pathLock.lockDataForReading()) {
 			Path node = resolvePath(path);
 			BasicFileAttributes attrs = Files.readAttributes(node, BasicFileAttributes.class);
+			LOG.trace("getattr {} (lastModifiedTime: {}, lastAccessTime: {}, creationTime: {}, isRegularFile: {}, isDirectory: {}, isSymbolicLink: {}, isOther: {}, size: {}, fileKey: {})", path, attrs.lastModifiedTime(), attrs.lastAccessTime(), attrs.creationTime(), attrs.isRegularFile(), attrs.isDirectory(), attrs.isSymbolicLink(), attrs.isOther(), attrs.size(), attrs.fileKey());
 			if (attrs.isDirectory()) {
 				return dirHandler.getattr(node, attrs, stat);
 			} else {
@@ -128,6 +130,7 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 			}
 		} catch (NoSuchFileException e) {
 			// see Files.notExists
+			LOG.trace("getattr {} failed, node not found", path);
 			return -ErrorCodes.ENOENT();
 		} catch (IOException | RuntimeException e) {
 			LOG.error("getattr failed.", e);
@@ -140,8 +143,10 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
 			 DataLock dataLock = pathLock.lockDataForReading()) {
 			Path node = resolvePath(path);
+			LOG.trace("readdir {}", path);
 			return dirHandler.readdir(node, buf, filler, offset, fi);
 		} catch (NotDirectoryException e) {
+			LOG.error("readdir {} failed, node is not a directory.", path);
 			return -ErrorCodes.ENOENT();
 		} catch (IOException | RuntimeException e) {
 			LOG.error("readdir failed.", e);
@@ -156,10 +161,13 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 			Path node = resolvePath(path);
 			// TODO do we need to distinguish files vs. dirs? https://github.com/libfuse/libfuse/wiki/Invariants
 			if (Files.isDirectory(node)) {
+				LOG.error("open {} failed, node is a directory.", path);
 				return -ErrorCodes.EISDIR();
 			} else if (Files.exists(node)) {
+				LOG.trace("open {} ({})", path, fi.fh.get());
 				return fileHandler.open(node, fi);
 			} else {
+				LOG.error("open {} failed, file not found.", path);
 				return -ErrorCodes.ENOENT();
 			}
 		} catch (RuntimeException e) {
@@ -186,6 +194,7 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
 			 DataLock dataLock = pathLock.lockDataForReading()) {
 			Path node = resolvePath(path);
+			LOG.trace("release {} ({})", path, fi.fh.get());
 			return fileHandler.release(node, fi);
 		} catch (RuntimeException e) {
 			LOG.error("release failed.", e);

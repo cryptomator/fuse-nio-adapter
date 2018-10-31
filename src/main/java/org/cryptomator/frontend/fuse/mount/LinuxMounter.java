@@ -1,8 +1,6 @@
 package org.cryptomator.frontend.fuse.mount;
 
 import com.google.common.collect.ObjectArrays;
-import org.cryptomator.frontend.fuse.AdapterFactory;
-import org.cryptomator.frontend.fuse.FuseNioAdapter;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;

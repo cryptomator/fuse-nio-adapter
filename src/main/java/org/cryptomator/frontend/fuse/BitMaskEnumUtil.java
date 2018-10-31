@@ -24,4 +24,12 @@ public class BitMaskEnumUtil {
 		return result;
 	}
 
+	public <E extends Enum & Constant> long setToBitMask(Set<E> set) {
+		long mask = 0;
+		for (E value : set) {
+			mask |= value.longValue();
+		}
+		return mask;
+	}
+
 }

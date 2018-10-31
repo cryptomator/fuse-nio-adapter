@@ -24,7 +24,7 @@ public class OpenFileFactory implements AutoCloseable {
 	private static final Logger LOG = LoggerFactory.getLogger(OpenFileFactory.class);
 
 	private final ConcurrentMap<Long, OpenFile> openFiles = new ConcurrentHashMap<>();
-	private final AtomicLong fileHandleGen = new AtomicLong();
+	private final AtomicLong fileHandleGen = new AtomicLong(1l);
 
 	@Inject
 	public OpenFileFactory() {
@@ -50,7 +50,9 @@ public class OpenFileFactory implements AutoCloseable {
 	 */
 	public long open(Path path, Set<? extends OpenOption> options, FileAttribute<?>... attrs) throws IOException {
 		long fileHandle = fileHandleGen.getAndIncrement();
-		openFiles.put(fileHandle, new OpenFile(path, options, attrs));
+		OpenFile file = new OpenFile(path, options, attrs);
+		openFiles.put(fileHandle, file);
+		LOG.trace("Opening {} {}", fileHandle, file);
 		return fileHandle;
 	}
 
@@ -68,6 +70,7 @@ public class OpenFileFactory implements AutoCloseable {
 	public void close(long fileHandle) throws ClosedChannelException, IOException {
 		OpenFile file = openFiles.remove(fileHandle);
 		if (file != null) {
+			LOG.trace("Releasing {} {}", fileHandle, file);
 			file.close();
 		} else {
 			throw new ClosedChannelException();
