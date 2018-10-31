@@ -36,18 +36,18 @@ public class ReadWriteFileHandler extends ReadOnlyFileHandler implements Closeab
 	private static final Logger LOG = LoggerFactory.getLogger(ReadWriteFileHandler.class);
 	private static final long UTIME_NOW = -1l; // https://github.com/apple/darwin-xnu/blob/xnu-4570.1.46/bsd/sys/stat.h#L538
 	private static final long UTIME_OMIT = -2l; // https://github.com/apple/darwin-xnu/blob/xnu-4570.1.46/bsd/sys/stat.h#L539
-	private FileStore fileStore;
+	private final boolean supportsPosixFileAttributeView;
 
 	@Inject
 	public ReadWriteFileHandler(OpenFileFactory openFiles, FileAttributesUtil attrUtil, FileStore fileStore, OpenOptionsUtil openOptionsUtil) {
 		super(openFiles, attrUtil, openOptionsUtil);
-		this.fileStore = fileStore;
+		this.supportsPosixFileAttributeView = fileStore.supportsFileAttributeView(PosixFileAttributeView.class);
 	}
 
 	@Override
 	public int getattr(Path node, BasicFileAttributes attrs, FileStat stat) {
 		int result = super.getattr(node, attrs, stat);
-		if (result == 0 && fileStore.supportsFileAttributeView(PosixFileAttributeView.class)) {
+		if (result == 0 && supportsPosixFileAttributeView) {
 			stat.st_mode.set(FileStat.S_IFREG | 0644);
 		} else if (result == 0) {
 			stat.st_mode.set(FileStat.S_IFREG | 0777);
