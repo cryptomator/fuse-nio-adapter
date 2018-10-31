@@ -77,8 +77,10 @@ public class FileAttributesUtil {
 		stat.st_size.set(attrs.size());
 		// make sure to nil certain fields known to contain garbage from uninitialized memory
 		// fixes alleged permission bugs, see https://github.com/cryptomator/fuse-nio-adapter/issues/19
-		stat.st_flags.set(0);
-		stat.st_gen.set(0);
+		if (Platform.IS_MAC) {
+			stat.st_flags.set(0);
+			stat.st_gen.set(0);
+		}
 	}
 
 }
