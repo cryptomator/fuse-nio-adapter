@@ -115,7 +115,7 @@ class MacMounter implements Mounter {
 			mountOptions.add("-oauto_xattr");
 			mountOptions.add("-oauto_cache");
 			mountOptions.add("-onoappledouble"); // vastly impacts performance for some reason...
-			mountOptions.add("-s"); // otherwise we still have race conditions (especially when disabling noappledouble and copying dirs to mount)
+//			mountOptions.add("-s"); // otherwise we still have race conditions (especially when disabling noappledouble and copying dirs to mount)
 			mountOptions.add("-odefault_permissions"); // let the kernel assume permissions based on file attributes etc
 			return mountOptions.toArray(new String[mountOptions.size()]);
 		}
