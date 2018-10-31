@@ -23,7 +23,7 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 public class AccessPatternIntegrationTest {
 
 	static {
-		System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "trace");
+		System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "debug");
 		System.setProperty(SimpleLogger.SHOW_DATE_TIME_KEY, "true");
 		System.setProperty(SimpleLogger.DATE_TIME_FORMAT_KEY, "HH:mm:ss.SSS");
 	}
