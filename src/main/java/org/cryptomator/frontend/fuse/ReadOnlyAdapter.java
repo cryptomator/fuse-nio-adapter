@@ -41,6 +41,7 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 
 	private static final Logger LOG = LoggerFactory.getLogger(ReadOnlyAdapter.class);
 	private static final int BLOCKSIZE = 4096;
+	private static final int FUSE_NAME_MAX = 254; // 255 is preferred, but nautilus checks for this value + 1
 	protected final Path root;
 	protected final FileStore fileStore;
 	protected final LockManager lockManager;
@@ -75,6 +76,7 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 			stbuf.f_blocks.set(tBlocks);
 			stbuf.f_bavail.set(aBlocks);
 			stbuf.f_bfree.set(aBlocks);
+			stbuf.f_namemax.set(FUSE_NAME_MAX);
 			LOG.trace("statfs {} ({} / {})", path, avail, total);
 			return 0;
 		} catch (IOException | RuntimeException e) {
