@@ -1,16 +1,15 @@
 package org.cryptomator.frontend.fuse;
 
+import jnr.posix.util.Platform;
+import ru.serce.jnrfuse.flags.AccessConstants;
+import ru.serce.jnrfuse.struct.FileStat;
+
+import javax.inject.Inject;
 import java.nio.file.AccessMode;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.EnumSet;
 import java.util.Set;
-
-import javax.inject.Inject;
-
-import jnr.posix.util.Platform;
-import ru.serce.jnrfuse.flags.AccessConstants;
-import ru.serce.jnrfuse.struct.FileStat;
 
 @PerAdapter
 public class FileAttributesUtil {
@@ -49,17 +48,13 @@ public class FileAttributesUtil {
 		return result;
 	}
 
-	public FileStat basicFileAttributesToFileStat(BasicFileAttributes attrs) {
-		FileStat stat = new FileStat(jnr.ffi.Runtime.getSystemRuntime());
-		copyBasicFileAttributesFromNioToFuse(attrs, stat);
-		return stat;
-	}
-
 	public void copyBasicFileAttributesFromNioToFuse(BasicFileAttributes attrs, FileStat stat) {
 		if (attrs.isDirectory()) {
 			stat.st_mode.set(stat.st_mode.longValue() | FileStat.S_IFDIR);
-		} else {
+		} else if (attrs.isRegularFile()) {
 			stat.st_mode.set(stat.st_mode.longValue() | FileStat.S_IFREG);
+		} else if (attrs.isSymbolicLink()) {
+			stat.st_mode.set(stat.st_mode.longValue() | FileStat.S_IFLNK);
 		}
 		stat.st_uid.set(DUMMY_UID);
 		stat.st_gid.set(DUMMY_GID);

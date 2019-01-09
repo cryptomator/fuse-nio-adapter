@@ -46,8 +46,8 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 	private final BitMaskEnumUtil bitMaskUtil;
 
 	@Inject
-	public ReadWriteAdapter(@Named("root") Path root, FileStore fileStore, LockManager lockManager, ReadWriteDirectoryHandler dirHandler, ReadWriteFileHandler fileHandler, FileAttributesUtil attrUtil, BitMaskEnumUtil bitMaskUtil) {
-		super(root, fileStore, lockManager, dirHandler, fileHandler, attrUtil);
+	public ReadWriteAdapter(@Named("root") Path root, FileStore fileStore, LockManager lockManager, ReadWriteDirectoryHandler dirHandler, ReadWriteFileHandler fileHandler, ReadOnlyLinkHandler linkHandler, FileAttributesUtil attrUtil, BitMaskEnumUtil bitMaskUtil) {
+		super(root, fileStore, lockManager, dirHandler, fileHandler, linkHandler, attrUtil);
 		this.fileHandler = fileHandler;
 		this.attrUtil = attrUtil;
 		this.bitMaskUtil = bitMaskUtil;

@@ -1,28 +1,12 @@
 package org.cryptomator.frontend.fuse;
 
-import java.io.IOException;
-import java.nio.file.AccessDeniedException;
-import java.nio.file.AccessMode;
-import java.nio.file.FileStore;
-import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
-import java.nio.file.NotDirectoryException;
-import java.nio.file.Path;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.Set;
-
-import javax.inject.Inject;
-import javax.inject.Named;
-
 import com.google.common.base.CharMatcher;
 import com.google.common.collect.Iterables;
 import jnr.ffi.Pointer;
 import jnr.ffi.types.off_t;
 import jnr.ffi.types.size_t;
-import org.cryptomator.frontend.fuse.locks.LockManager;
 import org.cryptomator.frontend.fuse.locks.DataLock;
+import org.cryptomator.frontend.fuse.locks.LockManager;
 import org.cryptomator.frontend.fuse.locks.PathLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +16,23 @@ import ru.serce.jnrfuse.FuseStubFS;
 import ru.serce.jnrfuse.struct.FileStat;
 import ru.serce.jnrfuse.struct.FuseFileInfo;
 import ru.serce.jnrfuse.struct.Statvfs;
+
+import javax.inject.Inject;
+import javax.inject.Named;
+import java.io.IOException;
+import java.nio.file.AccessDeniedException;
+import java.nio.file.AccessMode;
+import java.nio.file.FileStore;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.NotDirectoryException;
+import java.nio.file.NotLinkException;
+import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.Set;
 
 /**
  * Read-Only FUSE-NIO-Adapter based on Sergey Tselovalnikov's <a href="https://github.com/SerCeMan/jnr-fuse/blob/0.5.1/src/main/java/ru/serce/jnrfuse/examples/HelloFuse.java">HelloFuse</a>
@@ -47,15 +48,17 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 	protected final LockManager lockManager;
 	private final ReadOnlyDirectoryHandler dirHandler;
 	private final ReadOnlyFileHandler fileHandler;
+	private final ReadOnlyLinkHandler linkHandler;
 	private final FileAttributesUtil attrUtil;
 
 	@Inject
-	public ReadOnlyAdapter(@Named("root") Path root, FileStore fileStore, LockManager lockManager, ReadOnlyDirectoryHandler dirHandler, ReadOnlyFileHandler fileHandler, FileAttributesUtil attrUtil) {
+	public ReadOnlyAdapter(@Named("root") Path root, FileStore fileStore, LockManager lockManager, ReadOnlyDirectoryHandler dirHandler, ReadOnlyFileHandler fileHandler, ReadOnlyLinkHandler linkHandler, FileAttributesUtil attrUtil) {
 		this.root = root;
 		this.fileStore = fileStore;
 		this.lockManager = lockManager;
 		this.dirHandler = dirHandler;
 		this.fileHandler = fileHandler;
+		this.linkHandler = linkHandler;
 		this.attrUtil = attrUtil;
 	}
 
@@ -119,16 +122,35 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 	}
 
 	@Override
+	public int readlink(String path, Pointer buf, long size) {
+		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
+			 DataLock dataLock = pathLock.lockDataForReading()) {
+			Path node = resolvePath(path);
+			return linkHandler.readlink(node, buf, size);
+		} catch (NotLinkException | NoSuchFileException e) {
+			LOG.trace("readlink {} failed, node not found or not a symlink", path);
+			return -ErrorCodes.ENOENT();
+		} catch (IOException | RuntimeException e) {
+			LOG.error("readlink failed.", e);
+			return -ErrorCodes.EIO();
+		}
+	}
+
+	@Override
 	public int getattr(String path, FileStat stat) {
 		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
 			 DataLock dataLock = pathLock.lockDataForReading()) {
 			Path node = resolvePath(path);
-			BasicFileAttributes attrs = Files.readAttributes(node, BasicFileAttributes.class);
+			BasicFileAttributes attrs = Files.readAttributes(node, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
 			LOG.trace("getattr {} (lastModifiedTime: {}, lastAccessTime: {}, creationTime: {}, isRegularFile: {}, isDirectory: {}, isSymbolicLink: {}, isOther: {}, size: {}, fileKey: {})", path, attrs.lastModifiedTime(), attrs.lastAccessTime(), attrs.creationTime(), attrs.isRegularFile(), attrs.isDirectory(), attrs.isSymbolicLink(), attrs.isOther(), attrs.size(), attrs.fileKey());
 			if (attrs.isDirectory()) {
 				return dirHandler.getattr(node, attrs, stat);
-			} else {
+			} else if (attrs.isRegularFile()) {
 				return fileHandler.getattr(node, attrs, stat);
+			} else if (attrs.isSymbolicLink()) {
+				return linkHandler.getattr(node, attrs, stat);
+			} else {
+				throw new NoSuchFileException("Not a supported node type: " + path);
 			}
 		} catch (NoSuchFileException e) {
 			// see Files.notExists
