@@ -8,14 +8,12 @@ public class AdapterFactory {
 	}
 
 	public static FuseNioAdapter createReadOnlyAdapter(Path root) {
-		FuseNioAdapterModule module = new FuseNioAdapterModule(root);
-		FuseNioAdapterComponent comp = DaggerFuseNioAdapterComponent.builder().fuseNioAdapterModule(module).build();
+		FuseNioAdapterComponent comp = DaggerFuseNioAdapterComponent.builder().root(root).build();
 		return comp.readOnlyAdapter();
 	}
 
 	public static FuseNioAdapter createReadWriteAdapter(Path root) {
-		FuseNioAdapterModule module = new FuseNioAdapterModule(root);
-		FuseNioAdapterComponent comp = DaggerFuseNioAdapterComponent.builder().fuseNioAdapterModule(module).build();
+		FuseNioAdapterComponent comp = DaggerFuseNioAdapterComponent.builder().root(root).build();
 		return comp.readWriteAdapter();
 	}
 }
