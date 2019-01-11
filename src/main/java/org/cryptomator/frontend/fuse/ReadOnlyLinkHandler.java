@@ -41,7 +41,6 @@ class ReadOnlyLinkHandler {
 	 */
 	public int readlink(Path path, Pointer buf, long size) throws IOException {
 		Path target = Files.readSymbolicLink(path);
-		LOG.info("reading link {} -> {}", path, target);
 		String result = target.toString();
 		int maxSize = size == 0 ? 0 : (int) size - 1;
 		buf.putString(0, result, maxSize, StandardCharsets.UTF_8);

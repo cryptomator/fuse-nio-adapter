@@ -75,6 +75,23 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 	}
 
 	@Override
+	public int symlink(String oldpath, String newpath) {
+		try (PathLock pathLock = lockManager.createPathLock(newpath).forWriting();
+			 DataLock dataLock = pathLock.lockDataForWriting()) {
+			Path link = resolvePath(newpath);
+			Path target = link.getFileSystem().getPath(oldpath);;
+			LOG.trace("symlink {} -> {}", newpath, oldpath);
+			Files.createSymbolicLink(link, target);
+			return 0;
+		} catch (FileAlreadyExistsException e) {
+			return -ErrorCodes.EEXIST();
+		} catch (IOException | RuntimeException e) {
+			LOG.error("mkdir failed.", e);
+			return -ErrorCodes.EIO();
+		}
+	}
+
+	@Override
 	public int create(String path, @mode_t long mode, FuseFileInfo fi) {
 		try (PathLock pathLock = lockManager.createPathLock(path).forWriting();
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
