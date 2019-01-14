@@ -81,6 +81,32 @@ public class AccessPatternIntegrationTest {
 		Assertions.assertArrayEquals("asdasd".getBytes(US_ASCII), Arrays.copyOf(buf.array(), numRead));
 	}
 
+	@Test
+	public void testCreateMoveAndDeleteSymlinks() {
+		// touch foo.txt
+		FuseFileInfo fi1 = new MockFuseFileInfo();
+		adapter.create("/foo.txt", 0644, fi1);
+
+		// ln -s foo.txt bar.txt
+		adapter.symlink("foo.txt", "/bar.txt");
+
+		// mkdir test
+		adapter.mkdir("test", 0755);
+
+		// ln -s test test2
+		adapter.symlink("test", "/test2");
+
+		// move both to subdir
+		adapter.rename("/foo.txt", "/test/foo.txt");
+		adapter.rename("/bar.txt", "/test/bar.txt");
+
+		// delete all
+		adapter.unlink("/test2");
+		adapter.unlink("/test/foo.txt");
+		adapter.unlink("/test/bar.txt");
+		adapter.rmdir("/test");
+	}
+
 	private static class MockFuseFileInfo extends FuseFileInfo {
 		public MockFuseFileInfo() {
 			super(Runtime.getSystemRuntime());
