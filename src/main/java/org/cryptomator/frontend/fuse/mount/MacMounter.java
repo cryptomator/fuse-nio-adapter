@@ -114,6 +114,7 @@ class MacMounter implements Mounter {
 			mountOptions.add("-ovolname=" + mountName);
 			mountOptions.add("-oauto_xattr");
 			mountOptions.add("-oauto_cache");
+			mountOptions.add("-omodules=iconv,from_code=UTF-8,to_code=UTF-8-MAC");
 			mountOptions.add("-onoappledouble"); // vastly impacts performance for some reason...
 //			mountOptions.add("-s"); // otherwise we still have race conditions (especially when disabling noappledouble and copying dirs to mount)
 			mountOptions.add("-odefault_permissions"); // let the kernel assume permissions based on file attributes etc
