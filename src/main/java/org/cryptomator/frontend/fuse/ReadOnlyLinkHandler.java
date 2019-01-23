@@ -11,6 +11,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.PosixFileAttributes;
 
 @PerAdapter
 class ReadOnlyLinkHandler {
@@ -25,7 +26,12 @@ class ReadOnlyLinkHandler {
 	}
 
 	public int getattr(Path path, BasicFileAttributes attrs, FileStat stat) {
-		stat.st_mode.set(FileStat.S_IFLNK | 0555);
+		if (attrs instanceof PosixFileAttributes) {
+			long mode = attrUtil.posixPermissionsToMode(((PosixFileAttributes) attrs).permissions());
+			stat.st_mode.set(FileStat.S_IFLNK | mode);
+		} else {
+			stat.st_mode.set(FileStat.S_IFLNK | 0555);
+		}
 		stat.st_nlink.set(1);
 		attrUtil.copyBasicFileAttributesFromNioToFuse(attrs, stat);
 		return 0;

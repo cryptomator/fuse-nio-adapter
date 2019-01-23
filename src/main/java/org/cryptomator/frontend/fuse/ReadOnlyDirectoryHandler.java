@@ -16,6 +16,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.PosixFileAttributes;
 import java.util.Iterator;
 
 @PerAdapter
@@ -31,7 +32,12 @@ public class ReadOnlyDirectoryHandler {
 	}
 
 	public int getattr(Path path, BasicFileAttributes attrs, FileStat stat) {
-		stat.st_mode.set(FileStat.S_IFDIR | 0555);
+		if (attrs instanceof PosixFileAttributes) {
+			long mode = attrUtil.posixPermissionsToMode(((PosixFileAttributes) attrs).permissions());
+			stat.st_mode.set(FileStat.S_IFDIR | mode);
+		} else {
+			stat.st_mode.set(FileStat.S_IFDIR | 0555);
+		}
 		long nlinks;
 		try {
 			attrUtil.copyBasicFileAttributesFromNioToFuse(attrs, stat);

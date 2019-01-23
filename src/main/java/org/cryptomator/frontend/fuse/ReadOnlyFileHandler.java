@@ -16,6 +16,7 @@ import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.PosixFileAttributes;
 import java.util.Set;
 
 @PerAdapter
@@ -24,7 +25,7 @@ public class ReadOnlyFileHandler implements Closeable {
 	private static final Logger LOG = LoggerFactory.getLogger(ReadOnlyFileHandler.class);
 
 	protected final OpenFileFactory openFiles;
-	private final FileAttributesUtil attrUtil;
+	protected final FileAttributesUtil attrUtil;
 	private final OpenOptionsUtil openOptionsUtil;
 
 	@Inject
@@ -92,7 +93,12 @@ public class ReadOnlyFileHandler implements Closeable {
 	}
 
 	public int getattr(Path node, BasicFileAttributes attrs, FileStat stat) {
-		stat.st_mode.set(FileStat.S_IFREG | 0444);
+		if (attrs instanceof PosixFileAttributes) {
+			long mode = attrUtil.posixPermissionsToMode(((PosixFileAttributes) attrs).permissions());
+			stat.st_mode.set(FileStat.S_IFREG | mode);
+		} else {
+			stat.st_mode.set(FileStat.S_IFREG | 0444);
+		}
 		stat.st_nlink.set(1);
 		attrUtil.copyBasicFileAttributesFromNioToFuse(attrs, stat);
 		return 0;

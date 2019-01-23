@@ -15,6 +15,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.PosixFileAttributeView;
+import java.nio.file.attribute.PosixFileAttributes;
 import java.time.DateTimeException;
 import java.time.Instant;
 import java.util.EnumSet;
@@ -47,7 +48,10 @@ public class ReadWriteFileHandler extends ReadOnlyFileHandler implements Closeab
 	@Override
 	public int getattr(Path node, BasicFileAttributes attrs, FileStat stat) {
 		int result = super.getattr(node, attrs, stat);
-		if (result == 0 && supportsPosixFileAttributeView) {
+		if (result == 0 && attrs instanceof PosixFileAttributes) {
+			long mode = attrUtil.posixPermissionsToMode(((PosixFileAttributes) attrs).permissions());
+			stat.st_mode.set(FileStat.S_IFREG | mode);
+		} else if (result == 0 && supportsPosixFileAttributeView) {
 			stat.st_mode.set(FileStat.S_IFREG | 0644);
 		} else if (result == 0) {
 			stat.st_mode.set(FileStat.S_IFREG | 0777);

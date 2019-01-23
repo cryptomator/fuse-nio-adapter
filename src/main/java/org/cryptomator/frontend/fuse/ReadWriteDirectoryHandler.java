@@ -5,6 +5,7 @@ import ru.serce.jnrfuse.struct.FileStat;
 import javax.inject.Inject;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.PosixFileAttributes;
 
 @PerAdapter
 public class ReadWriteDirectoryHandler extends ReadOnlyDirectoryHandler {
@@ -17,7 +18,9 @@ public class ReadWriteDirectoryHandler extends ReadOnlyDirectoryHandler {
 	@Override
 	public int getattr(Path node, BasicFileAttributes attrs, FileStat stat) {
 		int result = super.getattr(node, attrs, stat);
-		stat.st_mode.set(FileStat.S_IFDIR | 0755);
+		if (!(attrs instanceof PosixFileAttributes)) {
+			stat.st_mode.set(FileStat.S_IFDIR | 0755);
+		}
 		return result;
 	}
 }

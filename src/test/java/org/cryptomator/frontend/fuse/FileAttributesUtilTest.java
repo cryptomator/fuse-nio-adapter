@@ -90,4 +90,12 @@ public class FileAttributesUtilTest {
 		Assertions.assertEquals(42l, stat.st_size.longValue());
 	}
 
+	@ParameterizedTest
+	@MethodSource("filePermissionProvider")
+	public void testPosixPermissionsToMode(Set<PosixFilePermission> permissions, long expectedMode) {
+		FileAttributesUtil util = new FileAttributesUtil();
+		long mode = util.posixPermissionsToMode(permissions);
+		Assertions.assertEquals(expectedMode, mode);
+	}
+
 }

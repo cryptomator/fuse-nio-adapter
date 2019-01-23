@@ -7,6 +7,7 @@ import ru.serce.jnrfuse.struct.FileStat;
 import javax.inject.Inject;
 import java.nio.file.AccessMode;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.PosixFileAttributes;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.EnumSet;
 import java.util.Set;
@@ -76,6 +77,38 @@ public class FileAttributesUtil {
 			stat.st_flags.set(0);
 			stat.st_gen.set(0);
 		}
+	}
+
+	public long posixPermissionsToMode(Set<PosixFilePermission> permissions) {
+		long mode = 0;
+		if (permissions.contains(PosixFilePermission.OWNER_READ)) {
+			mode = mode | FileStat.S_IRUSR;
+		}
+		if (permissions.contains(PosixFilePermission.GROUP_READ)) {
+			mode = mode | FileStat.S_IRGRP;
+		}
+		if (permissions.contains(PosixFilePermission.OTHERS_READ)) {
+			mode = mode | FileStat.S_IROTH;
+		}
+		if (permissions.contains(PosixFilePermission.OWNER_WRITE)) {
+			mode = mode | FileStat.S_IWUSR;
+		}
+		if (permissions.contains(PosixFilePermission.GROUP_WRITE)) {
+			mode = mode | FileStat.S_IWGRP;
+		}
+		if (permissions.contains(PosixFilePermission.OTHERS_WRITE)) {
+			mode = mode | FileStat.S_IWOTH;
+		}
+		if (permissions.contains(PosixFilePermission.OWNER_EXECUTE)) {
+			mode = mode | FileStat.S_IXUSR;
+		}
+		if (permissions.contains(PosixFilePermission.GROUP_EXECUTE)) {
+			mode = mode | FileStat.S_IXGRP;
+		}
+		if (permissions.contains(PosixFilePermission.OTHERS_EXECUTE)) {
+			mode = mode | FileStat.S_IXOTH;
+		}
+		return mode;
 	}
 
 }
