@@ -33,7 +33,7 @@ public class ReadOnlyDirectoryHandler {
 
 	public int getattr(Path path, BasicFileAttributes attrs, FileStat stat) {
 		if (attrs instanceof PosixFileAttributes) {
-			long mode = attrUtil.posixPermissionsToMode(((PosixFileAttributes) attrs).permissions());
+			long mode = attrUtil.posixPermissionsToOctalMode(((PosixFileAttributes) attrs).permissions());
 			stat.st_mode.set(FileStat.S_IFDIR | mode);
 		} else {
 			stat.st_mode.set(FileStat.S_IFDIR | 0555);

@@ -27,7 +27,7 @@ class ReadOnlyLinkHandler {
 
 	public int getattr(Path path, BasicFileAttributes attrs, FileStat stat) {
 		if (attrs instanceof PosixFileAttributes) {
-			long mode = attrUtil.posixPermissionsToMode(((PosixFileAttributes) attrs).permissions());
+			long mode = attrUtil.posixPermissionsToOctalMode(((PosixFileAttributes) attrs).permissions());
 			stat.st_mode.set(FileStat.S_IFLNK | mode);
 		} else {
 			stat.st_mode.set(FileStat.S_IFLNK | 0555);

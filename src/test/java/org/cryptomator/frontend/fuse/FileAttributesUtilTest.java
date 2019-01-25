@@ -92,9 +92,9 @@ public class FileAttributesUtilTest {
 
 	@ParameterizedTest
 	@MethodSource("filePermissionProvider")
-	public void testPosixPermissionsToMode(Set<PosixFilePermission> permissions, long expectedMode) {
+	public void testPosixPermissionsToOctalMode(Set<PosixFilePermission> permissions, long expectedMode) {
 		FileAttributesUtil util = new FileAttributesUtil();
-		long mode = util.posixPermissionsToMode(permissions);
+		long mode = util.posixPermissionsToOctalMode(permissions);
 		Assertions.assertEquals(expectedMode, mode);
 	}
 

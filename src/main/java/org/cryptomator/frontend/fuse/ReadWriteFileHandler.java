@@ -49,7 +49,7 @@ public class ReadWriteFileHandler extends ReadOnlyFileHandler implements Closeab
 	public int getattr(Path node, BasicFileAttributes attrs, FileStat stat) {
 		int result = super.getattr(node, attrs, stat);
 		if (result == 0 && attrs instanceof PosixFileAttributes) {
-			long mode = attrUtil.posixPermissionsToMode(((PosixFileAttributes) attrs).permissions());
+			long mode = attrUtil.posixPermissionsToOctalMode(((PosixFileAttributes) attrs).permissions());
 			stat.st_mode.set(FileStat.S_IFREG | mode);
 		} else if (result == 0 && supportsPosixFileAttributeView) {
 			stat.st_mode.set(FileStat.S_IFREG | 0644);

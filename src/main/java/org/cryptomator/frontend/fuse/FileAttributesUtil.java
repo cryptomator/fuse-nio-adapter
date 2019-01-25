@@ -7,7 +7,6 @@ import ru.serce.jnrfuse.struct.FileStat;
 import javax.inject.Inject;
 import java.nio.file.AccessMode;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.nio.file.attribute.PosixFileAttributes;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.EnumSet;
 import java.util.Set;
@@ -79,7 +78,7 @@ public class FileAttributesUtil {
 		}
 	}
 
-	public long posixPermissionsToMode(Set<PosixFilePermission> permissions) {
+	public long posixPermissionsToOctalMode(Set<PosixFilePermission> permissions) {
 		long mode = 0;
 		if (permissions.contains(PosixFilePermission.OWNER_READ)) {
 			mode = mode | FileStat.S_IRUSR;
