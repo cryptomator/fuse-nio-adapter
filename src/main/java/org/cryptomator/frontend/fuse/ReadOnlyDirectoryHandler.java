@@ -24,7 +24,7 @@ public class ReadOnlyDirectoryHandler {
 
 	private static final Path SAME_DIR = Paths.get(".");
 	private static final Path PARENT_DIR = Paths.get("..");
-	private final FileAttributesUtil attrUtil;
+	protected final FileAttributesUtil attrUtil;
 
 	@Inject
 	public ReadOnlyDirectoryHandler(FileAttributesUtil attrUtil) {
@@ -35,6 +35,7 @@ public class ReadOnlyDirectoryHandler {
 		if (attrs instanceof PosixFileAttributes) {
 			PosixFileAttributes posixAttrs = (PosixFileAttributes) attrs;
 			long mode = attrUtil.posixPermissionsToOctalMode(posixAttrs.permissions());
+			mode = mode & 0555;
 			stat.st_mode.set(FileStat.S_IFDIR | mode);
 		} else {
 			stat.st_mode.set(FileStat.S_IFDIR | 0555);

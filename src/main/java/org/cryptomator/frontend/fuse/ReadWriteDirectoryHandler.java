@@ -18,7 +18,11 @@ public class ReadWriteDirectoryHandler extends ReadOnlyDirectoryHandler {
 	@Override
 	public int getattr(Path node, BasicFileAttributes attrs, FileStat stat) {
 		int result = super.getattr(node, attrs, stat);
-		if (!(attrs instanceof PosixFileAttributes)) {
+		if (attrs instanceof PosixFileAttributes) {
+			PosixFileAttributes posixAttrs = (PosixFileAttributes) attrs;
+			long mode = attrUtil.posixPermissionsToOctalMode(posixAttrs.permissions());
+			stat.st_mode.set(FileStat.S_IFDIR | mode);
+		} else {
 			stat.st_mode.set(FileStat.S_IFDIR | 0755);
 		}
 		return result;

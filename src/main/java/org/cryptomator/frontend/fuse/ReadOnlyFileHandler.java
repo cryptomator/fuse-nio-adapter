@@ -96,6 +96,7 @@ public class ReadOnlyFileHandler implements Closeable {
 		if (attrs instanceof PosixFileAttributes) {
 			PosixFileAttributes posixAttrs = (PosixFileAttributes) attrs;
 			long mode = attrUtil.posixPermissionsToOctalMode(posixAttrs.permissions());
+			mode = mode & 0555;
 			stat.st_mode.set(FileStat.S_IFREG | mode);
 		} else {
 			stat.st_mode.set(FileStat.S_IFREG | 0444);
