@@ -80,6 +80,7 @@ public class FileAttributesUtil {
 
 	public long posixPermissionsToOctalMode(Set<PosixFilePermission> permissions) {
 		long mode = 0;
+		// @formatter:off
 		if (permissions.contains(PosixFilePermission.OWNER_READ)) mode = mode | FileStat.S_IRUSR;
 		if (permissions.contains(PosixFilePermission.GROUP_READ)) mode = mode | FileStat.S_IRGRP;
 		if (permissions.contains(PosixFilePermission.OTHERS_READ)) mode = mode | FileStat.S_IROTH;
@@ -89,6 +90,7 @@ public class FileAttributesUtil {
 		if (permissions.contains(PosixFilePermission.OWNER_EXECUTE)) mode = mode | FileStat.S_IXUSR;
 		if (permissions.contains(PosixFilePermission.GROUP_EXECUTE)) mode = mode | FileStat.S_IXGRP;
 		if (permissions.contains(PosixFilePermission.OTHERS_EXECUTE)) mode = mode | FileStat.S_IXOTH;
+		// @formatter:on
 		return mode;
 	}
 
