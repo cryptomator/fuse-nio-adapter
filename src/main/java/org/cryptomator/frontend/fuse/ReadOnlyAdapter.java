@@ -30,6 +30,8 @@ import java.nio.file.NotDirectoryException;
 import java.nio.file.NotLinkException;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.PosixFileAttributeView;
+import java.nio.file.attribute.PosixFileAttributes;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
@@ -141,7 +143,12 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
 			 DataLock dataLock = pathLock.lockDataForReading()) {
 			Path node = resolvePath(path);
-			BasicFileAttributes attrs = Files.readAttributes(node, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+			BasicFileAttributes attrs;
+			if (fileStore.supportsFileAttributeView(PosixFileAttributeView.class)) {
+				attrs = Files.readAttributes(node, PosixFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+			} else {
+				attrs = Files.readAttributes(node, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+			}
 			LOG.trace("getattr {} (lastModifiedTime: {}, lastAccessTime: {}, creationTime: {}, isRegularFile: {}, isDirectory: {}, isSymbolicLink: {}, isOther: {}, size: {}, fileKey: {})", path, attrs.lastModifiedTime(), attrs.lastAccessTime(), attrs.creationTime(), attrs.isRegularFile(), attrs.isDirectory(), attrs.isSymbolicLink(), attrs.isOther(), attrs.size(), attrs.fileKey());
 			if (attrs.isDirectory()) {
 				return dirHandler.getattr(node, attrs, stat);
