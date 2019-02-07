@@ -23,6 +23,7 @@ public class LinuxEnvironmentTest {
 				mnt.revealInFileManager();
 				System.out.println("Wait for it...");
 				System.in.read();
+				mnt.unmountForced();
 			} catch (IOException | CommandFailedException e) {
 				e.printStackTrace();
 			}

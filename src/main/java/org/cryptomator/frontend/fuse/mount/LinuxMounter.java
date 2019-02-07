@@ -32,11 +32,18 @@ class LinuxMounter implements Mounter {
 		private static final String DEFAULT_REVEALCOMMAND_LINUX = "xdg-open";
 
 		private final ProcessBuilder revealCommand;
+		private final ProcessBuilder unmountCommand;
+		private final ProcessBuilder unmountForcedCommand;
 
 		private LinuxMount(Path directory, EnvironmentVariables envVars) {
 			super(directory, envVars);
+			Path mountPoint = envVars.getMountPath();
 			String[] command = envVars.getRevealCommand().orElse(DEFAULT_REVEALCOMMAND_LINUX).split("\\s+");
-			this.revealCommand = new ProcessBuilder(ObjectArrays.concat(command, envVars.getMountPath().toString()));
+			this.revealCommand = new ProcessBuilder(ObjectArrays.concat(command, mountPoint.toString()));
+			this.unmountCommand = new ProcessBuilder("fusermount", "-u", mountPoint.getFileName().toString());
+			this.unmountCommand.directory(mountPoint.getParent().toFile());
+			this.unmountForcedCommand = new ProcessBuilder("umount", "-f", mountPoint.getFileName().toString());
+			this.unmountForcedCommand.directory(mountPoint.getParent().toFile());
 		}
 
 		@Override
@@ -55,10 +62,18 @@ class LinuxMounter implements Mounter {
 		}
 
 		@Override
-		public void revealInFileManager() throws CommandFailedException {
-			Process proc = ProcessUtil.startAndWaitFor(revealCommand,5, TimeUnit.SECONDS);
-			ProcessUtil.assertExitValue(proc, 0);
+		public ProcessBuilder getRevealCommand() {
+			return revealCommand;
 		}
 
+		@Override
+		public ProcessBuilder getUnmountCommand() {
+			return unmountCommand;
+		}
+
+		@Override
+		public ProcessBuilder getUnmountForcedCommand() {
+			return unmountForcedCommand;
+		}
 	}
 }

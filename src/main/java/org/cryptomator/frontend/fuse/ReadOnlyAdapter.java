@@ -243,6 +243,20 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 	}
 
 	@Override
+	public boolean isMounted() {
+		return mounted.get();
+	}
+
+	@Override
+	public void umount() {
+		if (mounted.compareAndSet(true, false)) {
+			LOG.debug("Marked file system adapter as unmounted.");
+		} else {
+			LOG.warn("File system adapter already marked as unmounted. This could indicate an error.");
+		}
+	}
+
+	@Override
 	public void close() throws IOException {
 		fileHandler.close();
 	}
