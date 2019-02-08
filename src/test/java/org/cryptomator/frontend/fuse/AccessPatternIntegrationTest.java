@@ -1,20 +1,17 @@
 package org.cryptomator.frontend.fuse;
 
-import com.google.common.io.MoreFiles;
-import com.google.common.io.RecursiveDeleteOption;
 import jnr.ffi.Pointer;
 import jnr.ffi.Runtime;
 import jnr.ffi.provider.jffi.ByteBufferMemoryIO;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.impl.SimpleLogger;
 import ru.serce.jnrfuse.struct.FuseFileInfo;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 
@@ -28,22 +25,16 @@ public class AccessPatternIntegrationTest {
 		System.setProperty(SimpleLogger.DATE_TIME_FORMAT_KEY, "HH:mm:ss.SSS");
 	}
 
-	private Path testDir;
 	private FuseNioAdapter adapter;
 
 	@BeforeEach
-	private void setup() throws IOException {
-		testDir = Files.createTempDirectory("fuse-integration-test");
-		adapter = AdapterFactory.createReadWriteAdapter(testDir);
-	}
-
-	@AfterEach
-	private void teardown() throws IOException {
-		MoreFiles.deleteRecursively(testDir, RecursiveDeleteOption.ALLOW_INSECURE);
+	void setup(@TempDir Path tmpDir) {
+		adapter = AdapterFactory.createReadWriteAdapter(tmpDir);
 	}
 
 	@Test
-	public void testAppleAutosaveAccessPattern() {
+	@DisplayName("simulate TextEdit.app's access pattern during save")
+	void testAppleAutosaveAccessPattern() {
 		// echo "asd" > foo.txt
 		FuseFileInfo fi1 = new MockFuseFileInfo();
 		adapter.create("/foo.txt", 0644, fi1);
@@ -82,7 +73,8 @@ public class AccessPatternIntegrationTest {
 	}
 
 	@Test
-	public void testCreateMoveAndDeleteSymlinks() {
+	@DisplayName("create, move and delete symlinks")
+	void testCreateMoveAndDeleteSymlinks() {
 		// touch foo.txt
 		FuseFileInfo fi1 = new MockFuseFileInfo();
 		adapter.create("/foo.txt", 0644, fi1);

@@ -62,6 +62,7 @@ public class LockManagerTest {
 		}
 
 		@Test
+		@DisplayName("read locks are shared")
 		public void testMultipleReadLocks() {
 			LockManager lockManager = new LockManager();
 			int numThreads = 8;
@@ -94,6 +95,7 @@ public class LockManagerTest {
 		}
 
 		@Test
+		@DisplayName("write locks are exclusive")
 		public void testMultipleWriteLocks() {
 			LockManager lockManager = new LockManager();
 			int numThreads = 8;
@@ -132,6 +134,7 @@ public class LockManagerTest {
 	class DataLockTests {
 
 		@Test
+		@DisplayName("read locks are shared")
 		public void testMultipleReadLocks() throws InterruptedException {
 			LockManager lockManager = new LockManager();
 			int numThreads = 8;
@@ -165,6 +168,7 @@ public class LockManagerTest {
 		}
 
 		@Test
+		@DisplayName("write locks are exclusive")
 		public void testMultipleWriteLocks() throws InterruptedException {
 			LockManager lockManager = new LockManager();
 			int numThreads = 8;
