@@ -90,14 +90,19 @@ class MacMounter implements Mounter {
 
 		private static final Path USER_HOME = Paths.get(System.getProperty("user.home"));
 
-		private final String mountName;
 		private final ProcessBuilder revealCommand;
+		private final ProcessBuilder unmountCommand;
+		private final ProcessBuilder unmountForcedCommand;
 
 		private MacMount(Path directory, EnvironmentVariables envVars) {
 			super(directory, envVars);
-			this.mountName = envVars.getMountName().orElse("vault");
+			Path mountPoint = envVars.getMountPath();
 			this.revealCommand = new ProcessBuilder("open", ".");
-			this.revealCommand.directory(envVars.getMountPath().toFile());
+			this.revealCommand.directory(mountPoint.toFile());
+			this.unmountCommand = new ProcessBuilder("umount", mountPoint.getFileName().toString());
+			this.unmountCommand.directory(mountPoint.getParent().toFile());
+			this.unmountForcedCommand = new ProcessBuilder("umount", "-f", mountPoint.getFileName().toString());
+			this.unmountForcedCommand.directory(mountPoint.getParent().toFile());
 		}
 
 		@Override
@@ -111,20 +116,28 @@ class MacMounter implements Mounter {
 				throw new UncheckedIOException(e);
 			}
 			mountOptions.add("-oatomic_o_trunc");
-			mountOptions.add("-ovolname=" + mountName);
+			mountOptions.add("-ovolname=" + envVars.getMountName().orElse("vault"));
 			mountOptions.add("-oauto_xattr");
 			mountOptions.add("-oauto_cache");
-			mountOptions.add("-omodules=iconv,from_code=UTF-8,to_code=UTF-8-MAC");
+			mountOptions.add("-omodules=iconv,from_code=UTF-8,to_code=UTF-8-MAC"); // show files names in Unicode NFD encoding
 			mountOptions.add("-onoappledouble"); // vastly impacts performance for some reason...
-//			mountOptions.add("-s"); // otherwise we still have race conditions (especially when disabling noappledouble and copying dirs to mount)
 			mountOptions.add("-odefault_permissions"); // let the kernel assume permissions based on file attributes etc
 			return mountOptions.toArray(new String[mountOptions.size()]);
 		}
 
 		@Override
-		public void revealInFileManager() throws CommandFailedException {
-			Process proc = ProcessUtil.startAndWaitFor(revealCommand, 5, TimeUnit.SECONDS);
-			ProcessUtil.assertExitValue(proc, 0);
+		public ProcessBuilder getRevealCommand() {
+			return revealCommand;
+		}
+
+		@Override
+		public ProcessBuilder getUnmountCommand() {
+			return unmountCommand;
+		}
+
+		@Override
+		public ProcessBuilder getUnmountForcedCommand() {
+			return unmountForcedCommand;
 		}
 
 	}

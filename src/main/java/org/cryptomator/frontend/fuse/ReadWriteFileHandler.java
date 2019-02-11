@@ -14,7 +14,7 @@ import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.FileTime;
-import java.nio.file.attribute.PosixFileAttributeView;
+import java.nio.file.attribute.PosixFileAttributes;
 import java.time.DateTimeException;
 import java.time.Instant;
 import java.util.EnumSet;
@@ -36,19 +36,19 @@ public class ReadWriteFileHandler extends ReadOnlyFileHandler implements Closeab
 	private static final Logger LOG = LoggerFactory.getLogger(ReadWriteFileHandler.class);
 	private static final long UTIME_NOW = -1l; // https://github.com/apple/darwin-xnu/blob/xnu-4570.1.46/bsd/sys/stat.h#L538
 	private static final long UTIME_OMIT = -2l; // https://github.com/apple/darwin-xnu/blob/xnu-4570.1.46/bsd/sys/stat.h#L539
-	private final boolean supportsPosixFileAttributeView;
 
 	@Inject
 	public ReadWriteFileHandler(OpenFileFactory openFiles, FileAttributesUtil attrUtil, FileStore fileStore, OpenOptionsUtil openOptionsUtil) {
 		super(openFiles, attrUtil, openOptionsUtil);
-		this.supportsPosixFileAttributeView = fileStore.supportsFileAttributeView(PosixFileAttributeView.class);
 	}
 
 	@Override
 	public int getattr(Path node, BasicFileAttributes attrs, FileStat stat) {
 		int result = super.getattr(node, attrs, stat);
-		if (result == 0 && supportsPosixFileAttributeView) {
-			stat.st_mode.set(FileStat.S_IFREG | 0644);
+		if (result == 0 && attrs instanceof PosixFileAttributes) {
+			PosixFileAttributes posixAttrs = (PosixFileAttributes) attrs;
+			long mode = attrUtil.posixPermissionsToOctalMode(posixAttrs.permissions());
+			stat.st_mode.set(FileStat.S_IFREG | mode);
 		} else if (result == 0) {
 			stat.st_mode.set(FileStat.S_IFREG | 0777);
 		}

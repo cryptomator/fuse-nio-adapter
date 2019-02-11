@@ -26,7 +26,9 @@ public class MirroringFuseMountTest {
 			Path p = Paths.get(scanner.nextLine());
 			System.out.println("Enter mount point:");
 			Path m = Paths.get(scanner.nextLine());
-			if (Files.isDirectory(p)) {
+			if (m.startsWith(p) || p.startsWith(m)) {
+				System.err.println("Mirrored directory and mount location must not be nested.");
+			} else if (Files.isDirectory(p)) {
 				mount(p, m);
 			} else {
 				LOG.error("Invalid directory.");
@@ -44,6 +46,7 @@ public class MirroringFuseMountTest {
 			LOG.info("Mounted successfully. Enter anything to stop the server...");
 			mnt.revealInFileManager();
 			System.in.read();
+			mnt.unmountForced();
 			LOG.info("Unmounted successfully. Exiting...");
 		} catch (IOException | CommandFailedException e) {
 			LOG.error("Mount failed", e);

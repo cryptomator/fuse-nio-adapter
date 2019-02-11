@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.cryptomator</groupId>
 	<artifactId>fuse-nio-adapter</artifactId>
-	<version>1.0.3</version>
+	<version>1.1.0</version>
 	<name>FUSE-NIO-Adapter</name>
 	<description>Access resources at a given NIO path via FUSE.</description>
 	<url>https://github.com/cryptomator/fuse-nio-adapter</url>
@@ -16,11 +16,11 @@
 
 	<properties>
 		<jnrfuse.version>0.5.2.1</jnrfuse.version>
-		<dagger.version>2.19</dagger.version>
+		<dagger.version>2.20</dagger.version>
 		<guava.version>27.0-jre</guava.version>
 		<slf4j.version>1.7.25</slf4j.version>
-		<junit.jupiter.version>5.3.1</junit.jupiter.version>
-		<mockito.version>2.23.0</mockito.version>
+		<junit.jupiter.version>5.4.0</junit.jupiter.version>
+		<mockito.version>2.24.0</mockito.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
 
@@ -64,12 +64,6 @@
 			<artifactId>dagger</artifactId>
 			<version>${dagger.version}</version>
 		</dependency>
-		<dependency>
-			<groupId>com.google.dagger</groupId>
-			<artifactId>dagger-compiler</artifactId>
-			<version>${dagger.version}</version>
-			<scope>provided</scope>
-		</dependency>
 
 		<!-- Guava -->
 		<dependency>
@@ -92,6 +86,12 @@
 		</dependency>
 
 		<!-- Testing -->
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter-api</artifactId>
+			<version>${junit.jupiter.version}</version>
+			<scope>test</scope>
+		</dependency>
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter-engine</artifactId>
@@ -120,11 +120,18 @@
 				<configuration>
 					<release>9</release>
 					<showWarnings>true</showWarnings>
+					<annotationProcessorPaths>
+						<path>
+							<groupId>com.google.dagger</groupId>
+							<artifactId>dagger-compiler</artifactId>
+							<version>${dagger.version}</version>
+						</path>
+					</annotationProcessorPaths>
 				</configuration>
 			</plugin>
 			<plugin>
 				<artifactId>maven-surefire-plugin</artifactId>
-				<version>2.22.0</version>
+				<version>2.22.1</version>
 			</plugin>
 		</plugins>
 	</build>
@@ -137,7 +144,7 @@
 					<plugin>
 						<groupId>org.owasp</groupId>
 						<artifactId>dependency-check-maven</artifactId>
-						<version>3.3.4</version>
+						<version>4.0.2</version>
 						<configuration>
 							<cveValidForHours>24</cveValidForHours>
 							<failBuildOnCVSS>0</failBuildOnCVSS>
@@ -166,12 +173,18 @@
 					<plugin>
 						<groupId>org.jacoco</groupId>
 						<artifactId>jacoco-maven-plugin</artifactId>
-						<version>0.8.2</version>
+						<version>0.8.3</version>
 						<executions>
 							<execution>
 								<id>prepare-agent</id>
 								<goals>
 									<goal>prepare-agent</goal>
+								</goals>
+							</execution>
+							<execution>
+								<id>report</id>
+								<goals>
+									<goal>report</goal>
 								</goals>
 							</execution>
 						</executions>

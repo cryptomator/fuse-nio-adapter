@@ -1,16 +1,15 @@
 package org.cryptomator.frontend.fuse;
 
+import jnr.posix.util.Platform;
+import ru.serce.jnrfuse.flags.AccessConstants;
+import ru.serce.jnrfuse.struct.FileStat;
+
+import javax.inject.Inject;
 import java.nio.file.AccessMode;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.EnumSet;
 import java.util.Set;
-
-import javax.inject.Inject;
-
-import jnr.posix.util.Platform;
-import ru.serce.jnrfuse.flags.AccessConstants;
-import ru.serce.jnrfuse.struct.FileStat;
 
 @PerAdapter
 public class FileAttributesUtil {
@@ -49,17 +48,13 @@ public class FileAttributesUtil {
 		return result;
 	}
 
-	public FileStat basicFileAttributesToFileStat(BasicFileAttributes attrs) {
-		FileStat stat = new FileStat(jnr.ffi.Runtime.getSystemRuntime());
-		copyBasicFileAttributesFromNioToFuse(attrs, stat);
-		return stat;
-	}
-
 	public void copyBasicFileAttributesFromNioToFuse(BasicFileAttributes attrs, FileStat stat) {
 		if (attrs.isDirectory()) {
 			stat.st_mode.set(stat.st_mode.longValue() | FileStat.S_IFDIR);
-		} else {
+		} else if (attrs.isRegularFile()) {
 			stat.st_mode.set(stat.st_mode.longValue() | FileStat.S_IFREG);
+		} else if (attrs.isSymbolicLink()) {
+			stat.st_mode.set(stat.st_mode.longValue() | FileStat.S_IFLNK);
 		}
 		stat.st_uid.set(DUMMY_UID);
 		stat.st_gid.set(DUMMY_GID);
@@ -81,6 +76,22 @@ public class FileAttributesUtil {
 			stat.st_flags.set(0);
 			stat.st_gen.set(0);
 		}
+	}
+
+	public long posixPermissionsToOctalMode(Set<PosixFilePermission> permissions) {
+		long mode = 0;
+		// @formatter:off
+		if (permissions.contains(PosixFilePermission.OWNER_READ)) mode = mode | FileStat.S_IRUSR;
+		if (permissions.contains(PosixFilePermission.GROUP_READ)) mode = mode | FileStat.S_IRGRP;
+		if (permissions.contains(PosixFilePermission.OTHERS_READ)) mode = mode | FileStat.S_IROTH;
+		if (permissions.contains(PosixFilePermission.OWNER_WRITE)) mode = mode | FileStat.S_IWUSR;
+		if (permissions.contains(PosixFilePermission.GROUP_WRITE)) mode = mode | FileStat.S_IWGRP;
+		if (permissions.contains(PosixFilePermission.OTHERS_WRITE)) mode = mode | FileStat.S_IWOTH;
+		if (permissions.contains(PosixFilePermission.OWNER_EXECUTE)) mode = mode | FileStat.S_IXUSR;
+		if (permissions.contains(PosixFilePermission.GROUP_EXECUTE)) mode = mode | FileStat.S_IXGRP;
+		if (permissions.contains(PosixFilePermission.OTHERS_EXECUTE)) mode = mode | FileStat.S_IXOTH;
+		// @formatter:on
+		return mode;
 	}
 
 }

@@ -14,22 +14,9 @@ import dagger.Provides;
 @Module
 class FuseNioAdapterModule {
 
-	private final Path root;
-
-	FuseNioAdapterModule(Path root) {
-		this.root = root;
-	}
-
 	@Provides
 	@PerAdapter
-	@Named("root")
-	public Path provideRootPath() {
-		return root;
-	}
-
-	@Provides
-	@PerAdapter
-	protected FileStore provideRootFileStore() {
+	protected FileStore provideRootFileStore(@Named("root") Path root) {
 		try {
 			return Files.getFileStore(root);
 		} catch (IOException e) {

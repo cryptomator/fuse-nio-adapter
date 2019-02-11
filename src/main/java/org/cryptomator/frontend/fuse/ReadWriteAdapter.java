@@ -25,6 +25,7 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileStore;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -46,8 +47,8 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 	private final BitMaskEnumUtil bitMaskUtil;
 
 	@Inject
-	public ReadWriteAdapter(@Named("root") Path root, FileStore fileStore, LockManager lockManager, ReadWriteDirectoryHandler dirHandler, ReadWriteFileHandler fileHandler, FileAttributesUtil attrUtil, BitMaskEnumUtil bitMaskUtil) {
-		super(root, fileStore, lockManager, dirHandler, fileHandler, attrUtil);
+	public ReadWriteAdapter(@Named("root") Path root, FileStore fileStore, LockManager lockManager, ReadWriteDirectoryHandler dirHandler, ReadWriteFileHandler fileHandler, ReadOnlyLinkHandler linkHandler, FileAttributesUtil attrUtil, BitMaskEnumUtil bitMaskUtil) {
+		super(root, fileStore, lockManager, dirHandler, fileHandler, linkHandler, attrUtil);
 		this.fileHandler = fileHandler;
 		this.attrUtil = attrUtil;
 		this.bitMaskUtil = bitMaskUtil;
@@ -65,6 +66,23 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 			Path node = resolvePath(path);
 			LOG.trace("mkdir {} ({})", path, mode);
 			Files.createDirectory(node);
+			return 0;
+		} catch (FileAlreadyExistsException e) {
+			return -ErrorCodes.EEXIST();
+		} catch (IOException | RuntimeException e) {
+			LOG.error("mkdir failed.", e);
+			return -ErrorCodes.EIO();
+		}
+	}
+
+	@Override
+	public int symlink(String oldpath, String newpath) {
+		try (PathLock pathLock = lockManager.createPathLock(newpath).forWriting();
+			 DataLock dataLock = pathLock.lockDataForWriting()) {
+			Path link = resolvePath(newpath);
+			Path target = link.getFileSystem().getPath(oldpath);;
+			LOG.trace("symlink {} -> {}", newpath, oldpath);
+			Files.createSymbolicLink(link, target);
 			return 0;
 		} catch (FileAlreadyExistsException e) {
 			return -ErrorCodes.EEXIST();
@@ -123,7 +141,7 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 		try (PathLock pathLock = lockManager.createPathLock(path).forWriting();
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(path);
-			if (Files.isDirectory(node)) {
+			if (Files.isDirectory(node, LinkOption.NOFOLLOW_LINKS)) {
 				LOG.error("unlink {} failed, node is a directory.", path);
 				return -ErrorCodes.EISDIR();
 			}
@@ -144,7 +162,7 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 		try (PathLock pathLock = lockManager.createPathLock(path).forWriting();
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(path);
-			if (!Files.isDirectory(node)) {
+			if (!Files.isDirectory(node, LinkOption.NOFOLLOW_LINKS)) {
 				LOG.error("rmdir {} failed, node is not a directory.", path);
 				return -ErrorCodes.ENOTDIR();
 			}

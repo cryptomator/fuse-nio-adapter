@@ -10,10 +10,24 @@ public interface Mount extends AutoCloseable {
 	void revealInFileManager() throws CommandFailedException;
 
 	/**
-	 * Unmounts the FUSE volume and releases corresponding resources.
+	 * Gracefully attempts to unmount the FUSE volume.
 	 *
 	 * @throws CommandFailedException
 	 */
-	void close() throws CommandFailedException;
+	void unmount() throws CommandFailedException;
 
+	/**
+	 * Forcefully unmounts the FUSE volume and releases corresponding resources.
+	 *
+	 * @throws CommandFailedException
+	 */
+	void unmountForced() throws CommandFailedException;
+
+	/**
+	 * Releases associated resources
+	 * @throws CommandFailedException If closing failed
+	 * @throws IllegalStateException If still mounted
+	 */
+	@Override
+	void close() throws CommandFailedException, IllegalStateException;
 }
