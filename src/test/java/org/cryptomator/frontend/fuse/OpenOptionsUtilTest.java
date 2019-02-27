@@ -30,7 +30,9 @@ public class OpenOptionsUtilTest {
 		return Stream.of( //
 				Arguments.of(Sets.newHashSet(StandardOpenOption.READ), EnumSet.of(OpenFlags.O_RDONLY)), //
 				Arguments.of(Sets.newHashSet(StandardOpenOption.WRITE), EnumSet.of(OpenFlags.O_WRONLY)), //
+				Arguments.of(Sets.newHashSet(StandardOpenOption.WRITE), EnumSet.of(OpenFlags.O_WRONLY, OpenFlags.O_RDONLY)), // write wins
 				Arguments.of(Sets.newHashSet(StandardOpenOption.READ, StandardOpenOption.WRITE), EnumSet.of(OpenFlags.O_RDWR)), //
+				Arguments.of(Sets.newHashSet(StandardOpenOption.READ, StandardOpenOption.WRITE), EnumSet.of(OpenFlags.O_RDWR, OpenFlags.O_WRONLY, OpenFlags.O_RDONLY)), //
 				Arguments.of(Sets.newHashSet(StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING), EnumSet.of(OpenFlags.O_WRONLY, OpenFlags.O_TRUNC)) //
 		);
 	}
