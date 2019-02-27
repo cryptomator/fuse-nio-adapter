@@ -21,16 +21,19 @@ public class OpenOptionsUtil {
 
 	public Set<OpenOption> fuseOpenFlagsToNioOpenOptions(long mask) {
 		Set<OpenFlags> flags = bitMaskUtil.bitMaskToSet(OpenFlags.class, mask);
-		return (fuseOpenFlagsToNioOpenOptions(flags));
+		return fuseOpenFlagsToNioOpenOptions(flags);
 	}
 
 	public Set<OpenOption> fuseOpenFlagsToNioOpenOptions(Set<OpenFlags> flags) {
 		Set<OpenOption> result = new HashSet<>();
-		if (flags.contains(OpenFlags.O_RDONLY) || flags.contains(OpenFlags.O_RDWR)) {
+		// https://linux.die.net/man/3/open:
+		if (flags.contains(OpenFlags.O_RDWR)) {
 			result.add(StandardOpenOption.READ);
-		}
-		if (flags.contains(OpenFlags.O_WRONLY) || flags.contains(OpenFlags.O_RDWR)) {
 			result.add(StandardOpenOption.WRITE);
+		} else if (flags.contains(OpenFlags.O_WRONLY)) {
+			result.add(StandardOpenOption.WRITE);
+		} else if (flags.contains(OpenFlags.O_RDONLY)) {
+			result.add(StandardOpenOption.READ);
 		}
 		if (flags.contains(OpenFlags.O_APPEND)) {
 			result.add(StandardOpenOption.APPEND);
