@@ -43,8 +43,8 @@ public class LockManager {
 
 	private static final Logger LOG = LoggerFactory.getLogger(LockManager.class);
 
-	private final LoadingCache<String, ReadWriteLock> pathLocks;
-	private final LoadingCache<String, ReadWriteLock> dataLocks;
+	private final LoadingCache<List<String>, ReadWriteLock> pathLocks;
+	private final LoadingCache<List<String>, ReadWriteLock> dataLocks;
 
 	@Inject
 	public LockManager() {
@@ -69,19 +69,18 @@ public class LockManager {
 
 		List<String> parentPathComponents = FilePaths.parentPathComponents(pathComponents);
 		PathLockBuilder parentLockBuilder = createPathLock(parentPathComponents);
-		String path = FilePaths.toPath(pathComponents);
-		ReadWriteLock lock = pathLocks.getUnchecked(path);
-		return new PathLockBuilderImpl(path, Optional.ofNullable(parentLockBuilder), lock, dataLocks::getUnchecked);
+		ReadWriteLock lock = pathLocks.getUnchecked(pathComponents);
+		return new PathLockBuilderImpl(pathComponents, Optional.ofNullable(parentLockBuilder), lock, dataLocks::getUnchecked);
 	}
 
 	private void onLockRemoval(RemovalNotification<String, ReentrantReadWriteLock> notification) {
 		LOG.trace("Deleting ReadWriteLock for {}", notification.getKey());
 	}
 
-	private static class LockLoader extends CacheLoader<String, ReadWriteLock> {
+	private static class LockLoader extends CacheLoader<List<String>, ReadWriteLock> {
 
 		@Override
-		public ReadWriteLock load(String key) {
+		public ReadWriteLock load(List<String> key) {
 			LOG.trace("Creating ReadWriteLock for {}", key);
 			return new ReentrantReadWriteLock();
 		}
@@ -93,7 +92,7 @@ public class LockManager {
 
 	// visible for testing
 	boolean isPathLocked(String path) {
-		ReadWriteLock lock = pathLocks.getIfPresent(FilePaths.normalizePath(path));
+		ReadWriteLock lock = pathLocks.getIfPresent(FilePaths.toComponents(path));
 		if (lock == null) {
 			return false;
 		} else if (lock.writeLock().tryLock()) {
