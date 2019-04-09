@@ -70,6 +70,7 @@ public class FileAttributesUtil {
 		stat.st_atim.tv_sec.set(attrs.lastAccessTime().toInstant().getEpochSecond());
 		stat.st_atim.tv_nsec.set(attrs.lastAccessTime().toInstant().getNano());
 		stat.st_size.set(attrs.size());
+		stat.st_nlink.set(1);
 		// make sure to nil certain fields known to contain garbage from uninitialized memory
 		// fixes alleged permission bugs, see https://github.com/cryptomator/fuse-nio-adapter/issues/19
 		if (Platform.IS_MAC) {

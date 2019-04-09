@@ -101,7 +101,6 @@ public class ReadOnlyFileHandler implements Closeable {
 		} else {
 			stat.st_mode.set(FileStat.S_IFREG | 0444);
 		}
-		stat.st_nlink.set(1);
 		attrUtil.copyBasicFileAttributesFromNioToFuse(attrs, stat);
 		return 0;
 	}

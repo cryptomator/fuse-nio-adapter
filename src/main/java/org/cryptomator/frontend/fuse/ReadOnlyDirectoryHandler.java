@@ -40,23 +40,8 @@ public class ReadOnlyDirectoryHandler {
 		} else {
 			stat.st_mode.set(FileStat.S_IFDIR | 0555);
 		}
-		long nlinks;
-		try {
-			attrUtil.copyBasicFileAttributesFromNioToFuse(attrs, stat);
-			nlinks = 2 + countSubDirs(path);
-		} catch (IOException e) {
-			nlinks = 2;
-		}
-		stat.st_nlink.set(nlinks);
+		attrUtil.copyBasicFileAttributesFromNioToFuse(attrs, stat);
 		return 0;
-	}
-
-	private long countSubDirs(Path path) throws IOException {
-		try (DirectoryStream<Path> ds = Files.newDirectoryStream(path, Files::isDirectory)) {
-			return Iterables.size(ds);
-		} catch (DirectoryIteratorException e) {
-			throw new IOException(e);
-		}
 	}
 
 	public int readdir(Path path, Pointer buf, FuseFillDir filler, long offset, FuseFileInfo fi) throws IOException {
