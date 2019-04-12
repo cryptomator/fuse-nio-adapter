@@ -25,4 +25,4 @@ deploy:
     repo: cryptomator/fuse-nio-adapter
     tags: true
 after_deploy:
-  - "echo '{\"close\": \"1\"}' | curl -X POST -u cryptobot:${BINTRAY_API_KEY} https://api.bintray.com/maven_central_sync/cryptomator/maven/fuse-nio-adapter/versions/${TRAVIS_TAG}"
+  - "echo '{\"close\": \"1\"}' | curl --max-time 10 -X POST -u cryptobot:${BINTRAY_API_KEY} https://api.bintray.com/maven_central_sync/cryptomator/maven/fuse-nio-adapter/versions/${TRAVIS_TAG}"
