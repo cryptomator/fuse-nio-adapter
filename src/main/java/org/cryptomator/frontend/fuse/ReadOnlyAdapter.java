@@ -247,12 +247,17 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 		return mounted.get();
 	}
 
+	/**
+	 * @implNote We overwrite the default implementation to skip the "internal" unmount command, because we want to use system commands instead.
+	 * @see <a href="https://github.com/cryptomator/fuse-nio-adapter/issues/29">cryptomator/fuse-nio-adapter#29</a>
+	 */
 	@Override
 	public void umount() {
+		// this might be called multiple times: explicitly _and_ via a shutdown hook registered during mount() in AbstractFuseFS
 		if (mounted.compareAndSet(true, false)) {
 			LOG.debug("Marked file system adapter as unmounted.");
 		} else {
-			LOG.warn("File system adapter already marked as unmounted. This could indicate an error.");
+			LOG.trace("File system adapter already unmounted.");
 		}
 	}
 
