@@ -6,6 +6,7 @@ import java.nio.channels.FileChannel;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileStore;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
@@ -136,7 +137,8 @@ public class ReadWriteFileHandler extends ReadOnlyFileHandler implements Closeab
 		try {
 			FileTime mTime = toFileTime(mTimeSpec);
 			FileTime aTime = toFileTime(aTimeSpec);
-			Files.getFileAttributeView(node, BasicFileAttributeView.class).setTimes(mTime, aTime, null);
+			BasicFileAttributeView view = Files.getFileAttributeView(node, BasicFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
+			view.setTimes(mTime, aTime, null); // this only works on CryptoFS due to a bug on the "normal" FS: https://bugs.openjdk.java.net/browse/JDK-8220793
 			return 0;
 		} catch (DateTimeException | ArithmeticException e) {
 			LOG.error("Invalid argument in Instant.ofEpochSecond(...) ", e);
