@@ -34,7 +34,6 @@ class ReadOnlyLinkHandler {
 		} else {
 			stat.st_mode.set(FileStat.S_IFLNK | 0555);
 		}
-		stat.st_nlink.set(1);
 		attrUtil.copyBasicFileAttributesFromNioToFuse(attrs, stat);
 		return 0;
 	}
