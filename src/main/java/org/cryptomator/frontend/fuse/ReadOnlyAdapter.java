@@ -247,9 +247,9 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 		return mounted.get();
 	}
 
-	/**
-	 * @implNote We overwrite the default implementation to skip the "internal" unmount command, because we want to use system commands instead.
-	 * @see <a href="https://github.com/cryptomator/fuse-nio-adapter/issues/29">cryptomator/fuse-nio-adapter#29</a>
+	/*
+	 * We overwrite the default implementation to skip the "internal" unmount command, because we want to use system commands instead.
+	 * See also: https://github.com/cryptomator/fuse-nio-adapter/issues/29
 	 */
 	@Override
 	public void umount() {
