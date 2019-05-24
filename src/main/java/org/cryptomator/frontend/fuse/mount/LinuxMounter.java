@@ -8,7 +8,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.concurrent.TimeUnit;
 
 class LinuxMounter implements Mounter {
 
@@ -40,9 +39,9 @@ class LinuxMounter implements Mounter {
 			Path mountPoint = envVars.getMountPath();
 			String[] command = envVars.getRevealCommand().orElse(DEFAULT_REVEALCOMMAND_LINUX).split("\\s+");
 			this.revealCommand = new ProcessBuilder(ObjectArrays.concat(command, mountPoint.toString()));
-			this.unmountCommand = new ProcessBuilder("fusermount", "-u", mountPoint.getFileName().toString());
+			this.unmountCommand = new ProcessBuilder("fusermount", "-u", "--", mountPoint.getFileName().toString());
 			this.unmountCommand.directory(mountPoint.getParent().toFile());
-			this.unmountForcedCommand = new ProcessBuilder("fusermount", "-u", "-z", mountPoint.getFileName().toString());
+			this.unmountForcedCommand = new ProcessBuilder("fusermount", "-u", "-z", "--", mountPoint.getFileName().toString());
 			this.unmountForcedCommand.directory(mountPoint.getParent().toFile());
 		}
 

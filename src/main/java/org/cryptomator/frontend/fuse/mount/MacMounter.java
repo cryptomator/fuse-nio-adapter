@@ -16,7 +16,6 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.concurrent.TimeUnit;
 
 class MacMounter implements Mounter {
 
@@ -99,9 +98,9 @@ class MacMounter implements Mounter {
 			Path mountPoint = envVars.getMountPath();
 			this.revealCommand = new ProcessBuilder("open", ".");
 			this.revealCommand.directory(mountPoint.toFile());
-			this.unmountCommand = new ProcessBuilder("umount", mountPoint.getFileName().toString());
+			this.unmountCommand = new ProcessBuilder("umount", "--", mountPoint.getFileName().toString());
 			this.unmountCommand.directory(mountPoint.getParent().toFile());
-			this.unmountForcedCommand = new ProcessBuilder("umount", "-f", mountPoint.getFileName().toString());
+			this.unmountForcedCommand = new ProcessBuilder("umount", "-f", "--", mountPoint.getFileName().toString());
 			this.unmountForcedCommand.directory(mountPoint.getParent().toFile());
 		}
 
