@@ -18,11 +18,14 @@
 *.tar.gz
 *.rar
 
+# Maven #
+target/
+pom.xml.versionsBackup
+
 # Eclipse Settings Files #
 .settings
 .project
 .classpath
-target/
 test-output/
 
 # IntelliJ Settings Files #
