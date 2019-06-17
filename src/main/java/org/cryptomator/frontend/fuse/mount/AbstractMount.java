@@ -1,32 +1,31 @@
 package org.cryptomator.frontend.fuse.mount;
 
-import com.google.common.collect.ObjectArrays;
+import com.google.common.base.Preconditions;
 import org.cryptomator.frontend.fuse.AdapterFactory;
 import org.cryptomator.frontend.fuse.FuseNioAdapter;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
 abstract class AbstractMount implements Mount {
 
-	protected final EnvironmentVariables envVars;
 	protected final FuseNioAdapter fuseAdapter;
+	protected final EnvironmentVariables envVars;
 
-	public AbstractMount(Path directory, EnvironmentVariables envVars) {
+	public AbstractMount(FuseNioAdapter fuseAdapter, EnvironmentVariables envVars) {
+		Preconditions.checkArgument(fuseAdapter.isMounted());
+		this.fuseAdapter = fuseAdapter;
 		this.envVars = envVars;
-		this.fuseAdapter = AdapterFactory.createReadWriteAdapter(directory);
+
 	}
 
-	protected void mount(String... additionalFuseOptions) throws CommandFailedException {
+	protected void mount() throws CommandFailedException {
 		try {
-			fuseAdapter.mount(envVars.getMountPath(), false, false, ObjectArrays.concat(getFuseOptions(), additionalFuseOptions, String.class));
+			fuseAdapter.mount(envVars.getMountPoint(), false, false, envVars.getFuseFlags());
 		} catch (RuntimeException e) {
 			throw new CommandFailedException(e);
 		}
 	}
-
-	protected abstract String[] getFuseOptions();
 
 	protected abstract ProcessBuilder getRevealCommand();
 
