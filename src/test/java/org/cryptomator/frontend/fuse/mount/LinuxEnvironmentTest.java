@@ -13,13 +13,14 @@ public class LinuxEnvironmentTest {
 	public static void main(String[] args) throws IOException {
 		if (IS_LINUX) {
 			Path mountPoint = Files.createTempDirectory("fuse-mount");
+			Mounter mounter = FuseMountFactory.getMounter();
 			EnvironmentVariables envVars = EnvironmentVariables.create()
-					.withMountName("yolo")
-					.withMountPath(mountPoint)
+					.withFlags(mounter.defaultMountFlags())
+					.withMountPoint(mountPoint)
 					.withRevealCommand("nautilus")
 					.build();
 			Path tmp = Paths.get("/tmp");
-			try (Mount mnt = FuseMountFactory.getMounter().mount(tmp, envVars)) {
+			try (Mount mnt = mounter.mount(tmp, envVars)) {
 				mnt.revealInFileManager();
 				System.out.println("Wait for it...");
 				System.in.read();

@@ -127,8 +127,8 @@ public class MirroringFuseMountTest {
 	private static void mount(Path pathToMirror, Path mountPoint) {
 		Mounter mounter = FuseMountFactory.getMounter();
 		EnvironmentVariables envVars = EnvironmentVariables.create()
-				.withMountName("FuseMirror")
-				.withMountPath(mountPoint)
+				.withFlags(mounter.defaultMountFlags())
+				.withMountPoint(mountPoint)
 				.build();
 		try (Mount mnt = mounter.mount(pathToMirror, envVars)) {
 			LOG.info("Mounted successfully. Enter anything to stop the server...");

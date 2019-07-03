@@ -5,13 +5,13 @@ import java.util.Optional;
 
 public class EnvironmentVariables {
 
-	private final Path mountPath;
-	private final Optional<String> mountName;
+	private final Path mountPoint;
+	private final String[] fuseFlags;
 	private final Optional<String> revealCommand;
 
-	private EnvironmentVariables(Path mountPath, Optional<String> mountName, Optional<String> revealCommand) {
-		this.mountPath = mountPath;
-		this.mountName = mountName;
+	private EnvironmentVariables(Path mountPoint, String[] fuseFlags, Optional<String> revealCommand) {
+		this.mountPoint = mountPoint;
+		this.fuseFlags = fuseFlags;
 		this.revealCommand = revealCommand;
 	}
 
@@ -19,12 +19,12 @@ public class EnvironmentVariables {
 		return new EnvironmentVariablesBuilder();
 	}
 
-	public Path getMountPath() {
-		return mountPath;
+	public Path getMountPoint() {
+		return mountPoint;
 	}
 
-	public Optional<String> getMountName() {
-		return mountName;
+	public String[] getFuseFlags() {
+		return fuseFlags;
 	}
 
 	public Optional<String> getRevealCommand() {
@@ -33,17 +33,17 @@ public class EnvironmentVariables {
 
 	public static class EnvironmentVariablesBuilder {
 
-		private Path mountPath = null;
-		private Optional<String> mountName = Optional.empty();
+		private Path mountPoint = null;
+		private String[] fuseFlags;
 		private Optional<String> revealCommand = Optional.empty();
 
-		public EnvironmentVariablesBuilder withMountPath(Path mountPath) {
-			this.mountPath = mountPath;
+		public EnvironmentVariablesBuilder withMountPoint(Path mountPoint) {
+			this.mountPoint = mountPoint;
 			return this;
 		}
 
-		public EnvironmentVariablesBuilder withMountName(String mountName) {
-			this.mountName = Optional.ofNullable(mountName);
+		public EnvironmentVariablesBuilder withFlags(String[] fuseFlags) {
+			this.fuseFlags = fuseFlags;
 			return this;
 		}
 
@@ -53,7 +53,7 @@ public class EnvironmentVariables {
 		}
 
 		public EnvironmentVariables build() {
-			return new EnvironmentVariables(mountPath, mountName, revealCommand);
+			return new EnvironmentVariables(mountPoint, fuseFlags, revealCommand);
 		}
 
 	}
