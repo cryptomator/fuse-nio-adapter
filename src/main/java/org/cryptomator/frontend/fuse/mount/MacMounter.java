@@ -112,10 +112,10 @@ class MacMounter implements Mounter {
 				return node.getTextContent();
 			}
 		} catch (ParserConfigurationException | SAXException | XPathException e) {
-			LOG.error("Could not parse file {} to detect version of OSXFUSE.", OSXFUSE_VERSIONFILE_LOCATION);
+			LOG.error("Could not parse " + OSXFUSE_VERSIONFILE_LOCATION + " to detect version of OSXFUSE.", e);
 			return null;
 		} catch (IOException e) {
-			LOG.error("Could not read file {} to detect version of OSXFUSE.", OSXFUSE_VERSIONFILE_LOCATION);
+			LOG.error("Could not read " + OSXFUSE_VERSIONFILE_LOCATION + " to detect version of OSXFUSE.", e);
 			return null;
 		}
 	}

@@ -98,8 +98,8 @@ public class OpenFile implements Closeable {
 		channel.close();
 	}
 
-	public void flush() throws IOException {
-		channel.force(false);
+	public void fsync(boolean metaData) throws IOException {
+		channel.force(metaData);
 	}
 
 	public void truncate(long size) throws IOException {
