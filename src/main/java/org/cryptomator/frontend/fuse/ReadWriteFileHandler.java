@@ -93,14 +93,14 @@ public class ReadWriteFileHandler extends ReadOnlyFileHandler implements Closeab
 		}
 	}
 
-	public int flush(Path path, FuseFileInfo fi) {
+	public int fsync(Path path, FuseFileInfo fi, boolean metaData) {
 		OpenFile file = openFiles.get(fi.fh.get());
 		if (file == null) {
 			LOG.warn("flush: File not opened: {}", path);
 			return -ErrorCodes.EBADFD();
 		}
 		try {
-			file.flush();
+			file.fsync(metaData);
 			return 0;
 		} catch (IOException e) {
 			LOG.error("Flushing file failed.", e);

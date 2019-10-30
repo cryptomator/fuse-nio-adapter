@@ -281,11 +281,12 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 	}
 
 	@Override
-	public int flush(String path, FuseFileInfo fi) {
+	public int fsync(String path, int isdatasync, FuseFileInfo fi) {
 		try {
+			boolean metaData = isdatasync == 0;
 			Path node = resolvePath(path);
-			LOG.trace("flush {}", path);
-			return fileHandler.flush(node, fi);
+			LOG.trace("fsync {}", path);
+			return fileHandler.fsync(node, fi, metaData);
 		} catch (RuntimeException e) {
 			LOG.error("flush " + path + " failed.", e);
 			return -ErrorCodes.EIO();
