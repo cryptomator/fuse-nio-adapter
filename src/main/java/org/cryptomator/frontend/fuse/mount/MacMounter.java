@@ -7,8 +7,10 @@ import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPath;
@@ -32,6 +34,7 @@ class MacMounter implements Mounter {
 	private static final int[] OSXFUSE_MINIMUM_SUPPORTED_VERSION = new int[]{3, 8, 2};
 	private static final String OSXFUSE_VERSIONFILE_LOCATION = "/Library/Filesystems/osxfuse.fs/Contents/version.plist";
 	private static final String OSXFUSE_VERSIONFILE_XPATH = "/plist/dict/key[.='CFBundleShortVersionString']/following-sibling::string[1]";
+	private static final String PLIST_DTD_URL = "http://www.apple.com/DTDs/PropertyList-1.0.dtd";
 
 	@Override
 	public synchronized Mount mount(Path directory, EnvironmentVariables envVars) throws CommandFailedException {
@@ -103,7 +106,9 @@ class MacMounter implements Mounter {
 		DocumentBuilderFactory domFactory = DocumentBuilderFactory.newInstance();
 		XPath xPath = XPathFactory.newInstance().newXPath();
 		try (InputStream in = Files.newInputStream(plistFile, StandardOpenOption.READ)) {
-			Document doc = domFactory.newDocumentBuilder().parse(in);
+			DocumentBuilder docBuilder = domFactory.newDocumentBuilder();
+			docBuilder.setEntityResolver(this::resolveEntity);
+			Document doc = docBuilder.parse(in);
 			NodeList nodeList = (NodeList) xPath.compile(OSXFUSE_VERSIONFILE_XPATH).evaluate(doc, XPathConstants.NODESET);
 			Node node = nodeList.item(0);
 			if (node == null) {
@@ -116,6 +121,15 @@ class MacMounter implements Mounter {
 			return null;
 		} catch (IOException e) {
 			LOG.error("Could not read " + OSXFUSE_VERSIONFILE_LOCATION + " to detect version of OSXFUSE.", e);
+			return null;
+		}
+	}
+
+	private InputSource resolveEntity(String publicId, String systemId) {
+		if (PLIST_DTD_URL.equals(systemId)) {
+			// load DTD from local resource. fixes https://github.com/cryptomator/fuse-nio-adapter/issues/40
+			return new InputSource(getClass().getResourceAsStream("/PropertyList-1.0.dtd"));
+		} else {
 			return null;
 		}
 	}
