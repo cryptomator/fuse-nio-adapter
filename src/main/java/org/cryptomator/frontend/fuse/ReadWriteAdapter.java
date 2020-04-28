@@ -1,6 +1,5 @@
 package org.cryptomator.frontend.fuse;
 
-import com.google.common.base.Strings;
 import jnr.constants.platform.OpenFlags;
 import jnr.ffi.Pointer;
 import jnr.ffi.types.gid_t;
@@ -336,23 +335,5 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 			return -ErrorCodes.EIO();
 		}
 	}
-
-	/**
-	 * Attempts to get a specific error code that best describes the given exception.
-	 * As a side effect this logs the error.
-	 *
-	 * @param e An exception
-	 * @param opDesc A human-friendly string describing what operation was attempted (for logging purposes)
-	 * @return A specific error code or -EIO.
-	 */
-	private int getErrorCodeForGenericFileSystemException(FileSystemException e, String opDesc) {
-		String reason = Strings.nullToEmpty(e.getReason());
-		if (reason.contains("path too long") || reason.contains("name too long")) {
-			LOG.warn("{} {} failed, name too long.", opDesc);
-			return -ErrorCodes.ENAMETOOLONG();
-		} else {
-			LOG.error(opDesc + " failed.", e);
-			return -ErrorCodes.EIO();
-		}
-	}
+	
 }

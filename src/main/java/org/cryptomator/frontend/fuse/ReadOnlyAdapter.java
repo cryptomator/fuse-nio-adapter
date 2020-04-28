@@ -1,6 +1,7 @@
 package org.cryptomator.frontend.fuse;
 
 import com.google.common.base.CharMatcher;
+import com.google.common.base.Strings;
 import com.google.common.collect.Iterables;
 import jnr.ffi.Pointer;
 import jnr.ffi.types.off_t;
@@ -24,6 +25,7 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.AccessMode;
 import java.nio.file.FileStore;
+import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.NoSuchFileException;
@@ -82,7 +84,7 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 			stbuf.f_blocks.set(tBlocks);
 			stbuf.f_bavail.set(aBlocks);
 			stbuf.f_bfree.set(aBlocks);
-			stbuf.f_namemax.set(FUSE_NAME_MAX);
+			stbuf.f_namemax.set(maxFileNameLength);
 			LOG.trace("statfs {} ({} / {})", path, avail, total);
 			return 0;
 		} catch (IOException | RuntimeException e) {
@@ -164,6 +166,8 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 			// see Files.notExists
 			LOG.trace("getattr {} failed, node not found", path);
 			return -ErrorCodes.ENOENT();
+		} catch (FileSystemException e) {
+			return getErrorCodeForGenericFileSystemException(e, "getattr " + path);
 		} catch (IOException | RuntimeException e) {
 			LOG.error("getattr failed.", e);
 			return -ErrorCodes.EIO();
@@ -270,5 +274,24 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 	@Override
 	public void close() throws IOException {
 		fileHandler.close();
+	}
+
+	/**
+	 * Attempts to get a specific error code that best describes the given exception.
+	 * As a side effect this logs the error.
+	 *
+	 * @param e      An exception
+	 * @param opDesc A human-friendly string describing what operation was attempted (for logging purposes)
+	 * @return A specific error code or -EIO.
+	 */
+	protected int getErrorCodeForGenericFileSystemException(FileSystemException e, String opDesc) {
+		String reason = Strings.nullToEmpty(e.getReason());
+		if (reason.contains("path too long") || reason.contains("name too long")) {
+			LOG.warn("{} {} failed, name too long.", opDesc);
+			return -ErrorCodes.ENAMETOOLONG();
+		} else {
+			LOG.error(opDesc + " failed.", e);
+			return -ErrorCodes.EIO();
+		}
 	}
 }
