@@ -47,8 +47,8 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 
 	private static final Logger LOG = LoggerFactory.getLogger(ReadOnlyAdapter.class);
 	private static final int BLOCKSIZE = 4096;
-	private static final int FUSE_NAME_MAX = 254; // 255 is preferred, but nautilus checks for this value + 1
 	protected final Path root;
+	private final int maxFileNameLength;
 	protected final FileStore fileStore;
 	protected final LockManager lockManager;
 	private final ReadOnlyDirectoryHandler dirHandler;
@@ -57,8 +57,9 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 	private final FileAttributesUtil attrUtil;
 
 	@Inject
-	public ReadOnlyAdapter(@Named("root") Path root, FileStore fileStore, LockManager lockManager, ReadOnlyDirectoryHandler dirHandler, ReadOnlyFileHandler fileHandler, ReadOnlyLinkHandler linkHandler, FileAttributesUtil attrUtil) {
+	public ReadOnlyAdapter(@Named("root") Path root, @Named("maxFileNameLength") int maxFileNameLength, FileStore fileStore, LockManager lockManager, ReadOnlyDirectoryHandler dirHandler, ReadOnlyFileHandler fileHandler, ReadOnlyLinkHandler linkHandler, FileAttributesUtil attrUtil) {
 		this.root = root;
+		this.maxFileNameLength = maxFileNameLength;
 		this.fileStore = fileStore;
 		this.lockManager = lockManager;
 		this.dirHandler = dirHandler;

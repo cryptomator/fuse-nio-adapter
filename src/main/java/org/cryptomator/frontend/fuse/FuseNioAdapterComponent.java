@@ -20,6 +20,9 @@ public interface FuseNioAdapterComponent {
 		@BindsInstance
 		Builder root(@Named("root") Path root);
 
+		@BindsInstance
+		Builder maxFileNameLength(@Named("maxFileNameLength") int maxFileNameLength);
+
 		FuseNioAdapterComponent build();
 	}
 
