@@ -1,9 +1,6 @@
 package org.cryptomator.frontend.fuse;
 
 import jnr.ffi.Pointer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import ru.serce.jnrfuse.ErrorCodes;
 import ru.serce.jnrfuse.struct.FileStat;
 import ru.serce.jnrfuse.struct.FuseFileInfo;
 
@@ -22,8 +19,6 @@ import java.util.Set;
 @PerAdapter
 public class ReadOnlyFileHandler implements Closeable {
 
-	private static final Logger LOG = LoggerFactory.getLogger(ReadOnlyFileHandler.class);
-
 	protected final OpenFileFactory openFiles;
 	protected final FileAttributesUtil attrUtil;
 	private final OpenOptionsUtil openOptionsUtil;
@@ -35,23 +30,14 @@ public class ReadOnlyFileHandler implements Closeable {
 		this.openOptionsUtil = openOptionsUtil;
 	}
 
-	public int open(Path path, FuseFileInfo fi) {
-		try {
-			Set<OpenOption> openOptions = openOptionsUtil.fuseOpenFlagsToNioOpenOptions(fi.flags.longValue());
-			long fileHandle = open(path, openOptions);
-			fi.fh.set(fileHandle);
-			return 0;
-		} catch (AccessDeniedException e) {
-			LOG.warn("Attempted to open file with unsupported flags.", e);
-			return -ErrorCodes.EROFS();
-		} catch (IOException e) {
-			LOG.error("Error opening file.", e);
-			return -ErrorCodes.EIO();
-		}
+	public void open(Path path, FuseFileInfo fi) throws IOException {
+		Set<OpenOption> openOptions = openOptionsUtil.fuseOpenFlagsToNioOpenOptions(fi.flags.longValue());
+		long fileHandle = open(path, openOptions);
+		fi.fh.set(fileHandle);
 	}
 
 	/**
-	 * @param path path of the file to open
+	 * @param path        path of the file to open
 	 * @param openOptions file open options
 	 * @return file handle used to identify and close open files.
 	 * @throws AccessDeniedException Thrown if the requested openOptions are not supported
@@ -65,31 +51,34 @@ public class ReadOnlyFileHandler implements Closeable {
 		}
 	}
 
-	public int read(Path path, Pointer buf, long size, long offset, FuseFileInfo fi) {
+	/**
+	 * Reads up to {@code num} bytes beginning at {@code offset} into {@code buf}
+	 *
+	 * @param buf    Buffer
+	 * @param size   Number of bytes to read
+	 * @param offset Position of first byte to read
+	 * @param fi     contains the file handle
+	 * @return Actual number of bytes read (can be less than {@code size} if reached EOF).
+	 * @throws ClosedChannelException If no open file could be found for the given file handle
+	 * @throws IOException
+	 */
+	public int read(Pointer buf, long size, long offset, FuseFileInfo fi) throws IOException {
 		OpenFile file = openFiles.get(fi.fh.get());
 		if (file == null) {
-			LOG.warn("Attempted to read from file with illegal fileHandle {}: {}", fi.fh.get(), path);
-			return -ErrorCodes.EBADF();
+			throw new ClosedChannelException();
 		}
-		try {
-			return file.read(buf, size, offset);
-		} catch (IOException e) {
-			LOG.error("Reading file failed.", e);
-			return -ErrorCodes.EIO();
-		}
+		return file.read(buf, size, offset);
 	}
 
-	public int release(Path path, FuseFileInfo fi) {
-		try {
-			openFiles.close(fi.fh.get());
-			return 0;
-		} catch (ClosedChannelException e) {
-			LOG.warn("Attempted to close file with illegal fileHandle {}: {}", fi.fh.get(), path);
-			return -ErrorCodes.EBADF();
-		} catch (IOException e) {
-			LOG.error("Error closing file.", e);
-			return -ErrorCodes.EIO();
-		}
+	/**
+	 * Closes the channel identified by the given fileHandle
+	 *
+	 * @param fi contains the file handle
+	 * @throws ClosedChannelException If no channel for the given fileHandle has been found.
+	 * @throws IOException
+	 */
+	public void release(FuseFileInfo fi) throws IOException {
+		openFiles.close(fi.fh.get());
 	}
 
 	public int getattr(Path node, BasicFileAttributes attrs, FileStat stat) {

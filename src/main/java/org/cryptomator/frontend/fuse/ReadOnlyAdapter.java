@@ -20,6 +20,7 @@ import ru.serce.jnrfuse.struct.Statvfs;
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.io.IOException;
+import java.nio.channels.ClosedChannelException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.AccessMode;
 import java.nio.file.FileStore;
@@ -190,19 +191,17 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
 			 DataLock dataLock = pathLock.lockDataForReading()) {
 			Path node = resolvePath(path);
-			// TODO do we need to distinguish files vs. dirs? https://github.com/libfuse/libfuse/wiki/Invariants
-			if (Files.isDirectory(node)) {
-				LOG.error("open {} failed, node is a directory.", path);
-				return -ErrorCodes.EISDIR();
-			} else if (Files.exists(node)) {
-				LOG.trace("open {} ({})", path, fi.fh.get());
-				return fileHandler.open(node, fi);
-			} else {
-				LOG.error("open {} failed, file not found.", path);
-				return -ErrorCodes.ENOENT();
-			}
-		} catch (RuntimeException e) {
-			LOG.error("open failed.", e);
+			LOG.trace("open {} ({})", path, fi.fh.get());
+			fileHandler.open(node, fi);
+			return 0;
+		} catch (NoSuchFileException e) {
+			LOG.warn("open {} failed, file not found.", path);
+			return -ErrorCodes.ENOENT();
+		} catch (AccessDeniedException e) {
+			LOG.warn("Attempted to open file with unsupported flags.", e);
+			return -ErrorCodes.EROFS();
+		} catch (IOException | RuntimeException e) {
+			LOG.error("open " + path + " failed.", e);
 			return -ErrorCodes.EIO();
 		}
 	}
@@ -211,11 +210,15 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 	public int read(String path, Pointer buf, @size_t long size, @off_t long offset, FuseFileInfo fi) {
 		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
 			 DataLock dataLock = pathLock.lockDataForReading()) {
-			Path node = resolvePath(path);
-			assert Files.exists(node);
-			return fileHandler.read(node, buf, size, offset, fi);
-		} catch (RuntimeException e) {
-			LOG.error("read failed.", e);
+			LOG.trace("read {} bytes from file {} starting at {}...", size, path, offset);
+			int read = fileHandler.read(buf, size, offset, fi);
+			LOG.trace("read {} bytes from file {}", read, path);
+			return read;
+		} catch (ClosedChannelException e) {
+			LOG.warn("read {} failed, invalid file handle {}", path, fi.fh.get());
+			return -ErrorCodes.EBADF();
+		} catch (IOException | RuntimeException e) {
+			LOG.error("read " + path + " failed.", e);
 			return -ErrorCodes.EIO();
 		}
 	}
@@ -224,11 +227,14 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 	public int release(String path, FuseFileInfo fi) {
 		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
 			 DataLock dataLock = pathLock.lockDataForReading()) {
-			Path node = resolvePath(path);
 			LOG.trace("release {} ({})", path, fi.fh.get());
-			return fileHandler.release(node, fi);
-		} catch (RuntimeException e) {
-			LOG.error("release failed.", e);
+			fileHandler.release(fi);
+			return 0;
+		} catch (ClosedChannelException e) {
+			LOG.warn("release {} failed, invalid file handle {}", path, fi.fh.get());
+			return -ErrorCodes.EBADF();
+		} catch (IOException | RuntimeException e) {
+			LOG.error("release " + path + " failed.", e);
 			return -ErrorCodes.EIO();
 		}
 	}

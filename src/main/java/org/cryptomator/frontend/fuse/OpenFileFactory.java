@@ -2,9 +2,13 @@ package org.cryptomator.frontend.fuse;
 
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.FileAttribute;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -50,7 +54,7 @@ public class OpenFileFactory implements AutoCloseable {
 	 */
 	public long open(Path path, Set<? extends OpenOption> options, FileAttribute<?>... attrs) throws IOException {
 		long fileHandle = fileHandleGen.getAndIncrement();
-		OpenFile file = new OpenFile(path, options, attrs);
+		OpenFile file = OpenFile.create(path, options, attrs);
 		openFiles.put(fileHandle, file);
 		LOG.trace("Opening {} {}", fileHandle, file);
 		return fileHandle;
