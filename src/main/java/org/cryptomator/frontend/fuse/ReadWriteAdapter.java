@@ -346,7 +346,8 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 	 * @return A specific error code or -EIO.
 	 */
 	private int getErrorCodeForGenericFileSystemException(FileSystemException e, String opDesc) {
-		if (Strings.nullToEmpty(e.getReason()).contains("path too long")) {
+		String reason = Strings.nullToEmpty(e.getReason());
+		if (reason.contains("path too long") || reason.contains("name too long")) {
 			LOG.warn("{} {} failed, name too long.", opDesc);
 			return -ErrorCodes.ENAMETOOLONG();
 		} else {
