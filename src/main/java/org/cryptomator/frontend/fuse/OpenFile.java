@@ -22,9 +22,14 @@ public class OpenFile implements Closeable {
 	private final Path path;
 	private final FileChannel channel;
 
-	public OpenFile(Path path, Set<? extends OpenOption> options, FileAttribute<?>... attrs) throws IOException {
+	private OpenFile(Path path, FileChannel channel) {
 		this.path = path;
-		this.channel = FileChannel.open(path, options, attrs);
+		this.channel = channel;
+	}
+	
+	static OpenFile create(Path path, Set<? extends OpenOption> options, FileAttribute<?>... attrs) throws IOException {
+		FileChannel ch = FileChannel.open(path, options, attrs);
+		return new OpenFile(path, ch);
 	}
 
 	/**

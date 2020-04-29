@@ -1,6 +1,7 @@
 package org.cryptomator.frontend.fuse;
 
 import com.google.common.base.CharMatcher;
+import com.google.common.base.Strings;
 import com.google.common.collect.Iterables;
 import jnr.ffi.Pointer;
 import jnr.ffi.types.off_t;
@@ -20,9 +21,11 @@ import ru.serce.jnrfuse.struct.Statvfs;
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.io.IOException;
+import java.nio.channels.ClosedChannelException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.AccessMode;
 import java.nio.file.FileStore;
+import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.NoSuchFileException;
@@ -44,8 +47,8 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 
 	private static final Logger LOG = LoggerFactory.getLogger(ReadOnlyAdapter.class);
 	private static final int BLOCKSIZE = 4096;
-	private static final int FUSE_NAME_MAX = 254; // 255 is preferred, but nautilus checks for this value + 1
 	protected final Path root;
+	private final int maxFileNameLength;
 	protected final FileStore fileStore;
 	protected final LockManager lockManager;
 	private final ReadOnlyDirectoryHandler dirHandler;
@@ -54,8 +57,9 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 	private final FileAttributesUtil attrUtil;
 
 	@Inject
-	public ReadOnlyAdapter(@Named("root") Path root, FileStore fileStore, LockManager lockManager, ReadOnlyDirectoryHandler dirHandler, ReadOnlyFileHandler fileHandler, ReadOnlyLinkHandler linkHandler, FileAttributesUtil attrUtil) {
+	public ReadOnlyAdapter(@Named("root") Path root, @Named("maxFileNameLength") int maxFileNameLength, FileStore fileStore, LockManager lockManager, ReadOnlyDirectoryHandler dirHandler, ReadOnlyFileHandler fileHandler, ReadOnlyLinkHandler linkHandler, FileAttributesUtil attrUtil) {
 		this.root = root;
+		this.maxFileNameLength = maxFileNameLength;
 		this.fileStore = fileStore;
 		this.lockManager = lockManager;
 		this.dirHandler = dirHandler;
@@ -81,7 +85,7 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 			stbuf.f_blocks.set(tBlocks);
 			stbuf.f_bavail.set(aBlocks);
 			stbuf.f_bfree.set(aBlocks);
-			stbuf.f_namemax.set(FUSE_NAME_MAX);
+			stbuf.f_namemax.set(maxFileNameLength);
 			LOG.trace("statfs {} ({} / {})", path, avail, total);
 			return 0;
 		} catch (IOException | RuntimeException e) {
@@ -163,6 +167,8 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 			// see Files.notExists
 			LOG.trace("getattr {} failed, node not found", path);
 			return -ErrorCodes.ENOENT();
+		} catch (FileSystemException e) {
+			return getErrorCodeForGenericFileSystemException(e, "getattr " + path);
 		} catch (IOException | RuntimeException e) {
 			LOG.error("getattr failed.", e);
 			return -ErrorCodes.EIO();
@@ -190,19 +196,17 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
 			 DataLock dataLock = pathLock.lockDataForReading()) {
 			Path node = resolvePath(path);
-			// TODO do we need to distinguish files vs. dirs? https://github.com/libfuse/libfuse/wiki/Invariants
-			if (Files.isDirectory(node)) {
-				LOG.error("open {} failed, node is a directory.", path);
-				return -ErrorCodes.EISDIR();
-			} else if (Files.exists(node)) {
-				LOG.trace("open {} ({})", path, fi.fh.get());
-				return fileHandler.open(node, fi);
-			} else {
-				LOG.error("open {} failed, file not found.", path);
-				return -ErrorCodes.ENOENT();
-			}
-		} catch (RuntimeException e) {
-			LOG.error("open failed.", e);
+			LOG.trace("open {} ({})", path, fi.fh.get());
+			fileHandler.open(node, fi);
+			return 0;
+		} catch (NoSuchFileException e) {
+			LOG.warn("open {} failed, file not found.", path);
+			return -ErrorCodes.ENOENT();
+		} catch (AccessDeniedException e) {
+			LOG.warn("Attempted to open file with unsupported flags.", e);
+			return -ErrorCodes.EROFS();
+		} catch (IOException | RuntimeException e) {
+			LOG.error("open " + path + " failed.", e);
 			return -ErrorCodes.EIO();
 		}
 	}
@@ -211,11 +215,15 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 	public int read(String path, Pointer buf, @size_t long size, @off_t long offset, FuseFileInfo fi) {
 		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
 			 DataLock dataLock = pathLock.lockDataForReading()) {
-			Path node = resolvePath(path);
-			assert Files.exists(node);
-			return fileHandler.read(node, buf, size, offset, fi);
-		} catch (RuntimeException e) {
-			LOG.error("read failed.", e);
+			LOG.trace("read {} bytes from file {} starting at {}...", size, path, offset);
+			int read = fileHandler.read(buf, size, offset, fi);
+			LOG.trace("read {} bytes from file {}", read, path);
+			return read;
+		} catch (ClosedChannelException e) {
+			LOG.warn("read {} failed, invalid file handle {}", path, fi.fh.get());
+			return -ErrorCodes.EBADF();
+		} catch (IOException | RuntimeException e) {
+			LOG.error("read " + path + " failed.", e);
 			return -ErrorCodes.EIO();
 		}
 	}
@@ -224,11 +232,14 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 	public int release(String path, FuseFileInfo fi) {
 		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
 			 DataLock dataLock = pathLock.lockDataForReading()) {
-			Path node = resolvePath(path);
 			LOG.trace("release {} ({})", path, fi.fh.get());
-			return fileHandler.release(node, fi);
-		} catch (RuntimeException e) {
-			LOG.error("release failed.", e);
+			fileHandler.release(fi);
+			return 0;
+		} catch (ClosedChannelException e) {
+			LOG.warn("release {} failed, invalid file handle {}", path, fi.fh.get());
+			return -ErrorCodes.EBADF();
+		} catch (IOException | RuntimeException e) {
+			LOG.error("release " + path + " failed.", e);
 			return -ErrorCodes.EIO();
 		}
 	}
@@ -264,5 +275,24 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 	@Override
 	public void close() throws IOException {
 		fileHandler.close();
+	}
+
+	/**
+	 * Attempts to get a specific error code that best describes the given exception.
+	 * As a side effect this logs the error.
+	 *
+	 * @param e      An exception
+	 * @param opDesc A human-friendly string describing what operation was attempted (for logging purposes)
+	 * @return A specific error code or -EIO.
+	 */
+	protected int getErrorCodeForGenericFileSystemException(FileSystemException e, String opDesc) {
+		String reason = Strings.nullToEmpty(e.getReason());
+		if (reason.contains("path too long") || reason.contains("name too long")) {
+			LOG.warn("{} {} failed, name too long.", opDesc);
+			return -ErrorCodes.ENAMETOOLONG();
+		} else {
+			LOG.error(opDesc + " failed.", e);
+			return -ErrorCodes.EIO();
+		}
 	}
 }
