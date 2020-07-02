@@ -1,10 +1,8 @@
 package org.cryptomator.frontend.fuse.mount;
 
 import com.google.common.base.Preconditions;
-import org.cryptomator.frontend.fuse.AdapterFactory;
 import org.cryptomator.frontend.fuse.FuseNioAdapter;
 
-import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
 abstract class AbstractMount implements Mount {
@@ -17,14 +15,6 @@ abstract class AbstractMount implements Mount {
 		this.fuseAdapter = fuseAdapter;
 		this.envVars = envVars;
 
-	}
-
-	protected void mount() throws CommandFailedException {
-		try {
-			fuseAdapter.mount(envVars.getMountPoint(), false, false, envVars.getFuseFlags());
-		} catch (RuntimeException e) {
-			throw new CommandFailedException(e);
-		}
 	}
 
 	protected abstract ProcessBuilder getRevealCommand();
