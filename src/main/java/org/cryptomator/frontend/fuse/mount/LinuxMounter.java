@@ -44,7 +44,7 @@ class LinuxMounter implements Mounter {
 		return IS_LINUX;
 	}
 
-	private static class LinuxMount extends AbstractMount {
+	private static class LinuxMount extends AbstractCommandBasedMount {
 
 		private static final String DEFAULT_REVEALCOMMAND_LINUX = "xdg-open";
 

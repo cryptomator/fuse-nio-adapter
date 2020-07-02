@@ -5,12 +5,12 @@ import org.cryptomator.frontend.fuse.FuseNioAdapter;
 
 import java.util.concurrent.TimeUnit;
 
-abstract class AbstractMount implements Mount {
+abstract class AbstractCommandBasedMount implements Mount {
 
 	protected final FuseNioAdapter fuseAdapter;
 	protected final EnvironmentVariables envVars;
 
-	public AbstractMount(FuseNioAdapter fuseAdapter, EnvironmentVariables envVars) {
+	public AbstractCommandBasedMount(FuseNioAdapter fuseAdapter, EnvironmentVariables envVars) {
 		Preconditions.checkArgument(fuseAdapter.isMounted());
 		this.fuseAdapter = fuseAdapter;
 		this.envVars = envVars;

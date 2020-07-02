@@ -134,7 +134,7 @@ class MacMounter implements Mounter {
 		}
 	}
 
-	private static class MacMount extends AbstractMount {
+	private static class MacMount extends AbstractCommandBasedMount {
 
 		private final ProcessBuilder revealCommand;
 		private final ProcessBuilder unmountCommand;
