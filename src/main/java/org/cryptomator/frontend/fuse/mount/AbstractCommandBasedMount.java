@@ -1,20 +1,13 @@
 package org.cryptomator.frontend.fuse.mount;
 
-import com.google.common.base.Preconditions;
 import org.cryptomator.frontend.fuse.FuseNioAdapter;
 
 import java.util.concurrent.TimeUnit;
 
-abstract class AbstractCommandBasedMount implements Mount {
-
-	protected final FuseNioAdapter fuseAdapter;
-	protected final EnvironmentVariables envVars;
+abstract class AbstractCommandBasedMount extends AbstractMount {
 
 	public AbstractCommandBasedMount(FuseNioAdapter fuseAdapter, EnvironmentVariables envVars) {
-		Preconditions.checkArgument(fuseAdapter.isMounted());
-		this.fuseAdapter = fuseAdapter;
-		this.envVars = envVars;
-
+		super(fuseAdapter, envVars);
 	}
 
 	protected abstract ProcessBuilder getRevealCommand();
@@ -51,17 +44,4 @@ abstract class AbstractCommandBasedMount implements Mount {
 		ProcessUtil.assertExitValue(proc, 0);
 		fuseAdapter.umount();
 	}
-
-	@Override
-	public void close() throws CommandFailedException {
-		if (fuseAdapter.isMounted()) {
-			throw new IllegalStateException("Can not close file system adapter while still mounted.");
-		}
-		try {
-			fuseAdapter.close();
-		} catch (Exception e) {
-			throw new CommandFailedException(e);
-		}
-	}
-
 }
