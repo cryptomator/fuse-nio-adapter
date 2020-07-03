@@ -27,6 +27,30 @@ public class MirroringFuseMountTest {
 	private static final String OS_NAME = System.getProperty("os.name").toLowerCase();
 
 	/**
+	 * Mirror directory on Windows
+	 */
+	public static class WindowsMirror {
+
+		public static void main(String[] args) {
+			Preconditions.checkState(OS_NAME.contains("win"), "Test designed to run on Windows.");
+
+			try (Scanner scanner = new Scanner(System.in)) {
+				System.out.println("Enter path to the directory you want to mirror:");
+				Path p = Paths.get(scanner.nextLine());
+				System.out.println("Enter mount point:");
+				Path m = Paths.get(scanner.nextLine());
+				if (m.startsWith(p) || p.startsWith(m)) {
+					LOG.error("Mirrored directory and mount location must not be nested.");
+				} else if (Files.isDirectory(p)) {
+					mount(p, m);
+				} else {
+					LOG.error("Invalid directory.");
+				}
+			}
+		}
+	}
+
+	/**
 	 * Mirror directory on Linux
 	 */
 	public static class LinuxMirror {
