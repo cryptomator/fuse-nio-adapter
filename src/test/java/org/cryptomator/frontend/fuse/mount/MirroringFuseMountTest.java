@@ -51,6 +51,34 @@ public class MirroringFuseMountTest {
 	}
 
 	/**
+	 * Mirror vault on Windows
+	 */
+	public static class WindowsCryptoFsMirror {
+
+		public static void main(String args[]) throws IOException {
+			Preconditions.checkState(OS_NAME.contains("win"), "Test designed to run on Windows.");
+
+			try (Scanner scanner = new Scanner(System.in)) {
+				System.out.println("Enter path to the vault you want to mirror:");
+				Path vaultPath = Paths.get(scanner.nextLine());
+				Preconditions.checkArgument(CryptoFileSystemProvider.containsVault(vaultPath, "masterkey.cryptomator"), "Not a vault: " + vaultPath);
+				System.out.println("Enter vault password:");
+				String passphrase = scanner.nextLine();
+				CryptoFileSystemProperties props = CryptoFileSystemProperties.withPassphrase(passphrase).withFlags().build();
+				try (FileSystem cryptoFs = CryptoFileSystemProvider.newFileSystem(vaultPath, props)) {
+					Path p = cryptoFs.getPath("/");
+					System.out.println("Enter mount point:");
+					Path m = Paths.get(scanner.nextLine());
+					//Preconditions.checkArgument(Files.isDirectory(m), "Invalid mount point: " + m); //We don't need that on Windows
+					LOG.info("Mounting FUSE file system at {}", m);
+					mount(p, m);
+				}
+			}
+		}
+
+	}
+
+	/**
 	 * Mirror directory on Linux
 	 */
 	public static class LinuxMirror {
