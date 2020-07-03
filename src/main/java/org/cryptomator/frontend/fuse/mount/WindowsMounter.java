@@ -23,7 +23,7 @@ class WindowsMounter implements Mounter {
 
 	@Override
 	public String[] defaultMountFlags() {
-		return new String[0];
+		return new String[] {"-ouid=-1", "-ogid=-1"};
 	}
 
 	@Override
