@@ -16,6 +16,28 @@ abstract class AbstractMount implements Mount {
 	}
 
 	@Override
+	public void revealInFileManager() throws CommandFailedException {
+		//NO-OP
+	}
+
+	@Override
+	public void unmount() throws CommandFailedException {
+		if (!this.fuseAdapter.isMounted()) {
+			return;
+		}
+		try {
+			this.fuseAdapter.umount();
+		} catch (Exception e) {
+			throw new CommandFailedException(e);
+		}
+	}
+
+	@Override
+	public void unmountForced() throws CommandFailedException {
+		unmount();
+	}
+
+	@Override
 	public void close() throws CommandFailedException {
 		if (this.fuseAdapter.isMounted()) {
 			throw new IllegalStateException("Can not close file system adapter while still mounted.");
