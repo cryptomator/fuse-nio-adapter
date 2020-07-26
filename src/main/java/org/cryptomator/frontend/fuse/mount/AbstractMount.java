@@ -34,6 +34,8 @@ abstract class AbstractMount implements Mount {
 
 	@Override
 	public void unmountForced() throws CommandFailedException {
+		//That's not optimal, but there is no other way (that I know of)
+		//to force the unmount using WinFSP (Linux and Mac override this anyway)
 		unmount();
 	}
 
