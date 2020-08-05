@@ -9,6 +9,8 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 class LinuxMounter implements Mounter {
 
@@ -44,38 +46,49 @@ class LinuxMounter implements Mounter {
 		return IS_LINUX;
 	}
 
-	private static class LinuxMount extends AbstractCommandBasedMount {
+	private static class LinuxMount extends AbstractMount {
 
-		private static final String DEFAULT_REVEALCOMMAND_LINUX = "xdg-open";
-
-		private final ProcessBuilder revealCommand;
-		private final ProcessBuilder unmountCommand;
-		private final ProcessBuilder unmountForcedCommand;
+		private final Optional<String> customRevealCommand;
 
 		private LinuxMount(FuseNioAdapter fuseAdapter, EnvironmentVariables envVars) {
-			super(fuseAdapter, envVars);
-			Path mountPoint = envVars.getMountPoint();
-			String[] command = envVars.getRevealCommand().orElse(DEFAULT_REVEALCOMMAND_LINUX).split("\\s+");
-			this.revealCommand = new ProcessBuilder(ObjectArrays.concat(command, mountPoint.toString()));
-			this.unmountCommand = new ProcessBuilder("fusermount", "-u", "--", mountPoint.getFileName().toString());
-			this.unmountCommand.directory(mountPoint.getParent().toFile());
-			this.unmountForcedCommand = new ProcessBuilder("fusermount", "-u", "-z", "--", mountPoint.getFileName().toString());
-			this.unmountForcedCommand.directory(mountPoint.getParent().toFile());
+			super(fuseAdapter, envVars.getMountPoint());
+			this.customRevealCommand = envVars.getRevealCommand();
 		}
 
 		@Override
-		public ProcessBuilder getRevealCommand() {
-			return revealCommand;
+		public void revealInFileManager() throws CommandFailedException {
+			if (customRevealCommand.isPresent()) {
+				ProcessBuilder command = new ProcessBuilder(ObjectArrays.concat(customRevealCommand.get().split("\\s+"), mountPoint.toString()));
+				command.directory(mountPoint.getParent().toFile());
+				Process proc = ProcessUtil.startAndWaitFor(command, 5, TimeUnit.SECONDS);
+				ProcessUtil.assertExitValue(proc, 0);
+			} else {
+				super.revealInFileManager();
+			}
 		}
 
 		@Override
-		public ProcessBuilder getUnmountCommand() {
-			return unmountCommand;
+		public void unmount() throws CommandFailedException {
+			if (!fuseAdapter.isMounted()) {
+				return;
+			}
+			ProcessBuilder command = new ProcessBuilder("fusermount", "-u", "--", mountPoint.getFileName().toString());
+			command.directory(mountPoint.getParent().toFile());
+			Process proc = ProcessUtil.startAndWaitFor(command, 5, TimeUnit.SECONDS);
+			ProcessUtil.assertExitValue(proc, 0);
+			fuseAdapter.umount();
 		}
 
 		@Override
-		public ProcessBuilder getUnmountForcedCommand() {
-			return unmountForcedCommand;
+		public void unmountForced() throws CommandFailedException {
+			if (!fuseAdapter.isMounted()) {
+				return;
+			}
+			ProcessBuilder command = new ProcessBuilder("fusermount", "-u", "-z", "--", mountPoint.getFileName().toString());
+			command.directory(mountPoint.getParent().toFile());
+			Process proc = ProcessUtil.startAndWaitFor(command, 5, TimeUnit.SECONDS);
+			ProcessUtil.assertExitValue(proc, 0);
+			fuseAdapter.umount();
 		}
 	}
 }

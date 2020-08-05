@@ -6,6 +6,7 @@ import com.google.common.collect.Iterables;
 import jnr.ffi.Pointer;
 import jnr.ffi.types.off_t;
 import jnr.ffi.types.size_t;
+import jnr.posix.util.Platform;
 import org.cryptomator.frontend.fuse.locks.DataLock;
 import org.cryptomator.frontend.fuse.locks.LockManager;
 import org.cryptomator.frontend.fuse.locks.PathLock;
@@ -261,6 +262,8 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 	/*
 	 * We overwrite the default implementation to skip the "internal" unmount command, because we want to use system commands instead.
 	 * See also: https://github.com/cryptomator/fuse-nio-adapter/issues/29
+	 *
+	 * On WinFSP, this will unmount via fuse_exit.
 	 */
 	@Override
 	public void umount() {
@@ -269,6 +272,11 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 			LOG.debug("Marked file system adapter as unmounted.");
 		} else {
 			LOG.trace("File system adapter already unmounted.");
+		}
+
+		if (Platform.IS_WINDOWS) {
+			// TODO: Do we only want this on Windows?
+			libFuse.fuse_exit(libFuse.fuse_get_context().fuse.get());
 		}
 	}
 
