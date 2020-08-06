@@ -56,6 +56,7 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 	private final ReadOnlyFileHandler fileHandler;
 	private final ReadOnlyLinkHandler linkHandler;
 	private final FileAttributesUtil attrUtil;
+	private Pointer fusePointer;
 
 	@Inject
 	public ReadOnlyAdapter(@Named("root") Path root, @Named("maxFileNameLength") int maxFileNameLength, FileStore fileStore, LockManager lockManager, ReadOnlyDirectoryHandler dirHandler, ReadOnlyFileHandler fileHandler, ReadOnlyLinkHandler linkHandler, FileAttributesUtil attrUtil) {
@@ -67,6 +68,12 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 		this.fileHandler = fileHandler;
 		this.linkHandler = linkHandler;
 		this.attrUtil = attrUtil;
+	}
+
+	@Override
+	public Pointer init(Pointer conn) {
+		this.fusePointer = getContext().fuse.get();
+		return super.init(conn);
 	}
 
 	protected Path resolvePath(String absolutePath) {
@@ -276,7 +283,7 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 
 		if (Platform.IS_WINDOWS) {
 			// TODO: Do we only want this on Windows?
-			libFuse.fuse_exit(libFuse.fuse_get_context().fuse.get());
+			libFuse.fuse_exit(fusePointer);
 		}
 	}
 
