@@ -140,6 +140,7 @@ class MacMounter implements Mounter {
 
 		private MacMount(FuseNioAdapter fuseAdapter, EnvironmentVariables envVars) {
 			super(fuseAdapter, envVars.getMountPoint());
+			fuseAdapter.setUmountBehaviour(FuseNioAdapter.UmountBehaviour.FLAG_ONLY);
 		}
 
 		@Override

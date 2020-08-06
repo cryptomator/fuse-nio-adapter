@@ -56,7 +56,7 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 	private final ReadOnlyFileHandler fileHandler;
 	private final ReadOnlyLinkHandler linkHandler;
 	private final FileAttributesUtil attrUtil;
-	private Pointer fusePointer;
+	private UmountBehaviour umountBehaviour;
 
 	@Inject
 	public ReadOnlyAdapter(@Named("root") Path root, @Named("maxFileNameLength") int maxFileNameLength, FileStore fileStore, LockManager lockManager, ReadOnlyDirectoryHandler dirHandler, ReadOnlyFileHandler fileHandler, ReadOnlyLinkHandler linkHandler, FileAttributesUtil attrUtil) {
@@ -68,12 +68,7 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 		this.fileHandler = fileHandler;
 		this.linkHandler = linkHandler;
 		this.attrUtil = attrUtil;
-	}
-
-	@Override
-	public Pointer init(Pointer conn) {
-		this.fusePointer = getContext().fuse.get();
-		return super.init(conn);
+		this.umountBehaviour = UmountBehaviour.DEFAULT;
 	}
 
 	protected Path resolvePath(String absolutePath) {
@@ -267,24 +262,30 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 	}
 
 	/*
-	 * We overwrite the default implementation to skip the "internal" unmount command, because we want to use system commands instead.
+	 * We overwrite the default implementation to allow skipping undesirable unmount commands.
 	 * See also: https://github.com/cryptomator/fuse-nio-adapter/issues/29
-	 *
-	 * On WinFSP, this will unmount via fuse_exit.
 	 */
 	@Override
 	public void umount() {
 		// this might be called multiple times: explicitly _and_ via a shutdown hook registered during mount() in AbstractFuseFS
+		if (UmountBehaviour.FLAG_ONLY.equals(umountBehaviour)) {
+			markUnmounted();
+		} else {
+			super.umount();
+		}
+	}
+
+	private void markUnmounted() {
 		if (mounted.compareAndSet(true, false)) {
 			LOG.debug("Marked file system adapter as unmounted.");
 		} else {
 			LOG.trace("File system adapter already unmounted.");
 		}
+	}
 
-		if (Platform.IS_WINDOWS) {
-			// TODO: Do we only want this on Windows?
-			libFuse.fuse_exit(fusePointer);
-		}
+	@Override
+	public void setUmountBehaviour(UmountBehaviour umountBehaviour) {
+		this.umountBehaviour = umountBehaviour;
 	}
 
 	@Override

@@ -52,6 +52,7 @@ class LinuxMounter implements Mounter {
 
 		private LinuxMount(FuseNioAdapter fuseAdapter, EnvironmentVariables envVars) {
 			super(fuseAdapter, envVars.getMountPoint());
+			fuseAdapter.setUmountBehaviour(FuseNioAdapter.UmountBehaviour.FLAG_ONLY);
 			this.customRevealCommand = envVars.getRevealCommand();
 		}
 
