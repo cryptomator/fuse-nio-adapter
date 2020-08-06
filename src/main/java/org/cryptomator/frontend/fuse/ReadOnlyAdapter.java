@@ -6,7 +6,6 @@ import com.google.common.collect.Iterables;
 import jnr.ffi.Pointer;
 import jnr.ffi.types.off_t;
 import jnr.ffi.types.size_t;
-import jnr.posix.util.Platform;
 import org.cryptomator.frontend.fuse.locks.DataLock;
 import org.cryptomator.frontend.fuse.locks.LockManager;
 import org.cryptomator.frontend.fuse.locks.PathLock;
@@ -56,7 +55,6 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 	private final ReadOnlyFileHandler fileHandler;
 	private final ReadOnlyLinkHandler linkHandler;
 	private final FileAttributesUtil attrUtil;
-	private UmountBehaviour umountBehaviour;
 
 	@Inject
 	public ReadOnlyAdapter(@Named("root") Path root, @Named("maxFileNameLength") int maxFileNameLength, FileStore fileStore, LockManager lockManager, ReadOnlyDirectoryHandler dirHandler, ReadOnlyFileHandler fileHandler, ReadOnlyLinkHandler linkHandler, FileAttributesUtil attrUtil) {
@@ -68,7 +66,6 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 		this.fileHandler = fileHandler;
 		this.linkHandler = linkHandler;
 		this.attrUtil = attrUtil;
-		this.umountBehaviour = UmountBehaviour.DEFAULT;
 	}
 
 	protected Path resolvePath(String absolutePath) {
@@ -261,31 +258,13 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 		return mounted.get();
 	}
 
-	/*
-	 * We overwrite the default implementation to allow skipping undesirable unmount commands.
-	 * See also: https://github.com/cryptomator/fuse-nio-adapter/issues/29
-	 */
 	@Override
-	public void umount() {
-		// this might be called multiple times: explicitly _and_ via a shutdown hook registered during mount() in AbstractFuseFS
-		if (UmountBehaviour.FLAG_ONLY.equals(umountBehaviour)) {
-			markUnmounted();
-		} else {
-			super.umount();
-		}
-	}
-
-	private void markUnmounted() {
+	public void setUnmounted() {
 		if (mounted.compareAndSet(true, false)) {
 			LOG.debug("Marked file system adapter as unmounted.");
 		} else {
 			LOG.trace("File system adapter already unmounted.");
 		}
-	}
-
-	@Override
-	public void setUmountBehaviour(UmountBehaviour umountBehaviour) {
-		this.umountBehaviour = umountBehaviour;
 	}
 
 	@Override

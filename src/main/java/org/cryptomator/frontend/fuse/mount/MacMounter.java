@@ -140,7 +140,6 @@ class MacMounter implements Mounter {
 
 		private MacMount(FuseNioAdapter fuseAdapter, EnvironmentVariables envVars) {
 			super(fuseAdapter, envVars.getMountPoint());
-			fuseAdapter.setUmountBehaviour(FuseNioAdapter.UmountBehaviour.FLAG_ONLY);
 		}
 
 		@Override
@@ -152,7 +151,7 @@ class MacMounter implements Mounter {
 			command.directory(mountPoint.getParent().toFile());
 			Process proc = ProcessUtil.startAndWaitFor(command, 5, TimeUnit.SECONDS);
 			ProcessUtil.assertExitValue(proc, 0);
-			fuseAdapter.umount();
+			fuseAdapter.setUnmounted();
 		}
 
 		@Override
@@ -164,7 +163,7 @@ class MacMounter implements Mounter {
 			command.directory(mountPoint.getParent().toFile());
 			Process proc = ProcessUtil.startAndWaitFor(command, 5, TimeUnit.SECONDS);
 			ProcessUtil.assertExitValue(proc, 0);
-			fuseAdapter.umount();
+			fuseAdapter.setUnmounted();
 		}
 
 	}

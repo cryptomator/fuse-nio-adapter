@@ -52,7 +52,6 @@ class LinuxMounter implements Mounter {
 
 		private LinuxMount(FuseNioAdapter fuseAdapter, EnvironmentVariables envVars) {
 			super(fuseAdapter, envVars.getMountPoint());
-			fuseAdapter.setUmountBehaviour(FuseNioAdapter.UmountBehaviour.FLAG_ONLY);
 			this.customRevealCommand = envVars.getRevealCommand();
 		}
 
@@ -77,7 +76,7 @@ class LinuxMounter implements Mounter {
 			command.directory(mountPoint.getParent().toFile());
 			Process proc = ProcessUtil.startAndWaitFor(command, 5, TimeUnit.SECONDS);
 			ProcessUtil.assertExitValue(proc, 0);
-			fuseAdapter.umount();
+			fuseAdapter.setUnmounted();
 		}
 
 		@Override
@@ -89,7 +88,7 @@ class LinuxMounter implements Mounter {
 			command.directory(mountPoint.getParent().toFile());
 			Process proc = ProcessUtil.startAndWaitFor(command, 5, TimeUnit.SECONDS);
 			ProcessUtil.assertExitValue(proc, 0);
-			fuseAdapter.umount();
+			fuseAdapter.setUnmounted();
 		}
 	}
 }
