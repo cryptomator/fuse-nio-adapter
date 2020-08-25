@@ -11,10 +11,10 @@ class WindowsMounter implements Mounter {
 	private static final boolean IS_WINDOWS = Platform.getNativePlatform().getOS() == Platform.OS.WINDOWS;
 
 	@Override
-	public synchronized Mount mount(Path directory, EnvironmentVariables envVars) throws CommandFailedException {
+	public synchronized Mount mount(Path directory, boolean blocking, boolean debug, EnvironmentVariables envVars) throws CommandFailedException {
 		FuseNioAdapter fuseAdapter = AdapterFactory.createReadWriteAdapter(directory);
 		try {
-			fuseAdapter.mount(envVars.getMountPoint(), false, false, envVars.getFuseFlags());
+			fuseAdapter.mount(envVars.getMountPoint(), blocking, debug, envVars.getFuseFlags());
 		} catch (RuntimeException e) {
 			throw new CommandFailedException(e);
 		}

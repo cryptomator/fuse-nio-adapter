@@ -39,10 +39,10 @@ class MacMounter implements Mounter {
 	private static final String PLIST_DTD_URL = "http://www.apple.com/DTDs/PropertyList-1.0.dtd";
 
 	@Override
-	public synchronized Mount mount(Path directory, EnvironmentVariables envVars) throws CommandFailedException {
+	public synchronized Mount mount(Path directory, boolean blocking, boolean debug, EnvironmentVariables envVars) throws CommandFailedException {
 		FuseNioAdapter fuseAdapter = AdapterFactory.createReadWriteAdapter(directory);
 		try {
-			fuseAdapter.mount(envVars.getMountPoint(), false, false, envVars.getFuseFlags());
+			fuseAdapter.mount(envVars.getMountPoint(), blocking, debug, envVars.getFuseFlags());
 		} catch (RuntimeException e) {
 			throw new CommandFailedException(e);
 		}

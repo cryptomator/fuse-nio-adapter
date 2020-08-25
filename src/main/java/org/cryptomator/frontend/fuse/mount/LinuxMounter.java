@@ -18,10 +18,10 @@ class LinuxMounter implements Mounter {
 	private static final Path USER_HOME = Paths.get(System.getProperty("user.home"));
 
 	@Override
-	public synchronized Mount mount(Path directory, EnvironmentVariables envVars) throws CommandFailedException {
+	public synchronized Mount mount(Path directory, boolean blocking, boolean debug, EnvironmentVariables envVars) throws CommandFailedException {
 		FuseNioAdapter fuseAdapter = AdapterFactory.createReadWriteAdapter(directory);
 		try {
-			fuseAdapter.mount(envVars.getMountPoint(), false, false, envVars.getFuseFlags());
+			fuseAdapter.mount(envVars.getMountPoint(), blocking, debug, envVars.getFuseFlags());
 		} catch (RuntimeException e) {
 			throw new CommandFailedException(e);
 		}
