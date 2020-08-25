@@ -7,8 +7,9 @@ public interface FuseNioAdapter extends FuseFS, AutoCloseable {
 	boolean isMounted();
 
 	/**
-	 * Sets mounted to false. Other than in {@link FuseFS#umount()} this will not actually attempt to unmount the device.
+	 * Sets mounted to false.
+	 * <p>
+	 * Allows custom unmount implementations to prevent subsequent invocations of {@link #umount()} to run into illegal states.
 	 */
-	@Override
-	void umount();
+	void setUnmounted();
 }

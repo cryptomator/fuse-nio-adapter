@@ -23,6 +23,12 @@ class FuseMountModule {
 	}
 
 	@Provides
+	@IntoSet
+	public static Mounter provideWindowsFuseEnvironment() {
+		return new WindowsMounter();
+	}
+
+	@Provides
 	public static Optional<Mounter> provideEnvironment(Set<Mounter> envs) {
 		return envs.stream().filter(Mounter::isApplicable).findAny();
 	}

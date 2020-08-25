@@ -1,5 +1,6 @@
 package org.cryptomator.frontend.fuse.mount;
 
+import com.google.common.base.Preconditions;
 import org.cryptomator.frontend.fuse.AdapterFactory;
 import org.cryptomator.frontend.fuse.FuseNioAdapter;
 import org.slf4j.Logger;
@@ -25,6 +26,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 
 class MacMounter implements Mounter {
 
@@ -136,34 +138,32 @@ class MacMounter implements Mounter {
 
 	private static class MacMount extends AbstractMount {
 
-		private final ProcessBuilder revealCommand;
-		private final ProcessBuilder unmountCommand;
-		private final ProcessBuilder unmountForcedCommand;
-
 		private MacMount(FuseNioAdapter fuseAdapter, EnvironmentVariables envVars) {
-			super(fuseAdapter, envVars);
-			Path mountPoint = envVars.getMountPoint();
-			this.revealCommand = new ProcessBuilder("open", ".");
-			this.revealCommand.directory(mountPoint.toFile());
-			this.unmountCommand = new ProcessBuilder("umount", "--", mountPoint.getFileName().toString());
-			this.unmountCommand.directory(mountPoint.getParent().toFile());
-			this.unmountForcedCommand = new ProcessBuilder("umount", "-f", "--", mountPoint.getFileName().toString());
-			this.unmountForcedCommand.directory(mountPoint.getParent().toFile());
+			super(fuseAdapter, envVars.getMountPoint());
 		}
 
 		@Override
-		public ProcessBuilder getRevealCommand() {
-			return revealCommand;
+		public void unmount() throws CommandFailedException {
+			if (!fuseAdapter.isMounted()) {
+				return;
+			}
+			ProcessBuilder command = new ProcessBuilder("umount", "--", mountPoint.getFileName().toString());
+			command.directory(mountPoint.getParent().toFile());
+			Process proc = ProcessUtil.startAndWaitFor(command, 5, TimeUnit.SECONDS);
+			ProcessUtil.assertExitValue(proc, 0);
+			fuseAdapter.setUnmounted();
 		}
 
 		@Override
-		public ProcessBuilder getUnmountCommand() {
-			return unmountCommand;
-		}
-
-		@Override
-		public ProcessBuilder getUnmountForcedCommand() {
-			return unmountForcedCommand;
+		public void unmountForced() throws CommandFailedException {
+			if (!fuseAdapter.isMounted()) {
+				return;
+			}
+			ProcessBuilder command = new ProcessBuilder("umount", "-f", "--", mountPoint.getFileName().toString());
+			command.directory(mountPoint.getParent().toFile());
+			Process proc = ProcessUtil.startAndWaitFor(command, 5, TimeUnit.SECONDS);
+			ProcessUtil.assertExitValue(proc, 0);
+			fuseAdapter.setUnmounted();
 		}
 
 	}

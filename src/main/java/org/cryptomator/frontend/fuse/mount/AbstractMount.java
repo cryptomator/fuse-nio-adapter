@@ -1,77 +1,51 @@
 package org.cryptomator.frontend.fuse.mount;
 
 import com.google.common.base.Preconditions;
-import org.cryptomator.frontend.fuse.AdapterFactory;
 import org.cryptomator.frontend.fuse.FuseNioAdapter;
 
+import java.awt.*;
+import java.io.IOException;
 import java.nio.file.Path;
-import java.util.concurrent.TimeUnit;
 
 abstract class AbstractMount implements Mount {
 
 	protected final FuseNioAdapter fuseAdapter;
-	protected final EnvironmentVariables envVars;
+	protected final Path mountPoint;
 
-	public AbstractMount(FuseNioAdapter fuseAdapter, EnvironmentVariables envVars) {
+	public AbstractMount(FuseNioAdapter fuseAdapter, Path mountPoint) {
 		Preconditions.checkArgument(fuseAdapter.isMounted());
 		this.fuseAdapter = fuseAdapter;
-		this.envVars = envVars;
-
+		this.mountPoint = mountPoint;
 	}
 
-	protected void mount() throws CommandFailedException {
-		try {
-			fuseAdapter.mount(envVars.getMountPoint(), false, false, envVars.getFuseFlags());
-		} catch (RuntimeException e) {
-			throw new CommandFailedException(e);
-		}
+	@Override
+	public Path getMountPoint() {
+		Preconditions.checkState(fuseAdapter.isMounted(), "Not currently mounted.");
+		return mountPoint;
 	}
-
-	protected abstract ProcessBuilder getRevealCommand();
-
-	protected abstract ProcessBuilder getUnmountCommand();
-
-	protected abstract ProcessBuilder getUnmountForcedCommand();
 
 	@Override
 	public void revealInFileManager() throws CommandFailedException {
-		if (!fuseAdapter.isMounted()) {
-			throw new CommandFailedException("Not currently mounted.");
+		if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
+			try {
+				Desktop.getDesktop().browse(mountPoint.toUri());
+			} catch (IOException e) {
+				throw new CommandFailedException(e);
+			}
+		} else {
+			throw new CommandFailedException("API to browse files not supported.");
 		}
-		Process proc = ProcessUtil.startAndWaitFor(getRevealCommand(), 5, TimeUnit.SECONDS);
-		ProcessUtil.assertExitValue(proc, 0);
-	}
-
-	@Override
-	public void unmount() throws CommandFailedException {
-		if (!fuseAdapter.isMounted()) {
-			return;
-		}
-		Process proc = ProcessUtil.startAndWaitFor(getUnmountCommand(), 5, TimeUnit.SECONDS);
-		ProcessUtil.assertExitValue(proc, 0);
-		fuseAdapter.umount();
-	}
-
-	@Override
-	public void unmountForced() throws CommandFailedException {
-		if (!fuseAdapter.isMounted()) {
-			return;
-		}
-		Process proc = ProcessUtil.startAndWaitFor(getUnmountForcedCommand(), 5, TimeUnit.SECONDS);
-		ProcessUtil.assertExitValue(proc, 0);
-		fuseAdapter.umount();
 	}
 
 	@Override
 	public void close() throws CommandFailedException {
-		if (fuseAdapter.isMounted()) {
+		if (this.fuseAdapter.isMounted()) {
 			throw new IllegalStateException("Can not close file system adapter while still mounted.");
 		}
 		try {
-			fuseAdapter.close();
+			this.fuseAdapter.close();
 		} catch (Exception e) {
 			throw new CommandFailedException(e);
 		}
 	}
-
 }
