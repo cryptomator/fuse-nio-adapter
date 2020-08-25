@@ -21,6 +21,7 @@ import javax.xml.xpath.XPathFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -150,7 +151,7 @@ class MacMounter implements Mounter {
 			ProcessBuilder command = new ProcessBuilder("umount", "--", mountPoint.getFileName().toString());
 			command.directory(mountPoint.getParent().toFile());
 			Process proc = ProcessUtil.startAndWaitFor(command, 5, TimeUnit.SECONDS);
-			ProcessUtil.assertExitValue(proc, 0);
+			assertUmountSucceeded(proc);
 			fuseAdapter.setUnmounted();
 		}
 
@@ -162,8 +163,25 @@ class MacMounter implements Mounter {
 			ProcessBuilder command = new ProcessBuilder("umount", "-f", "--", mountPoint.getFileName().toString());
 			command.directory(mountPoint.getParent().toFile());
 			Process proc = ProcessUtil.startAndWaitFor(command, 5, TimeUnit.SECONDS);
-			ProcessUtil.assertExitValue(proc, 0);
+			assertUmountSucceeded(proc);
 			fuseAdapter.setUnmounted();
+		}
+
+		private void assertUmountSucceeded(Process proc) throws CommandFailedException {
+			if (proc.exitValue() == 0) {
+				return;
+			}
+			try {
+				String stderr = ProcessUtil.toString(proc.getErrorStream(), StandardCharsets.US_ASCII);
+				if (stderr.contains("not currently mounted")) {
+					LOG.info("Already unmounted");
+					return;
+				} else {
+					throw new CommandFailedException("Unmount failed. STDERR: " + stderr);
+				}
+			} catch (IOException e) {
+				throw new CommandFailedException(e);
+			}
 		}
 
 	}
