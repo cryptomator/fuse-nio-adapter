@@ -12,8 +12,8 @@ import java.nio.file.Path;
 
 class WindowsMounter implements Mounter {
 
-	private static final boolean IS_WINDOWS = Platform.getNativePlatform().getOS() == Platform.OS.WINDOWS;
 	private static final Logger LOG = LoggerFactory.getLogger(WindowsMounter.class);
+	private static final boolean IS_APPLICABLE = Platform.getNativePlatform().getOS() == Platform.OS.WINDOWS && isWinFspInstalled();
 
 	@Override
 	public synchronized Mount mount(Path directory, boolean blocking, boolean debug, EnvironmentVariables envVars) throws CommandFailedException {
@@ -33,10 +33,10 @@ class WindowsMounter implements Mounter {
 
 	@Override
 	public boolean isApplicable() {
-		return IS_WINDOWS && isWinFspInstalled();
+		return IS_APPLICABLE;
 	}
 
-	private boolean isWinFspInstalled() {
+	private static boolean isWinFspInstalled() {
 		try {
 			String path = WinPathUtils.getWinFspPath(); //Result only matters for debug-message; null-check is included in lib
 			LOG.trace("Found WinFsp installation at {}", path);
