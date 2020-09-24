@@ -186,7 +186,13 @@ public class MirroringFuseMountTest {
 			LOG.info("Mounted successfully. Enter anything to stop the server...");
 			mnt.revealInFileManager();
 			System.in.read();
-			mnt.unmountForced();
+			try {
+				mnt.unmount();
+			} catch (CommandFailedException e) {
+				LOG.info("Unable to perform regular unmount.", e);
+				LOG.info("Forcing unmount...");
+				mnt.unmountForced();
+			}
 			LOG.info("Unmounted successfully. Exiting...");
 		} catch (IOException | CommandFailedException e) {
 			LOG.error("Mount failed", e);

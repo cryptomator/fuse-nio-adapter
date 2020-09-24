@@ -144,7 +144,7 @@ class MacMounter implements Mounter {
 		}
 
 		@Override
-		public void unmount() throws CommandFailedException {
+		public void unmountInternal() throws CommandFailedException {
 			if (!fuseAdapter.isMounted()) {
 				return;
 			}
@@ -156,7 +156,7 @@ class MacMounter implements Mounter {
 		}
 
 		@Override
-		public void unmountForced() throws CommandFailedException {
+		public void unmountForcedInternal() throws CommandFailedException {
 			if (!fuseAdapter.isMounted()) {
 				return;
 			}
