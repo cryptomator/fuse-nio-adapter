@@ -24,9 +24,19 @@ class PathLockBuilderImpl implements PathLockBuilder {
 		return PathRLockImpl.create(pathComponents, parentLock, lock, dataLockSupplier);
 	}
 
+	public PathLock tryForReading() throws AlreadyLockedException {
+		Optional<PathLock> parentLock = parent.map(PathLockBuilder::forReading);
+		return PathRLockImpl.attempt(pathComponents, parentLock, lock, dataLockSupplier);
+	}
+
 	public PathLock forWriting() {
 		Optional<PathLock> parentLock = parent.map(PathLockBuilder::forReading);
 		return PathWLockImpl.create(pathComponents, parentLock, lock, dataLockSupplier);
+	}
+
+	public PathLock tryForWriting() throws AlreadyLockedException {
+		Optional<PathLock> parentLock = parent.map(PathLockBuilder::forReading);
+		return PathWLockImpl.attempt(pathComponents, parentLock, lock, dataLockSupplier);
 	}
 
 }
