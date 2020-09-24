@@ -263,7 +263,7 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 	}
 
 	@Override
-	public boolean isNotSafeToUnmount() {
+	public boolean isInUse() {
 		try (PathLock pLock = lockManager.createPathLock("/").tryForWriting()) {
 			return hasOpenFiles.getAsBoolean();
 		} catch (AlreadyLockedException e) {

@@ -39,7 +39,7 @@ abstract class AbstractMount implements Mount {
 
 	@Override
 	public void unmount() throws CommandFailedException {
-		if (fuseAdapter.isNotSafeToUnmount()) {
+		if (fuseAdapter.isInUse()) {
 			throw new CommandFailedException("Unmount refused: There are open files or pending operations.");
 		}
 
