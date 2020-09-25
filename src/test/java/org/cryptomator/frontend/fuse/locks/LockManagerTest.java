@@ -131,50 +131,34 @@ public class LockManagerTest {
 		@DisplayName("try-Methods fail with exception if path already locked")
 		public void testTryMethod() {
 			LockManager lockManager = new LockManager();
-			int numThreads = 4;
-			ExecutorService threadPool = Executors.newFixedThreadPool(numThreads);
-			CountDownLatch done = new CountDownLatch(numThreads);
-			AtomicInteger counter = new AtomicInteger();
-			AtomicInteger maxCounter = new AtomicInteger();
+			ExecutorService threadPool = Executors.newFixedThreadPool(2);
+			CountDownLatch done = new CountDownLatch(2);
 			AtomicInteger exceptionCounter = new AtomicInteger();
 
 			try (PathLock lock = lockManager.createPathLock("/foo/bar/baz").forWriting()) {
-				for (int i = 0; i < numThreads; i++) {
-					int threadnum = i;
-					threadPool.submit(() -> {
-						if (threadnum % 2 == 0) {
-							try (PathLock lockThread = lockManager.createPathLock("/foo/bar/baz").tryForWriting()) {
-								counter.incrementAndGet();
-								Thread.sleep(10);
-								maxCounter.set(Math.max(counter.get(), maxCounter.get()));
-								counter.decrementAndGet();
-							} catch (InterruptedException e) {
-								LOG.error("thread interrupted", e);
-							} catch (AlreadyLockedException e) {
-								exceptionCounter.incrementAndGet();
-							}
-						} else {
-							try (PathLock lockThread = lockManager.createPathLock("/foo/bar/baz").tryForReading()) {
-								counter.incrementAndGet();
-								Thread.sleep(10);
-								maxCounter.set(Math.max(counter.get(), maxCounter.get()));
-								counter.decrementAndGet();
-							} catch (InterruptedException e) {
-								LOG.error("thread interrupted", e);
-							} catch (AlreadyLockedException e) {
-								exceptionCounter.incrementAndGet();
-							}
-						}
-						done.countDown();
-					});
-				}
+				threadPool.submit(() -> {
+					try (PathLock lockThread = lockManager.createPathLock("/foo/bar/baz").tryForWriting()) {
+						//do nuthin'
+					} catch (AlreadyLockedException e) {
+						exceptionCounter.incrementAndGet();
+					}
+					done.countDown();
+				});
+				threadPool.submit(() -> {
+					try (PathLock lockThread = lockManager.createPathLock("/foo/bar/baz").tryForReading()) {
+						//do nuthin'
+					} catch (AlreadyLockedException e) {
+						exceptionCounter.incrementAndGet();
+					}
+					done.countDown();
+				});
+
 				Assertions.assertTimeoutPreemptively(Duration.ofSeconds(10), () -> { // deadlock protection
 					done.await();
 				});
 			}
 
-			Assertions.assertEquals(0, maxCounter.get());
-			Assertions.assertEquals(4, exceptionCounter.get());
+			Assertions.assertEquals(2, exceptionCounter.get());
 		}
 
 	}
