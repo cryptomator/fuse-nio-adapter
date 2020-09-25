@@ -128,11 +128,11 @@ public class LockManagerTest {
 		}
 
 		@Test
-		@DisplayName("try-Methods fail with exception if path already locked")
-		public void testTryMethod() {
+		@DisplayName("try-Methods fail with exception if path already locked for writing")
+		public void testTryForWritingMethod() {
 			LockManager lockManager = new LockManager();
-			ExecutorService threadPool = Executors.newFixedThreadPool(2);
-			CountDownLatch done = new CountDownLatch(2);
+			ExecutorService threadPool = Executors.newFixedThreadPool(1);
+			CountDownLatch done = new CountDownLatch(1);
 			AtomicInteger exceptionCounter = new AtomicInteger();
 
 			try (PathLock lock = lockManager.createPathLock("/foo/bar/baz").forWriting()) {
@@ -142,9 +142,7 @@ public class LockManagerTest {
 					} catch (AlreadyLockedException e) {
 						exceptionCounter.incrementAndGet();
 					}
-					done.countDown();
-				});
-				threadPool.submit(() -> {
+
 					try (PathLock lockThread = lockManager.createPathLock("/foo/bar/baz").tryForReading()) {
 						//do nuthin'
 					} catch (AlreadyLockedException e) {
@@ -159,6 +157,39 @@ public class LockManagerTest {
 			}
 
 			Assertions.assertEquals(2, exceptionCounter.get());
+		}
+
+
+		@Test
+		@DisplayName("try-Methods partially fail with exception if path already locked for reading")
+		public void testTryForReadingMethod() {
+			LockManager lockManager = new LockManager();
+			ExecutorService threadPool = Executors.newFixedThreadPool(1);
+			CountDownLatch done = new CountDownLatch(1);
+			AtomicInteger exceptionCounter = new AtomicInteger();
+
+			try (PathLock lock = lockManager.createPathLock("/foo/bar/baz").forReading()) {
+				threadPool.submit(() -> {
+					try (PathLock lockThread = lockManager.createPathLock("/foo/bar/baz").tryForWriting()) {
+						//do nuthin'
+					} catch (AlreadyLockedException e) {
+						exceptionCounter.incrementAndGet();
+					}
+
+					try (PathLock lockThread = lockManager.createPathLock("/foo/bar/baz").tryForReading()) {
+						//do nuthin'
+					} catch (AlreadyLockedException e) {
+						exceptionCounter.incrementAndGet();
+					}
+					done.countDown();
+				});
+
+				Assertions.assertTimeoutPreemptively(Duration.ofSeconds(10), () -> { // deadlock protection
+					done.await();
+				});
+			}
+
+			Assertions.assertEquals(1, exceptionCounter.get());
 		}
 
 	}
