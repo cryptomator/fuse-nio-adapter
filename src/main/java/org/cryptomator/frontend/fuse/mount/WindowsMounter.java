@@ -54,7 +54,7 @@ class WindowsMounter implements Mounter {
 		}
 
 		@Override
-		public void unmount() {
+		protected void unmountInternal() {
 			if (!fuseAdapter.isMounted()) {
 				return;
 			}
@@ -62,8 +62,8 @@ class WindowsMounter implements Mounter {
 		}
 
 		@Override
-		public void unmountForced() {
-			unmount();
+		protected void unmountForcedInternal() {
+			unmountInternal();
 		}
 
 	}
