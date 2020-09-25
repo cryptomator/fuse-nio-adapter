@@ -129,7 +129,7 @@ public class LockManagerTest {
 
 		@Test
 		@DisplayName("try-Methods fail with exception if path already locked for writing")
-		public void testTryForWritingMethod() {
+		public void testTryForMethodsOnWriteLock() {
 			LockManager lockManager = new LockManager();
 			ExecutorService threadPool = Executors.newFixedThreadPool(1);
 			CountDownLatch done = new CountDownLatch(1);
@@ -162,7 +162,7 @@ public class LockManagerTest {
 
 		@Test
 		@DisplayName("try-Methods partially fail with exception if path already locked for reading")
-		public void testTryForReadingMethod() {
+		public void testTryForMethodsOnReadLock() {
 			LockManager lockManager = new LockManager();
 			ExecutorService threadPool = Executors.newFixedThreadPool(1);
 			CountDownLatch done = new CountDownLatch(1);
