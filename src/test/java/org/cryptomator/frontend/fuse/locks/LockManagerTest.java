@@ -151,7 +151,7 @@ public class LockManagerTest {
 					done.countDown();
 				});
 
-				Assertions.assertTimeoutPreemptively(Duration.ofSeconds(10), () -> { // deadlock protection
+				Assertions.assertTimeoutPreemptively(Duration.ofSeconds(3), () -> { // deadlock protection
 					done.await();
 				});
 			}
@@ -184,7 +184,7 @@ public class LockManagerTest {
 					done.countDown();
 				});
 
-				Assertions.assertTimeoutPreemptively(Duration.ofSeconds(10), () -> { // deadlock protection
+				Assertions.assertTimeoutPreemptively(Duration.ofSeconds(3), () -> { // deadlock protection
 					done.await();
 				});
 			}
