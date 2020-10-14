@@ -8,7 +8,7 @@ public interface Mount extends AutoCloseable {
 	 * Attempts to reveal the mounted FUSE volume in the operating system's default file manager.
 	 *
 	 * @throws CommandFailedException
-	 * @deprecated Use {@link #getMountPoint()} and reveal it yourself (e.g. using JavaFX's <code>application.getHostServices().showDocument(mountPoint)</code>>)
+	 * @deprecated Use {@link #getMountPoint()} and reveal it yourself (e.g. using JavaFX's <code>application.getHostServices().showDocument(mountPoint)</code>)
 	 */
 	@Deprecated
 	void revealInFileManager() throws CommandFailedException;
