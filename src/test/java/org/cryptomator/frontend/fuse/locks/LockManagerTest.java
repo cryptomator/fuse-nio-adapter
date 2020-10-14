@@ -22,6 +22,7 @@ public class LockManagerTest {
 	}
 
 	private static final Logger LOG = LoggerFactory.getLogger(LockManagerTest.class);
+	protected static final int TEST_TIMEOUT_SECONDS = 20;
 
 	@Nested
 	@DisplayName("PathLocks")
@@ -88,7 +89,7 @@ public class LockManagerTest {
 				});
 			}
 
-			Assertions.assertTimeoutPreemptively(Duration.ofSeconds(10), () -> { // deadlock protection
+			Assertions.assertTimeoutPreemptively(Duration.ofSeconds(TEST_TIMEOUT_SECONDS), () -> { // deadlock protection
 				done.await();
 			});
 			Assertions.assertEquals(numThreads, maxCounter.get());
@@ -121,7 +122,7 @@ public class LockManagerTest {
 				});
 			}
 
-			Assertions.assertTimeoutPreemptively(Duration.ofSeconds(10), () -> { // deadlock protection
+			Assertions.assertTimeoutPreemptively(Duration.ofSeconds(TEST_TIMEOUT_SECONDS), () -> { // deadlock protection
 				done.await();
 			});
 			Assertions.assertEquals(1, maxCounter.get());
@@ -226,7 +227,7 @@ public class LockManagerTest {
 				});
 			}
 
-			Assertions.assertTimeoutPreemptively(Duration.ofSeconds(10), () -> { // deadlock protection
+			Assertions.assertTimeoutPreemptively(Duration.ofSeconds(TEST_TIMEOUT_SECONDS), () -> { // deadlock protection
 				done.await();
 			});
 			Assertions.assertEquals(numThreads, maxCounter.get());
@@ -260,7 +261,7 @@ public class LockManagerTest {
 				});
 			}
 
-			Assertions.assertTimeoutPreemptively(Duration.ofSeconds(10), () -> { // deadlock protection
+			Assertions.assertTimeoutPreemptively(Duration.ofSeconds(TEST_TIMEOUT_SECONDS), () -> { // deadlock protection
 				done.await();
 			});
 			Assertions.assertEquals(1, maxCounter.get());
