@@ -15,7 +15,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
-@Disabled //TODO: https://travis-ci.org/github/cryptomator/fuse-nio-adapter/builds/735702459
 public class LockManagerTest {
 
 	static {
@@ -66,6 +65,7 @@ public class LockManagerTest {
 
 		@Test
 		@DisplayName("read locks are shared")
+		@Disabled //TODO: https://travis-ci.org/github/cryptomator/fuse-nio-adapter/builds/735702459
 		public void testMultipleReadLocks() {
 			LockManager lockManager = new LockManager();
 			int numThreads = 8;
@@ -203,6 +203,7 @@ public class LockManagerTest {
 
 		@Test
 		@DisplayName("read locks are shared")
+		@Disabled //TODO: https://travis-ci.org/github/cryptomator/fuse-nio-adapter/builds/735702459
 		public void testMultipleReadLocks() throws InterruptedException {
 			LockManager lockManager = new LockManager();
 			int numThreads = 8;
