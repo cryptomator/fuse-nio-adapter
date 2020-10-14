@@ -27,6 +27,58 @@ public class MirroringFuseMountTest {
 	private static final String OS_NAME = System.getProperty("os.name").toLowerCase();
 
 	/**
+	 * Mirror directory on Windows
+	 */
+	public static class WindowsMirror {
+
+		public static void main(String[] args) {
+			Preconditions.checkState(OS_NAME.contains("win"), "Test designed to run on Windows.");
+
+			try (Scanner scanner = new Scanner(System.in)) {
+				System.out.println("Enter path to the directory you want to mirror:");
+				Path p = Paths.get(scanner.nextLine());
+				System.out.println("Enter mount point:");
+				Path m = Paths.get(scanner.nextLine());
+				if (m.startsWith(p) || p.startsWith(m)) {
+					LOG.error("Mirrored directory and mount location must not be nested.");
+				} else if (Files.isDirectory(p)) {
+					mount(p, m);
+				} else {
+					LOG.error("Invalid directory.");
+				}
+			}
+		}
+	}
+
+	/**
+	 * Mirror vault on Windows
+	 */
+	public static class WindowsCryptoFsMirror {
+
+		public static void main(String args[]) throws IOException {
+			Preconditions.checkState(OS_NAME.contains("win"), "Test designed to run on Windows.");
+
+			try (Scanner scanner = new Scanner(System.in)) {
+				System.out.println("Enter path to the vault you want to mirror:");
+				Path vaultPath = Paths.get(scanner.nextLine());
+				Preconditions.checkArgument(CryptoFileSystemProvider.containsVault(vaultPath, "masterkey.cryptomator"), "Not a vault: " + vaultPath);
+				System.out.println("Enter vault password:");
+				String passphrase = scanner.nextLine();
+				CryptoFileSystemProperties props = CryptoFileSystemProperties.withPassphrase(passphrase).withFlags().build();
+				try (FileSystem cryptoFs = CryptoFileSystemProvider.newFileSystem(vaultPath, props)) {
+					Path p = cryptoFs.getPath("/");
+					System.out.println("Enter mount point:");
+					Path m = Paths.get(scanner.nextLine());
+					//Preconditions.checkArgument(Files.isDirectory(m), "Invalid mount point: " + m); //We don't need that on Windows
+					LOG.info("Mounting FUSE file system at {}", m);
+					mount(p, m);
+				}
+			}
+		}
+
+	}
+
+	/**
 	 * Mirror directory on Linux
 	 */
 	public static class LinuxMirror {
@@ -134,7 +186,13 @@ public class MirroringFuseMountTest {
 			LOG.info("Mounted successfully. Enter anything to stop the server...");
 			mnt.revealInFileManager();
 			System.in.read();
-			mnt.unmountForced();
+			try {
+				mnt.unmount();
+			} catch (CommandFailedException e) {
+				LOG.info("Unable to perform regular unmount.", e);
+				LOG.info("Forcing unmount...");
+				mnt.unmountForced();
+			}
 			LOG.info("Unmounted successfully. Exiting...");
 		} catch (IOException | CommandFailedException e) {
 			LOG.error("Mount failed", e);

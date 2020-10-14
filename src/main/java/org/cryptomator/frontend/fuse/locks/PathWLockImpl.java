@@ -22,6 +22,14 @@ class PathWLockImpl extends PathLockImpl {
 		return new PathWLockImpl(pathComponents, parent, lock, dataLockSupplier);
 	}
 
+	public static PathLockImpl attempt(List<String> pathComponents, Optional<PathLock> parent, ReadWriteLock lock, Function<List<String>, ReadWriteLock> dataLockSupplier) throws AlreadyLockedException {
+		if (!lock.writeLock().tryLock()) {
+			throw new AlreadyLockedException();
+		}
+		LOG.trace("Acquired write path lock for '{}'", pathComponents);
+		return new PathWLockImpl(pathComponents, parent, lock, dataLockSupplier);
+	}
+
 	@Override
 	public void close() {
 		LOG.trace("Released write path lock for '{}'", pathComponents);

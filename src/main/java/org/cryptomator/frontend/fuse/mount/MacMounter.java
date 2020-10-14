@@ -1,5 +1,6 @@
 package org.cryptomator.frontend.fuse.mount;
 
+import com.google.common.base.Preconditions;
 import org.cryptomator.frontend.fuse.AdapterFactory;
 import org.cryptomator.frontend.fuse.FuseNioAdapter;
 import org.slf4j.Logger;
@@ -20,11 +21,13 @@ import javax.xml.xpath.XPathFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 
 class MacMounter implements Mounter {
 
@@ -37,10 +40,10 @@ class MacMounter implements Mounter {
 	private static final String PLIST_DTD_URL = "http://www.apple.com/DTDs/PropertyList-1.0.dtd";
 
 	@Override
-	public synchronized Mount mount(Path directory, EnvironmentVariables envVars) throws CommandFailedException {
+	public synchronized Mount mount(Path directory, boolean blocking, boolean debug, EnvironmentVariables envVars) throws CommandFailedException {
 		FuseNioAdapter fuseAdapter = AdapterFactory.createReadWriteAdapter(directory);
 		try {
-			fuseAdapter.mount(envVars.getMountPoint(), false, false, envVars.getFuseFlags());
+			fuseAdapter.mount(envVars.getMountPoint(), blocking, debug, envVars.getFuseFlags());
 		} catch (RuntimeException e) {
 			throw new CommandFailedException(e);
 		}
@@ -136,34 +139,49 @@ class MacMounter implements Mounter {
 
 	private static class MacMount extends AbstractMount {
 
-		private final ProcessBuilder revealCommand;
-		private final ProcessBuilder unmountCommand;
-		private final ProcessBuilder unmountForcedCommand;
-
 		private MacMount(FuseNioAdapter fuseAdapter, EnvironmentVariables envVars) {
-			super(fuseAdapter, envVars);
-			Path mountPoint = envVars.getMountPoint();
-			this.revealCommand = new ProcessBuilder("open", ".");
-			this.revealCommand.directory(mountPoint.toFile());
-			this.unmountCommand = new ProcessBuilder("umount", "--", mountPoint.getFileName().toString());
-			this.unmountCommand.directory(mountPoint.getParent().toFile());
-			this.unmountForcedCommand = new ProcessBuilder("umount", "-f", "--", mountPoint.getFileName().toString());
-			this.unmountForcedCommand.directory(mountPoint.getParent().toFile());
+			super(fuseAdapter, envVars.getMountPoint());
 		}
 
 		@Override
-		public ProcessBuilder getRevealCommand() {
-			return revealCommand;
+		public void unmountInternal() throws CommandFailedException {
+			if (!fuseAdapter.isMounted()) {
+				return;
+			}
+			ProcessBuilder command = new ProcessBuilder("umount", "--", mountPoint.getFileName().toString());
+			command.directory(mountPoint.getParent().toFile());
+			Process proc = ProcessUtil.startAndWaitFor(command, 5, TimeUnit.SECONDS);
+			assertUmountSucceeded(proc);
+			fuseAdapter.setUnmounted();
 		}
 
 		@Override
-		public ProcessBuilder getUnmountCommand() {
-			return unmountCommand;
+		public void unmountForcedInternal() throws CommandFailedException {
+			if (!fuseAdapter.isMounted()) {
+				return;
+			}
+			ProcessBuilder command = new ProcessBuilder("umount", "-f", "--", mountPoint.getFileName().toString());
+			command.directory(mountPoint.getParent().toFile());
+			Process proc = ProcessUtil.startAndWaitFor(command, 5, TimeUnit.SECONDS);
+			assertUmountSucceeded(proc);
+			fuseAdapter.setUnmounted();
 		}
 
-		@Override
-		public ProcessBuilder getUnmountForcedCommand() {
-			return unmountForcedCommand;
+		private void assertUmountSucceeded(Process proc) throws CommandFailedException {
+			if (proc.exitValue() == 0) {
+				return;
+			}
+			try {
+				String stderr = ProcessUtil.toString(proc.getErrorStream(), StandardCharsets.US_ASCII);
+				if (stderr.contains("not currently mounted")) {
+					LOG.info("Already unmounted");
+					return;
+				} else {
+					throw new CommandFailedException("Unmount failed. STDERR: " + stderr);
+				}
+			} catch (IOException e) {
+				throw new CommandFailedException(e);
+			}
 		}
 
 	}

@@ -4,7 +4,11 @@ import java.nio.file.Path;
 
 public interface Mounter {
 
-	Mount mount(Path directory, EnvironmentVariables envVars) throws CommandFailedException;
+	default Mount mount(Path directory, EnvironmentVariables envVars) throws CommandFailedException {
+		return mount(directory, false, false, envVars);
+	}
+
+	Mount mount(Path directory, boolean blocking, boolean debug, EnvironmentVariables envVars) throws CommandFailedException;
 
 	String[] defaultMountFlags();
 

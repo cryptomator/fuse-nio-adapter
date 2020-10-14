@@ -81,6 +81,10 @@ public class OpenFileFactory implements AutoCloseable {
 		}
 	}
 
+	public int getOpenFileCount(){
+		return openFiles.size();
+	}
+
 	/**
 	 * Closes all currently open files.
 	 * Calling this method will not prevent the factory to open new files, i.e. this method can be called multiple times and is not idempotent.

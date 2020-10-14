@@ -6,6 +6,7 @@ import com.google.common.collect.Iterables;
 import jnr.ffi.Pointer;
 import jnr.ffi.types.off_t;
 import jnr.ffi.types.size_t;
+import org.cryptomator.frontend.fuse.locks.AlreadyLockedException;
 import org.cryptomator.frontend.fuse.locks.DataLock;
 import org.cryptomator.frontend.fuse.locks.LockManager;
 import org.cryptomator.frontend.fuse.locks.PathLock;
@@ -38,6 +39,7 @@ import java.nio.file.attribute.PosixFileAttributes;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
+import java.util.function.BooleanSupplier;
 
 /**
  * Read-Only FUSE-NIO-Adapter based on Sergey Tselovalnikov's <a href="https://github.com/SerCeMan/jnr-fuse/blob/0.5.1/src/main/java/ru/serce/jnrfuse/examples/HelloFuse.java">HelloFuse</a>
@@ -55,9 +57,10 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 	private final ReadOnlyFileHandler fileHandler;
 	private final ReadOnlyLinkHandler linkHandler;
 	private final FileAttributesUtil attrUtil;
+	private final BooleanSupplier hasOpenFiles;
 
 	@Inject
-	public ReadOnlyAdapter(@Named("root") Path root, @Named("maxFileNameLength") int maxFileNameLength, FileStore fileStore, LockManager lockManager, ReadOnlyDirectoryHandler dirHandler, ReadOnlyFileHandler fileHandler, ReadOnlyLinkHandler linkHandler, FileAttributesUtil attrUtil) {
+	public ReadOnlyAdapter(@Named("root") Path root, @Named("maxFileNameLength") int maxFileNameLength, FileStore fileStore, LockManager lockManager, ReadOnlyDirectoryHandler dirHandler, ReadOnlyFileHandler fileHandler, ReadOnlyLinkHandler linkHandler, FileAttributesUtil attrUtil, OpenFileFactory fileFactory) {
 		this.root = root;
 		this.maxFileNameLength = maxFileNameLength;
 		this.fileStore = fileStore;
@@ -66,6 +69,7 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 		this.fileHandler = fileHandler;
 		this.linkHandler = linkHandler;
 		this.attrUtil = attrUtil;
+		this.hasOpenFiles = () -> fileFactory.getOpenFileCount() != 0;
 	}
 
 	protected Path resolvePath(String absolutePath) {
@@ -258,13 +262,17 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 		return mounted.get();
 	}
 
-	/*
-	 * We overwrite the default implementation to skip the "internal" unmount command, because we want to use system commands instead.
-	 * See also: https://github.com/cryptomator/fuse-nio-adapter/issues/29
-	 */
 	@Override
-	public void umount() {
-		// this might be called multiple times: explicitly _and_ via a shutdown hook registered during mount() in AbstractFuseFS
+	public boolean isInUse() {
+		try (PathLock pLock = lockManager.createPathLock("/").tryForWriting()) {
+			return hasOpenFiles.getAsBoolean();
+		} catch (AlreadyLockedException e) {
+			return true;
+		}
+	}
+
+	@Override
+	public void setUnmounted() {
 		if (mounted.compareAndSet(true, false)) {
 			LOG.debug("Marked file system adapter as unmounted.");
 		} else {
@@ -281,7 +289,7 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 	 * Attempts to get a specific error code that best describes the given exception.
 	 * As a side effect this logs the error.
 	 *
-	 * @param e      An exception
+	 * @param e An exception
 	 * @param opDesc A human-friendly string describing what operation was attempted (for logging purposes)
 	 * @return A specific error code or -EIO.
 	 */
