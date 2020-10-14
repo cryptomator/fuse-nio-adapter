@@ -1,5 +1,6 @@
 package org.cryptomator.frontend.fuse.locks;
 
+import com.google.common.base.Supplier;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -50,10 +51,10 @@ public class LockManager {
 	public LockManager() {
 		CacheBuilder<Object, Object> cacheBuilder = CacheBuilder.newBuilder().weakValues();
 		if (LOG.isDebugEnabled()) {
-			cacheBuilder.removalListener(this::onLockRemoval);
+			cacheBuilder.removalListener(this::removedReadWriteLock);
 		}
-		this.pathLocks = cacheBuilder.build(new LockLoader());
-		this.dataLocks = cacheBuilder.build(new LockLoader());
+		this.pathLocks = cacheBuilder.build(CacheLoader.from(this::createReadWriteLock));
+		this.dataLocks = cacheBuilder.build(CacheLoader.from(this::createReadWriteLock));
 	}
 
 	public PathLockBuilder createPathLock(String path) {
@@ -73,17 +74,13 @@ public class LockManager {
 		return new PathLockBuilderImpl(pathComponents, Optional.ofNullable(parentLockBuilder), lock, dataLocks::getUnchecked);
 	}
 
-	private void onLockRemoval(RemovalNotification<String, ReentrantReadWriteLock> notification) {
-		LOG.trace("Deleting ReadWriteLock for {}", notification.getKey());
+	private ReadWriteLock createReadWriteLock(List<String> key) {
+		LOG.trace("Creating ReadWriteLock for {}", key);
+		return new ReentrantReadWriteLock();
 	}
 
-	private static class LockLoader extends CacheLoader<List<String>, ReadWriteLock> {
-
-		@Override
-		public ReadWriteLock load(List<String> key) {
-			LOG.trace("Creating ReadWriteLock for {}", key);
-			return new ReentrantReadWriteLock();
-		}
+	private void removedReadWriteLock(RemovalNotification<List<String>, ReentrantReadWriteLock> notification) {
+		LOG.trace("Deleting ReadWriteLock for {}", notification.getKey());
 	}
 
 	/*
