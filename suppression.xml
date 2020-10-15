@@ -4,7 +4,7 @@
 			  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 			  xsi:schemaLocation="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.2.xsd ">	<suppress>
 		<notes><![CDATA[Suppress vulnerabilities known in FUSE libraries.]]></notes>
-		<gav>com.github.serceman:jnr-fuse:0.5.1</gav>
+		<gav>com.github.serceman:jnr-fuse:0.5.4</gav>
 		<cpe>cpe:/a:fuse:fuse</cpe>
 		<cpe>cpe:/a:fuse_project:fuse</cpe>
 	</suppress>
