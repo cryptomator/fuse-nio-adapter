@@ -40,7 +40,7 @@ jobs:
         id: setVersion # Output used above (outputs.artifact-version)
         run: |
           v=$(mvn help:evaluate "-Dexpression=project.version" -q -DforceStdout)
-          echo "::set-env name=BUILD_VERSION::${v}"
+          echo "BUILD_VERSION=${v}" >> $GITHUB_ENV
           echo "::set-output name=version::${v}"
       - name: Build and Test
         id: buildAndTest
