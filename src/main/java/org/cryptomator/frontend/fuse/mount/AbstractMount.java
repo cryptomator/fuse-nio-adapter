@@ -26,7 +26,7 @@ abstract class AbstractMount implements Mount {
 
 	@Override
 	public void revealInFileManager() throws CommandFailedException {
-		if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
+		if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.OPEN)) {
 			try {
 				Desktop.getDesktop().open(mountPoint.toFile());
 			} catch (IOException e) {
