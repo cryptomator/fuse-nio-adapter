@@ -1,11 +1,44 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- This file lists false positives found by org.owasp:dependency-check-maven build plugin -->
-<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.2.xsd"
-			  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-			  xsi:schemaLocation="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.2.xsd ">	<suppress>
-		<notes><![CDATA[Suppress vulnerabilities known in FUSE libraries.]]></notes>
-		<gav>com.github.serceman:jnr-fuse:0.5.1</gav>
-		<cpe>cpe:/a:fuse:fuse</cpe>
-		<cpe>cpe:/a:fuse_project:fuse</cpe>
-	</suppress>
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+    <suppress>
+        <notes><![CDATA[Suppress known vulnerabilities in FUSE libraries for jnr-fuse.]]></notes>
+        <gav regex="true">^com\.github\.serceman:jnr-fuse:.*$</gav>
+
+        <!-- See: https://nvd.nist.gov/vuln/detail/CVE-2010-3879 -->
+        <!-- Last Modified: 08/16/2017 - Awaiting reanalysis -->
+        <!-- Possible Symlink attack that allows unpermitted unmounts by creating mtab entries on Fuse <= 2.8.5 -->
+        <!-- Can't fix: Error in FUSE -->
+        <cve>CVE-2010-3879</cve>
+
+        <!-- See: https://nvd.nist.gov/vuln/detail/CVE-2011-0541 -->
+        <!-- Last Modified: 02/11/2014 - Awaiting reanalysis -->
+        <!-- Possible Symlink attack that allows unpermitted unmounts by denying updates to /etc/mtab on Fuse <= 2.8.5 -->
+        <!-- Can't fix: Error in FUSE -->
+        <cve>CVE-2011-0541</cve>
+
+        <!-- See: https://nvd.nist.gov/vuln/detail/CVE-2011-0542 -->
+        <!-- Last Modified: 09/05/2011 -->
+        <!-- Possible attack that allows unpermitted unmounts on Fuse <= 2.8.5 cause of missing check -->
+        <!-- Can't fix: Error in FUSE -->
+        <cve>CVE-2011-0542</cve>
+
+        <!-- See: https://nvd.nist.gov/vuln/detail/CVE-2011-0543 -->
+        <!-- Last Modified: 02/11/2014 - Awaiting reanalysis -->
+        <!-- Possible Symlink attack that allows unpermitted unmounts caused by bypassable access restrictions on certain util-linux version on Fuse <= 2.8.5 -->
+        <!-- Can't fix: Error in FUSE -->
+        <cve>CVE-2011-0543</cve>
+
+        <!-- See: https://nvd.nist.gov/vuln/detail/CVE-2015-3202 -->
+        <!-- Last Modified: 06/30/2017 -->
+        <!-- Possible arbitrary file write using mount's debugging feature because of uncleared environment vars on Fuse < 2.9.3-15 -->
+        <!-- Can't fix: Error in FUSE -->
+        <cve>CVE-2015-3202</cve>
+
+        <!-- See: https://nvd.nist.gov/vuln/detail/CVE-2018-10906 -->
+        <!-- Last Modified: 10/02/2019 -->
+        <!-- Possible restriction bypass leading to unpermitted mounting of filesystems by non-root users on Fuse < 2.9.8 and < 3.2.5 when using SELinux -->
+        <!-- Can't fix: Error in FUSE/Not of technical concern for this library -->
+        <cve>CVE-2018-10906</cve>
+    </suppress>
 </suppressions>

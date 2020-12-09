@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.cryptomator</groupId>
 	<artifactId>fuse-nio-adapter</artifactId>
-	<version>1.2.5</version>
+	<version>1.2.6</version>
 	<name>FUSE-NIO-Adapter</name>
 	<description>Access resources at a given NIO path via FUSE.</description>
 	<url>https://github.com/cryptomator/fuse-nio-adapter</url>
@@ -15,9 +15,11 @@
 	</scm>
 
 	<properties>
+		<maven.compiler.release>11</maven.compiler.release>
+
 		<jnrfuse.version>0.5.4</jnrfuse.version>
 		<dagger.version>2.27</dagger.version>
-		<guava.version>29.0-jre</guava.version>
+		<guava.version>30.0-jre</guava.version>
 		<slf4j.version>1.7.30</slf4j.version>
 		
 		<junit.jupiter.version>5.6.2</junit.jupiter.version>
@@ -125,7 +127,6 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.8.1</version>
 				<configuration>
-					<release>9</release>
 					<showWarnings>true</showWarnings>
 					<annotationProcessorPaths>
 						<path>
@@ -151,7 +152,7 @@
 					<plugin>
 						<groupId>org.owasp</groupId>
 						<artifactId>dependency-check-maven</artifactId>
-						<version>5.3.2</version>
+						<version>6.0.2</version>
 						<configuration>
 							<cveValidForHours>24</cveValidForHours>
 							<failBuildOnCVSS>0</failBuildOnCVSS>

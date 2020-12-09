@@ -74,7 +74,8 @@ class MacMounter implements Mounter {
 	 */
 	@Override
 	public boolean isApplicable() {
-		return IS_MAC && Files.exists(Paths.get("/usr/local/lib/libosxfuse.2.dylib")) && installedVersionSupported();
+		return IS_MAC && Files.exists(Paths.get("/usr/local/lib/libosxfuse.2.dylib")); //
+//				&& installedVersionSupported(); // FIXME: #52
 	}
 
 	public boolean installedVersionSupported() {

@@ -1,7 +1,6 @@
 package org.cryptomator.frontend.fuse.locks;
 
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -9,13 +8,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
+import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
-@Disabled //TODO: https://travis-ci.org/github/cryptomator/fuse-nio-adapter/builds/735702459
 public class LockManagerTest {
 
 	static {
@@ -70,31 +71,26 @@ public class LockManagerTest {
 			LockManager lockManager = new LockManager();
 			int numThreads = 8;
 			ExecutorService threadPool = Executors.newFixedThreadPool(numThreads);
+			CyclicBarrier ready = new CyclicBarrier(8);
 			CountDownLatch done = new CountDownLatch(numThreads);
-			AtomicInteger counter = new AtomicInteger();
-			AtomicInteger maxCounter = new AtomicInteger();
 
 			for (int i = 0; i < numThreads; i++) {
 				int threadnum = i;
 				threadPool.submit(() -> {
 					try (PathLock lock = lockManager.createPathLock("/foo/bar/baz").forReading()) {
 						LOG.trace("ENTER thread {}", threadnum);
-						counter.incrementAndGet();
-						Thread.sleep(200);
-						maxCounter.set(Math.max(counter.get(), maxCounter.get()));
-						counter.decrementAndGet();
+						ready.await();
+						done.countDown();
 						LOG.trace("LEAVE thread {}", threadnum);
-					} catch (InterruptedException e) {
+					} catch (InterruptedException | BrokenBarrierException e) {
 						LOG.error("thread interrupted", e);
 					}
-					done.countDown();
 				});
 			}
 
 			Assertions.assertTimeoutPreemptively(Duration.ofSeconds(10), () -> { // deadlock protection
 				done.await();
 			});
-			Assertions.assertEquals(numThreads, maxCounter.get());
 		}
 
 		@Test
@@ -104,18 +100,20 @@ public class LockManagerTest {
 			int numThreads = 8;
 			ExecutorService threadPool = Executors.newFixedThreadPool(numThreads);
 			CountDownLatch done = new CountDownLatch(numThreads);
-			AtomicInteger counter = new AtomicInteger();
-			AtomicInteger maxCounter = new AtomicInteger();
+			AtomicBoolean occupied = new AtomicBoolean(false);
+			AtomicBoolean success = new AtomicBoolean(true);
 
 			for (int i = 0; i < numThreads; i++) {
 				int threadnum = i;
 				threadPool.submit(() -> {
 					try (PathLock lock = lockManager.createPathLock("/foo/bar/baz").forWriting()) {
 						LOG.trace("ENTER thread {}", threadnum);
-						counter.incrementAndGet();
-						Thread.sleep(10);
-						maxCounter.set(Math.max(counter.get(), maxCounter.get()));
-						counter.decrementAndGet();
+						boolean wasFree = occupied.compareAndSet(false, true);
+						Thread.sleep(50); // give other threads the chance to reach this point
+						if (!wasFree) {
+							success.set(false);
+						}
+						occupied.set(false);
 						LOG.trace("LEAVE thread {}", threadnum);
 					} catch (InterruptedException e) {
 						LOG.error("thread interrupted", e);
@@ -127,7 +125,7 @@ public class LockManagerTest {
 			Assertions.assertTimeoutPreemptively(Duration.ofSeconds(10), () -> { // deadlock protection
 				done.await();
 			});
-			Assertions.assertEquals(1, maxCounter.get());
+			Assertions.assertTrue(success.get());
 		}
 
 		@Test
@@ -203,13 +201,12 @@ public class LockManagerTest {
 
 		@Test
 		@DisplayName("read locks are shared")
-		public void testMultipleReadLocks() throws InterruptedException {
+		public void testMultipleReadLocks() {
 			LockManager lockManager = new LockManager();
 			int numThreads = 8;
 			ExecutorService threadPool = Executors.newFixedThreadPool(numThreads);
+			CyclicBarrier ready = new CyclicBarrier(8);
 			CountDownLatch done = new CountDownLatch(numThreads);
-			AtomicInteger counter = new AtomicInteger();
-			AtomicInteger maxCounter = new AtomicInteger();
 
 			for (int i = 0; i < numThreads; i++) {
 				int threadnum = i;
@@ -217,33 +214,29 @@ public class LockManagerTest {
 					try (PathLock pathLock = lockManager.createPathLock("/foo/bar/baz").forReading(); //
 						 DataLock dataLock = pathLock.lockDataForReading()) {
 						LOG.trace("ENTER thread {}", threadnum);
-						counter.incrementAndGet();
-						Thread.sleep(50);
-						maxCounter.set(Math.max(counter.get(), maxCounter.get()));
-						counter.decrementAndGet();
+						ready.await();
+						done.countDown();
 						LOG.trace("LEAVE thread {}", threadnum);
-					} catch (InterruptedException e) {
+					} catch (InterruptedException | BrokenBarrierException e) {
 						LOG.error("thread interrupted", e);
 					}
-					done.countDown();
 				});
 			}
 
 			Assertions.assertTimeoutPreemptively(Duration.ofSeconds(10), () -> { // deadlock protection
 				done.await();
 			});
-			Assertions.assertEquals(numThreads, maxCounter.get());
 		}
 
 		@Test
 		@DisplayName("write locks are exclusive")
-		public void testMultipleWriteLocks() throws InterruptedException {
+		public void testMultipleWriteLocks() {
 			LockManager lockManager = new LockManager();
 			int numThreads = 8;
 			ExecutorService threadPool = Executors.newFixedThreadPool(numThreads);
 			CountDownLatch done = new CountDownLatch(numThreads);
-			AtomicInteger counter = new AtomicInteger();
-			AtomicInteger maxCounter = new AtomicInteger();
+			AtomicBoolean occupied = new AtomicBoolean(false);
+			AtomicBoolean success = new AtomicBoolean(true);
 
 			for (int i = 0; i < numThreads; i++) {
 				int threadnum = i;
@@ -251,10 +244,12 @@ public class LockManagerTest {
 					try (PathLock pathLock = lockManager.createPathLock("/foo/bar/baz").forReading(); //
 						 DataLock dataLock = pathLock.lockDataForWriting()) {
 						LOG.trace("ENTER thread {}", threadnum);
-						counter.incrementAndGet();
-						Thread.sleep(10);
-						maxCounter.set(Math.max(counter.get(), maxCounter.get()));
-						counter.decrementAndGet();
+						boolean wasFree = occupied.compareAndSet(false, true);
+						Thread.sleep(50); // give other threads the chance to reach this point
+						if (!wasFree) {
+							success.set(false);
+						}
+						occupied.set(false);
 						LOG.trace("LEAVE thread {}", threadnum);
 					} catch (InterruptedException e) {
 						LOG.error("thread interrupted", e);
@@ -266,7 +261,7 @@ public class LockManagerTest {
 			Assertions.assertTimeoutPreemptively(Duration.ofSeconds(10), () -> { // deadlock protection
 				done.await();
 			});
-			Assertions.assertEquals(1, maxCounter.get());
+			Assertions.assertTrue(success.get());
 		}
 
 	}

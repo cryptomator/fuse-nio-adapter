@@ -3,7 +3,7 @@ package org.cryptomator.frontend.fuse.mount;
 import com.google.common.base.Preconditions;
 import org.cryptomator.frontend.fuse.FuseNioAdapter;
 
-import java.awt.*;
+import java.awt.Desktop;
 import java.io.IOException;
 import java.nio.file.Path;
 
@@ -26,9 +26,9 @@ abstract class AbstractMount implements Mount {
 
 	@Override
 	public void revealInFileManager() throws CommandFailedException {
-		if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
+		if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.OPEN)) {
 			try {
-				Desktop.getDesktop().browse(mountPoint.toUri());
+				Desktop.getDesktop().open(mountPoint.toFile());
 			} catch (IOException e) {
 				throw new CommandFailedException(e);
 			}
