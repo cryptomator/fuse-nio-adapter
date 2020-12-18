@@ -3,8 +3,6 @@ package org.cryptomator.frontend.fuse.mount;
 import com.google.common.base.Preconditions;
 import org.cryptomator.frontend.fuse.FuseNioAdapter;
 
-import java.awt.Desktop;
-import java.io.IOException;
 import java.nio.file.Path;
 
 abstract class AbstractMount implements Mount {
@@ -22,19 +20,6 @@ abstract class AbstractMount implements Mount {
 	public Path getMountPoint() {
 		Preconditions.checkState(fuseAdapter.isMounted(), "Not currently mounted.");
 		return mountPoint;
-	}
-
-	@Override
-	public void revealInFileManager() throws CommandFailedException {
-		if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.OPEN)) {
-			try {
-				Desktop.getDesktop().open(mountPoint.toFile());
-			} catch (IOException e) {
-				throw new CommandFailedException(e);
-			}
-		} else {
-			throw new CommandFailedException("API to browse files not supported.");
-		}
 	}
 
 	@Override
