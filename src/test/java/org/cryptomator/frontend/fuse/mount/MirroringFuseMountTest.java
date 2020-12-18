@@ -184,6 +184,7 @@ public class MirroringFuseMountTest {
 				.build();
 		try (Mount mnt = mounter.mount(pathToMirror, envVars)) {
 			LOG.info("Mounted successfully. Enter anything to stop the server...");
+			mnt.revealInFileManager();
 			System.in.read();
 			try {
 				mnt.unmount();

@@ -1,5 +1,6 @@
 package org.cryptomator.frontend.fuse.mount;
 
+import com.google.common.collect.ObjectArrays;
 import org.cryptomator.frontend.fuse.AdapterFactory;
 import org.cryptomator.frontend.fuse.FuseNioAdapter;
 import org.slf4j.Logger;
@@ -11,6 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 class LinuxMounter implements Mounter {
@@ -50,8 +52,23 @@ class LinuxMounter implements Mounter {
 
 	private static class LinuxMount extends AbstractMount {
 
+		private final Optional<String> customRevealCommand;
+
 		private LinuxMount(FuseNioAdapter fuseAdapter, EnvironmentVariables envVars) {
 			super(fuseAdapter, envVars.getMountPoint());
+			this.customRevealCommand = envVars.getRevealCommand();
+		}
+
+		@Override
+		public void revealInFileManager() throws CommandFailedException {
+			if (customRevealCommand.isPresent()) {
+				ProcessBuilder command = new ProcessBuilder(ObjectArrays.concat(customRevealCommand.get().split("\\s+"), mountPoint.toString()));
+				command.directory(mountPoint.getParent().toFile());
+				Process proc = ProcessUtil.startAndWaitFor(command, 5, TimeUnit.SECONDS);
+				ProcessUtil.assertExitValue(proc, 0);
+			} else {
+				super.revealInFileManager();
+			}
 		}
 
 		@Override

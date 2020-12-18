@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Objects;
 
 public class LinuxEnvironmentTest {
 
@@ -20,6 +21,7 @@ public class LinuxEnvironmentTest {
 					.build();
 			Path tmp = Paths.get("/tmp");
 			try (Mount mnt = mounter.mount(tmp, envVars)) {
+				mnt.revealInFileManager();
 				System.out.println("Wait for it...");
 				System.in.read();
 				mnt.unmountForced();
