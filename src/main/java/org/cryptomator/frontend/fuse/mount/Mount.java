@@ -6,7 +6,7 @@ import java.util.function.Consumer;
 public interface Mount extends AutoCloseable {
 
 	/**
-	 * Attempts to reveal the mounted FUSE volume.
+	 * Attempts to reveal the mounted FUSE volume. This method <i>may</i> choose to ignore the given <code>revealer</code>. If the revealer is invoked, it <i>must</i> reveal the given path.
 	 *
 	 * @param revealer Object containing necessary commands to show the Mount content to the user.
 	 */
