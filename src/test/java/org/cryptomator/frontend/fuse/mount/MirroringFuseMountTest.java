@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.impl.SimpleLogger;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -184,7 +185,11 @@ public class MirroringFuseMountTest {
 				.build();
 		try (Mount mnt = mounter.mount(pathToMirror, envVars)) {
 			LOG.info("Mounted successfully. Enter anything to stop the server...");
-			mnt.revealInFileManager();
+			try{
+				mnt.reveal(new AwtFrameworkRevealer());
+			} catch (RuntimeException e){
+				LOG.warn("Reveal failed.",e);
+			}
 			System.in.read();
 			try {
 				mnt.unmount();

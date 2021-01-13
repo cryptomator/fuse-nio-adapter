@@ -1,17 +1,16 @@
 package org.cryptomator.frontend.fuse.mount;
 
 import java.nio.file.Path;
+import java.util.function.Consumer;
 
 public interface Mount extends AutoCloseable {
 
 	/**
-	 * Attempts to reveal the mounted FUSE volume in the operating system's default file manager.
+	 * Attempts to reveal the mounted FUSE volume.
 	 *
-	 * @throws CommandFailedException
-	 * @deprecated Use {@link #getMountPoint()} and reveal it yourself (e.g. using JavaFX's <code>application.getHostServices().showDocument(mountPoint)</code>)
+	 * @param revealer Object containing necessary commands to show the Mount content to the user.
 	 */
-	@Deprecated
-	void revealInFileManager() throws CommandFailedException;
+	void reveal(Consumer<Path> revealer);
 
 	/**
 	 * Returns this Mount's mount point.
@@ -37,6 +36,7 @@ public interface Mount extends AutoCloseable {
 
 	/**
 	 * Releases associated resources
+	 *
 	 * @throws CommandFailedException If closing failed
 	 * @throws IllegalStateException If still mounted
 	 */
