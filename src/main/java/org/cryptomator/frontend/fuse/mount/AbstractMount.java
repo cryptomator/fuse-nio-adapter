@@ -3,10 +3,7 @@ package org.cryptomator.frontend.fuse.mount;
 import com.google.common.base.Preconditions;
 import org.cryptomator.frontend.fuse.FuseNioAdapter;
 
-import java.awt.Desktop;
-import java.io.IOException;
 import java.nio.file.Path;
-import java.util.function.Consumer;
 
 abstract class AbstractMount implements Mount {
 
@@ -26,8 +23,8 @@ abstract class AbstractMount implements Mount {
 	}
 
 	@Override
-	public void reveal(Consumer<Path> revealer) {
-		revealer.accept(mountPoint);
+	public void reveal(Revealer revealer) throws RevealException {
+		revealer.reveal(mountPoint);
 	}
 
 	@Override

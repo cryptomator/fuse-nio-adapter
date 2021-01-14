@@ -22,9 +22,8 @@ public class LinuxEnvironmentTest {
 			try (Mount mnt = mounter.mount(tmp, envVars)) {
 				try{
 					mnt.reveal(new AwtFrameworkRevealer());
-				} catch (RuntimeException e){
+				} catch (RevealException e){
 					System.out.println("Reveal failed.");
-					e.printStackTrace();
 				}
 				System.out.println("Wait for it...");
 				System.in.read();

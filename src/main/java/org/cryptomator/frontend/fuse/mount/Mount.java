@@ -1,7 +1,6 @@
 package org.cryptomator.frontend.fuse.mount;
 
 import java.nio.file.Path;
-import java.util.function.Consumer;
 
 public interface Mount extends AutoCloseable {
 
@@ -10,7 +9,7 @@ public interface Mount extends AutoCloseable {
 	 *
 	 * @param revealer Object containing necessary commands to show the Mount content to the user.
 	 */
-	void reveal(Consumer<Path> revealer);
+	void reveal(Revealer revealer) throws RevealException;
 
 	/**
 	 * Returns this Mount's mount point.
