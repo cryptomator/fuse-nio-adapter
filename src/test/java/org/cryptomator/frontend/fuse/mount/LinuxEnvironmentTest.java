@@ -20,9 +20,9 @@ public class LinuxEnvironmentTest {
 					.build();
 			Path tmp = Paths.get("/tmp");
 			try (Mount mnt = mounter.mount(tmp, envVars)) {
-				try{
+				try {
 					mnt.reveal(new AwtFrameworkRevealer());
-				} catch (RevealException e){
+				} catch (RevealException e) {
 					System.out.println("Reveal failed.");
 				}
 				System.out.println("Wait for it...");

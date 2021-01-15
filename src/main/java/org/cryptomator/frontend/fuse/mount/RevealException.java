@@ -1,12 +1,12 @@
 package org.cryptomator.frontend.fuse.mount;
 
-public class RevealException extends Exception{
+public class RevealException extends Exception {
 
-	public RevealException(String msg){
+	public RevealException(String msg) {
 		super(msg);
 	}
 
-	public RevealException(Throwable cause){
+	public RevealException(Throwable cause) {
 		super(cause);
 	}
 
