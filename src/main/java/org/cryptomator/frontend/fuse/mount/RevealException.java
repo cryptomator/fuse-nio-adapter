@@ -10,4 +10,7 @@ public class RevealException extends Exception {
 		super(cause);
 	}
 
+	public RevealException(String msg, Throwable cause) {
+		super(msg, cause);
+	}
 }
