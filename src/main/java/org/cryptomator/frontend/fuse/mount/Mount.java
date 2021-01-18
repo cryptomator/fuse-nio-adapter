@@ -5,13 +5,11 @@ import java.nio.file.Path;
 public interface Mount extends AutoCloseable {
 
 	/**
-	 * Attempts to reveal the mounted FUSE volume in the operating system's default file manager.
+	 * Attempts to reveal the mounted FUSE volume. This method <i>may</i> choose to ignore the given <code>revealer</code>. If the revealer is invoked, it <i>must</i> reveal the given path.
 	 *
-	 * @throws CommandFailedException
-	 * @deprecated Use {@link #getMountPoint()} and reveal it yourself (e.g. using JavaFX's <code>application.getHostServices().showDocument(mountPoint)</code>)
+	 * @param revealer Object containing necessary commands to show the Mount content to the user.
 	 */
-	@Deprecated
-	void revealInFileManager() throws CommandFailedException;
+	void reveal(Revealer revealer) throws RevealException;
 
 	/**
 	 * Returns this Mount's mount point.
@@ -37,6 +35,7 @@ public interface Mount extends AutoCloseable {
 
 	/**
 	 * Releases associated resources
+	 *
 	 * @throws CommandFailedException If closing failed
 	 * @throws IllegalStateException If still mounted
 	 */

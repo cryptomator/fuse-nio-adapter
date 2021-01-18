@@ -184,7 +184,11 @@ public class MirroringFuseMountTest {
 				.build();
 		try (Mount mnt = mounter.mount(pathToMirror, envVars)) {
 			LOG.info("Mounted successfully. Enter anything to stop the server...");
-			mnt.revealInFileManager();
+			try {
+				mnt.reveal(new AwtFrameworkRevealer());
+			} catch (RevealException e) {
+				LOG.warn("Reveal failed.", e);
+			}
 			System.in.read();
 			try {
 				mnt.unmount();
