@@ -9,7 +9,7 @@ public interface Mount extends AutoCloseable {
 	 *
 	 * @param revealer Object containing necessary commands to show the Mount content to the user.
 	 */
-	void reveal(Revealer revealer) throws RevealException;
+	void reveal(Revealer revealer) throws Exception;
 
 	/**
 	 * Returns this Mount's mount point.
