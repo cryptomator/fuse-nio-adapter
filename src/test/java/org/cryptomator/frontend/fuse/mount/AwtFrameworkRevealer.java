@@ -7,15 +7,12 @@ import java.nio.file.Path;
 public class AwtFrameworkRevealer implements Revealer {
 
 	@Override
-	public void reveal(Path path) throws RevealException {
+	public void reveal(Path path) throws IOException, UnsupportedOperationException {
 		if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.OPEN)) {
-			try {
-				Desktop.getDesktop().open(path.toFile());
-			} catch (IOException e) {
-				throw new RevealException(e);
-			}
+			Desktop.getDesktop().open(path.toFile());
 		} else {
-			throw new RevealException("Desktop API to browse files not supported.");
+			throw new UnsupportedOperationException("Desktop API to browse files not supported.");
 		}
 	}
+
 }

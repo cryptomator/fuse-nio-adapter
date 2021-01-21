@@ -186,7 +186,7 @@ public class MirroringFuseMountTest {
 			LOG.info("Mounted successfully. Enter anything to stop the server...");
 			try {
 				mnt.reveal(new AwtFrameworkRevealer());
-			} catch (RevealException e) {
+			} catch (Exception e) {
 				LOG.warn("Reveal failed.", e);
 			}
 			System.in.read();

@@ -22,7 +22,7 @@ public class LinuxEnvironmentTest {
 			try (Mount mnt = mounter.mount(tmp, envVars)) {
 				try {
 					mnt.reveal(new AwtFrameworkRevealer());
-				} catch (RevealException e) {
+				} catch (Exception e) {
 					System.out.println("Reveal failed.");
 				}
 				System.out.println("Wait for it...");
