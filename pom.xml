@@ -15,16 +15,19 @@
 	</scm>
 
 	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven.compiler.release>11</maven.compiler.release>
 
+		<!-- dependencies -->
 		<jnrfuse.version>0.5.5</jnrfuse.version>
 		<dagger.version>2.31.2</dagger.version>
 		<guava.version>30.1-jre</guava.version>
 		<slf4j.version>1.7.30</slf4j.version>
 		
+		<!-- test dependencies -->
 		<junit.jupiter.version>5.7.1</junit.jupiter.version>
 		<mockito.version>3.7.7</mockito.version>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<cryptofs.version>1.9.14</cryptofs.version>
 	</properties>
 
 	<licenses>
@@ -108,7 +111,7 @@
 		<dependency>
 			<groupId>org.cryptomator</groupId>
 			<artifactId>cryptofs</artifactId>
-			<version>1.9.12</version>
+			<version>${cryptofs.version}</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
