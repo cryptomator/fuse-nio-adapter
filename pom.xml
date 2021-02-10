@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.cryptomator</groupId>
 	<artifactId>fuse-nio-adapter</artifactId>
-	<version>1.2.8</version>
+	<version>1.2.9</version>
 	<name>FUSE-NIO-Adapter</name>
 	<description>Access resources at a given NIO path via FUSE.</description>
 	<url>https://github.com/cryptomator/fuse-nio-adapter</url>
@@ -15,16 +15,19 @@
 	</scm>
 
 	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven.compiler.release>11</maven.compiler.release>
 
-		<jnrfuse.version>0.5.4</jnrfuse.version>
-		<dagger.version>2.27</dagger.version>
-		<guava.version>30.0-jre</guava.version>
+		<!-- dependencies -->
+		<jnrfuse.version>0.5.5</jnrfuse.version>
+		<dagger.version>2.31.2</dagger.version>
+		<guava.version>30.1-jre</guava.version>
 		<slf4j.version>1.7.30</slf4j.version>
 		
-		<junit.jupiter.version>5.6.2</junit.jupiter.version>
-		<mockito.version>3.3.3</mockito.version>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<!-- test dependencies -->
+		<junit.jupiter.version>5.7.1</junit.jupiter.version>
+		<mockito.version>3.7.7</mockito.version>
+		<cryptofs.version>1.9.14</cryptofs.version>
 	</properties>
 
 	<licenses>
@@ -44,14 +47,6 @@
 			<organizationUrl>http://cryptomator.org</organizationUrl>
 		</developer>
 	</developers>
-
-	<repositories>
-		<repository>
-			<id>bintray</id>
-			<name>bintray</name>
-			<url>https://jcenter.bintray.com</url>
-		</repository>
-	</repositories>
 
 	<dependencies>
 		<!-- FUSE -->
@@ -116,7 +111,7 @@
 		<dependency>
 			<groupId>org.cryptomator</groupId>
 			<artifactId>cryptofs</artifactId>
-			<version>1.9.7</version>
+			<version>${cryptofs.version}</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
@@ -141,6 +136,42 @@
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>2.22.2</version>
 			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>3.2.0</version>
+				<configuration>
+					<archive>
+						<manifestEntries>
+							<Automatic-Module-Name>org.cryptomator.frontend.fuse</Automatic-Module-Name>
+						</manifestEntries>
+					</archive>
+				</configuration>
+			</plugin>
+			<plugin>
+				<artifactId>maven-source-plugin</artifactId>
+				<version>3.2.1</version>
+				<executions>
+					<execution>
+						<id>attach-sources</id>
+						<goals>
+							<goal>jar-no-fork</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>3.2.0</version>
+				<executions>
+					<execution>
+						<id>attach-javadocs</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
 		</plugins>
 	</build>
 
@@ -152,7 +183,7 @@
 					<plugin>
 						<groupId>org.owasp</groupId>
 						<artifactId>dependency-check-maven</artifactId>
-						<version>6.0.2</version>
+						<version>6.1.0</version>
 						<configuration>
 							<cveValidForHours>24</cveValidForHours>
 							<failBuildOnCVSS>0</failBuildOnCVSS>
@@ -181,7 +212,7 @@
 					<plugin>
 						<groupId>org.jacoco</groupId>
 						<artifactId>jacoco-maven-plugin</artifactId>
-						<version>0.8.5</version>
+						<version>0.8.6</version>
 						<executions>
 							<execution>
 								<id>prepare-agent</id>
@@ -202,41 +233,67 @@
 		</profile>
 
 		<profile>
-			<id>release</id>
-			<distributionManagement>
-				<repository>
-					<id>bintray-jcenter</id>
-					<url>https://api.bintray.com/maven/cryptomator/maven/fuse-nio-adapter/;publish=1</url>
-				</repository>
-			</distributionManagement>
+			<id>sign</id>
 			<build>
 				<plugins>
 					<plugin>
-						<artifactId>maven-source-plugin</artifactId>
-						<version>3.2.1</version>
+						<artifactId>maven-gpg-plugin</artifactId>
+						<version>1.6</version>
 						<executions>
 							<execution>
-								<id>attach-sources</id>
+								<id>sign-artifacts</id>
+								<phase>verify</phase>
 								<goals>
-									<goal>jar-no-fork</goal>
+									<goal>sign</goal>
 								</goals>
-							</execution>
-						</executions>
-					</plugin>
-					<plugin>
-						<artifactId>maven-javadoc-plugin</artifactId>
-						<version>3.2.0</version>
-						<executions>
-							<execution>
-								<id>attach-javadocs</id>
-								<goals>
-									<goal>jar</goal>
-								</goals>
+								<configuration>
+									<gpgArguments>
+										<arg>--pinentry-mode</arg>
+										<arg>loopback</arg>
+									</gpgArguments>
+								</configuration>
 							</execution>
 						</executions>
 					</plugin>
 				</plugins>
 			</build>
+		</profile>
+
+		<profile>
+			<id>deploy-central</id>
+			<distributionManagement>
+				<repository>
+					<id>ossrh</id>
+					<name>Maven Central</name>
+					<url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+				</repository>
+			</distributionManagement>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.sonatype.plugins</groupId>
+						<artifactId>nexus-staging-maven-plugin</artifactId>
+						<version>1.6.8</version>
+						<extensions>true</extensions>
+						<configuration>
+							<serverId>ossrh</serverId>
+							<nexusUrl>https://oss.sonatype.org/</nexusUrl>
+							<autoReleaseAfterClose>true</autoReleaseAfterClose>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+
+		<profile>
+			<id>deploy-github</id>
+			<distributionManagement>
+				<repository>
+					<id>github</id>
+					<name>GitHub Packages</name>
+					<url>https://maven.pkg.github.com/cryptomator/fuse-nio-adapter</url>
+				</repository>
+			</distributionManagement>
 		</profile>
 	</profiles>
 </project>
