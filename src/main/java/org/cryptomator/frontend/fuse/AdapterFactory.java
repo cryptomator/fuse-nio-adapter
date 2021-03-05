@@ -13,11 +13,15 @@ public class AdapterFactory {
 	}
 
 	public static FuseNioAdapter createReadOnlyAdapter(Path root) {
-		return createReadOnlyAdapter(root, DEFAULT_NAME_MAX);
+		return createReadOnlyAdapter(root, DEFAULT_NAME_MAX, new DefaultEncoder());
 	}
 
-	public static FuseNioAdapter createReadOnlyAdapter(Path root, int maxFileNameLength) {
-		FuseNioAdapterComponent comp = DaggerFuseNioAdapterComponent.builder().root(root).maxFileNameLength(maxFileNameLength).build();
+	public static FuseNioAdapter createReadOnlyAdapter(Path root, int maxFileNameLength, BufferEncoder toFuseEncoder ) {
+		FuseNioAdapterComponent comp = DaggerFuseNioAdapterComponent.builder()
+				.root(root)
+				.maxFileNameLength(maxFileNameLength)
+				.toFuseEncoder(toFuseEncoder)
+				.build();
 		return comp.readOnlyAdapter();
 	}
 
