@@ -3,6 +3,7 @@ package org.cryptomator.frontend.fuse.mount;
 import com.google.common.base.Preconditions;
 import org.cryptomator.frontend.fuse.AdapterFactory;
 import org.cryptomator.frontend.fuse.FuseNioAdapter;
+import org.cryptomator.frontend.fuse.encoding.UTF8NFDEncoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -41,7 +42,7 @@ class MacMounter implements Mounter {
 
 	@Override
 	public synchronized Mount mount(Path directory, boolean blocking, boolean debug, EnvironmentVariables envVars) throws CommandFailedException {
-		FuseNioAdapter fuseAdapter = AdapterFactory.createReadWriteAdapter(directory);
+		FuseNioAdapter fuseAdapter = AdapterFactory.createReadWriteAdapter(directory,254,new UTF8NFDEncoder());
 		try {
 			fuseAdapter.mount(envVars.getMountPoint(), blocking, debug, envVars.getFuseFlags());
 		} catch (RuntimeException e) {
@@ -60,7 +61,6 @@ class MacMounter implements Mounter {
 					"-oatomic_o_trunc",
 					"-oauto_xattr",
 					"-oauto_cache",
-					"-omodules=iconv,from_code=UTF-8,to_code=UTF-8-MAC", // show files names in Unicode NFD encoding
 					"-onoappledouble", // vastly impacts performance for some reason...
 					"-odefault_permissions" // let the kernel assume permissions based on file attributes etc
 			};
