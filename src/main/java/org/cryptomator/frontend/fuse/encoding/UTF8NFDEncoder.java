@@ -16,11 +16,6 @@ public class UTF8NFDEncoder implements FuseEncoder {
 	}
 
 	@Override
-	public Charset getTargetCharset() {
-		return UTF8;
-	}
-
-	@Override
 	public ByteBuffer encode(CharSequence s) {
 		String normalizedS = Normalizer.normalize(s, Normalizer.Form.NFD);
 		return UTF8.encode(normalizedS);
