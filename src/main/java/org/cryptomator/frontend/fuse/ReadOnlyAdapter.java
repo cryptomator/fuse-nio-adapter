@@ -37,6 +37,7 @@ import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.PosixFileAttributes;
+import java.text.Normalizer;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
@@ -44,6 +45,8 @@ import java.util.function.BooleanSupplier;
 
 /**
  * Read-Only FUSE-NIO-Adapter based on Sergey Tselovalnikov's <a href="https://github.com/SerCeMan/jnr-fuse/blob/0.5.1/src/main/java/ru/serce/jnrfuse/examples/HelloFuse.java">HelloFuse</a>
+ * <p>
+ * Any (string) path from a fuse callback is normalized into its NFC representation before it is transformed into a {@link java.nio.file.Path}.
  */
 @PerAdapter
 public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
@@ -76,7 +79,8 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 	}
 
 	protected Path resolvePath(String absolutePath) {
-		String relativePath = CharMatcher.is('/').trimLeadingFrom(absolutePath);
+		var normalizedAbsolutePath = Normalizer.normalize(absolutePath, Normalizer.Form.NFC);
+		String relativePath = CharMatcher.is('/').trimLeadingFrom(normalizedAbsolutePath);
 		return root.resolve(relativePath);
 	}
 
