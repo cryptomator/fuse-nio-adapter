@@ -2,6 +2,7 @@ package org.cryptomator.frontend.fuse;
 
 import dagger.BindsInstance;
 import dagger.Component;
+import org.cryptomator.frontend.fuse.encoding.BufferEncoder;
 
 import javax.inject.Named;
 import java.nio.file.Path;
@@ -22,6 +23,9 @@ public interface FuseNioAdapterComponent {
 
 		@BindsInstance
 		Builder maxFileNameLength(@Named("maxFileNameLength") int maxFileNameLength);
+
+		@BindsInstance
+		Builder toFuseEncoder(@Named("toFuseEncoder") BufferEncoder toFuseEncoder);
 
 		FuseNioAdapterComponent build();
 	}

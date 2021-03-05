@@ -10,6 +10,7 @@ import javax.inject.Named;
 
 import dagger.Module;
 import dagger.Provides;
+import org.cryptomator.frontend.fuse.encoding.BufferEncoder;
 
 @Module
 class FuseNioAdapterModule {
@@ -22,6 +23,12 @@ class FuseNioAdapterModule {
 		} catch (IOException e) {
 			throw new UncheckedIOException(e);
 		}
+	}
+
+	@Provides
+	@PerAdapter
+	protected BufferEncoder provideToFuseEncoder(@Named("toFuseEncoder") BufferEncoder enc){
+		return enc;
 	}
 
 }

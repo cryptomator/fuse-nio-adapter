@@ -1,13 +1,13 @@
 package org.cryptomator.frontend.fuse;
 
 import jnr.ffi.Pointer;
+import org.cryptomator.frontend.fuse.encoding.BufferEncoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.serce.jnrfuse.struct.FileStat;
 
 import javax.inject.Inject;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -19,10 +19,12 @@ class ReadOnlyLinkHandler {
 	private static final Logger LOG = LoggerFactory.getLogger(ReadOnlyLinkHandler.class);
 
 	private final FileAttributesUtil attrUtil;
+	private final BufferEncoder toFuseEncoder;
 
 	@Inject
-	public ReadOnlyLinkHandler(FileAttributesUtil attrUtil) {
+	public ReadOnlyLinkHandler(FileAttributesUtil attrUtil, BufferEncoder toFuseEncoder) {
 		this.attrUtil = attrUtil;
+		this.toFuseEncoder = toFuseEncoder;
 	}
 
 	public int getattr(Path path, BasicFileAttributes attrs, FileStat stat) {
@@ -48,9 +50,9 @@ class ReadOnlyLinkHandler {
 	 */
 	public int readlink(Path path, Pointer buf, long size) throws IOException {
 		Path target = Files.readSymbolicLink(path);
-		String result = target.toString();
+		var encodedTarget= toFuseEncoder.encode(target.toString());
 		int maxSize = size == 0 ? 0 : (int) size - 1;
-		buf.putString(0, result, maxSize, StandardCharsets.UTF_8);
+		buf.put(0, encodedTarget.array(),0,encodedTarget.capacity());
 		buf.putByte(maxSize, (byte) 0x00);
 		return 0;
 	}

@@ -5,7 +5,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
 
-public class UTF8NFCEncoder implements FuseEncoder {
+public class UTF8NFCEncoder implements BufferEncoder {
 
 	private final static Charset UTF8 = StandardCharsets.UTF_8;
 

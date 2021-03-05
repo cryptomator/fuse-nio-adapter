@@ -7,6 +7,7 @@ import jnr.ffi.types.mode_t;
 import jnr.ffi.types.off_t;
 import jnr.ffi.types.size_t;
 import jnr.ffi.types.uid_t;
+import org.cryptomator.frontend.fuse.encoding.BufferEncoder;
 import org.cryptomator.frontend.fuse.locks.DataLock;
 import org.cryptomator.frontend.fuse.locks.LockManager;
 import org.cryptomator.frontend.fuse.locks.PathLock;
@@ -51,8 +52,8 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 	private final BitMaskEnumUtil bitMaskUtil;
 
 	@Inject
-	public ReadWriteAdapter(@Named("root") Path root, @Named("maxFileNameLength") int maxFileNameLength, FileStore fileStore, LockManager lockManager, ReadWriteDirectoryHandler dirHandler, ReadWriteFileHandler fileHandler, ReadOnlyLinkHandler linkHandler, FileAttributesUtil attrUtil, BitMaskEnumUtil bitMaskUtil, OpenFileFactory fileFactory) {
-		super(root, maxFileNameLength, fileStore, lockManager, dirHandler, fileHandler, linkHandler, attrUtil, fileFactory);
+	public ReadWriteAdapter(@Named("root") Path root, @Named("maxFileNameLength") int maxFileNameLength, @Named("toFuseEncoder") BufferEncoder toFuseEncoder, FileStore fileStore, LockManager lockManager, ReadWriteDirectoryHandler dirHandler, ReadWriteFileHandler fileHandler, ReadOnlyLinkHandler linkHandler, FileAttributesUtil attrUtil, BitMaskEnumUtil bitMaskUtil, OpenFileFactory fileFactory) {
+		super(root, maxFileNameLength, toFuseEncoder, fileStore, lockManager, dirHandler, fileHandler, linkHandler, attrUtil, fileFactory);
 		this.fileHandler = fileHandler;
 		this.attrUtil = attrUtil;
 		this.bitMaskUtil = bitMaskUtil;

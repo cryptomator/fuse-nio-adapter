@@ -1,5 +1,8 @@
 package org.cryptomator.frontend.fuse;
 
+import org.cryptomator.frontend.fuse.encoding.BufferEncoder;
+import org.cryptomator.frontend.fuse.encoding.DefaultEncoder;
+
 import java.nio.file.Path;
 
 public class AdapterFactory {
@@ -23,7 +26,12 @@ public class AdapterFactory {
 	}
 
 	public static FuseNioAdapter createReadWriteAdapter(Path root, int maxFileNameLength) {
-		FuseNioAdapterComponent comp = DaggerFuseNioAdapterComponent.builder().root(root).maxFileNameLength(maxFileNameLength).build();
+		FuseNioAdapterComponent comp = DaggerFuseNioAdapterComponent.builder().root(root).maxFileNameLength(maxFileNameLength).toFuseEncoder(new DefaultEncoder()).build();
+		return comp.readWriteAdapter();
+	}
+
+	public static FuseNioAdapter createReadWriteAdapter(Path root, int maxFileNameLength, BufferEncoder toFuseEncoder) {
+		FuseNioAdapterComponent comp = DaggerFuseNioAdapterComponent.builder().root(root).maxFileNameLength(maxFileNameLength).toFuseEncoder(toFuseEncoder).build();
 		return comp.readWriteAdapter();
 	}
 }

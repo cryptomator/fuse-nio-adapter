@@ -6,6 +6,7 @@ import com.google.common.collect.Iterables;
 import jnr.ffi.Pointer;
 import jnr.ffi.types.off_t;
 import jnr.ffi.types.size_t;
+import org.cryptomator.frontend.fuse.encoding.BufferEncoder;
 import org.cryptomator.frontend.fuse.locks.AlreadyLockedException;
 import org.cryptomator.frontend.fuse.locks.DataLock;
 import org.cryptomator.frontend.fuse.locks.LockManager;
@@ -53,6 +54,7 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 	private final int maxFileNameLength;
 	protected final FileStore fileStore;
 	protected final LockManager lockManager;
+	protected final BufferEncoder toFuseEncoder;
 	private final ReadOnlyDirectoryHandler dirHandler;
 	private final ReadOnlyFileHandler fileHandler;
 	private final ReadOnlyLinkHandler linkHandler;
@@ -60,7 +62,7 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 	private final BooleanSupplier hasOpenFiles;
 
 	@Inject
-	public ReadOnlyAdapter(@Named("root") Path root, @Named("maxFileNameLength") int maxFileNameLength, FileStore fileStore, LockManager lockManager, ReadOnlyDirectoryHandler dirHandler, ReadOnlyFileHandler fileHandler, ReadOnlyLinkHandler linkHandler, FileAttributesUtil attrUtil, OpenFileFactory fileFactory) {
+	public ReadOnlyAdapter(@Named("root") Path root, @Named("maxFileNameLength") int maxFileNameLength, @Named("toFuseEncoder") BufferEncoder toFuseEncoder, FileStore fileStore, LockManager lockManager, ReadOnlyDirectoryHandler dirHandler, ReadOnlyFileHandler fileHandler, ReadOnlyLinkHandler linkHandler, FileAttributesUtil attrUtil, OpenFileFactory fileFactory) {
 		this.root = root;
 		this.maxFileNameLength = maxFileNameLength;
 		this.fileStore = fileStore;
@@ -70,6 +72,7 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 		this.linkHandler = linkHandler;
 		this.attrUtil = attrUtil;
 		this.hasOpenFiles = () -> fileFactory.getOpenFileCount() != 0;
+		this.toFuseEncoder = toFuseEncoder;
 	}
 
 	protected Path resolvePath(String absolutePath) {

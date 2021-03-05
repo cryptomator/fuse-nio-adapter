@@ -2,7 +2,7 @@ package org.cryptomator.frontend.fuse.encoding;
 
 import java.nio.ByteBuffer;
 
-public interface FuseEncoder {
+public interface BufferEncoder {
 
 	String getEncodingDescription();
 

@@ -1,8 +1,8 @@
 package org.cryptomator.frontend.fuse;
 
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Iterators;
 import jnr.ffi.Pointer;
+import org.cryptomator.frontend.fuse.encoding.BufferEncoder;
 import ru.serce.jnrfuse.ErrorCodes;
 import ru.serce.jnrfuse.FuseFillDir;
 import ru.serce.jnrfuse.struct.FileStat;
@@ -25,10 +25,12 @@ public class ReadOnlyDirectoryHandler {
 	private static final Path SAME_DIR = Paths.get(".");
 	private static final Path PARENT_DIR = Paths.get("..");
 	protected final FileAttributesUtil attrUtil;
+	protected final BufferEncoder toFuseEncoder;
 
 	@Inject
-	public ReadOnlyDirectoryHandler(FileAttributesUtil attrUtil) {
+	public ReadOnlyDirectoryHandler(FileAttributesUtil attrUtil, BufferEncoder toFuseEncoder) {
 		this.attrUtil = attrUtil;
+		this.toFuseEncoder = toFuseEncoder;
 	}
 
 	public int getattr(Path path, BasicFileAttributes attrs, FileStat stat) {
@@ -75,7 +77,8 @@ public class ReadOnlyDirectoryHandler {
 			Iterator<Path> iter = Iterators.concat(sameAndParent, ds.iterator());
 			while (iter.hasNext()) {
 				String fileName = iter.next().getFileName().toString();
-				if (filler.apply(buf, fileName, null, 0) != 0) {
+				var bytebuffer = toFuseEncoder.encode(fileName);
+				if (filler.apply(buf, bytebuffer, null, 0) != 0) {
 					return -ErrorCodes.ENOMEM();
 				}
 			}

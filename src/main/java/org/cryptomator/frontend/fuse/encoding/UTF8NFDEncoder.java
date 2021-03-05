@@ -6,7 +6,7 @@ import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
 
 //TODO: for MacOS standard NFD is not enough
-public class UTF8NFDEncoder implements FuseEncoder {
+public class UTF8NFDEncoder implements BufferEncoder {
 
 	private final static Charset UTF8 = StandardCharsets.UTF_8;
 

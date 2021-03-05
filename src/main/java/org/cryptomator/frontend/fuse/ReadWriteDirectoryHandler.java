@@ -1,5 +1,6 @@
 package org.cryptomator.frontend.fuse;
 
+import org.cryptomator.frontend.fuse.encoding.BufferEncoder;
 import ru.serce.jnrfuse.struct.FileStat;
 
 import javax.inject.Inject;
@@ -11,8 +12,8 @@ import java.nio.file.attribute.PosixFileAttributes;
 public class ReadWriteDirectoryHandler extends ReadOnlyDirectoryHandler {
 
 	@Inject
-	public ReadWriteDirectoryHandler(FileAttributesUtil attrUtil) {
-		super(attrUtil);
+	public ReadWriteDirectoryHandler(FileAttributesUtil attrUtil, BufferEncoder toFuseEncoder) {
+		super(attrUtil, toFuseEncoder);
 	}
 
 	@Override
