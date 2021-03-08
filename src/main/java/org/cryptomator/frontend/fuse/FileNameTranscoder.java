@@ -70,8 +70,8 @@ public class FileNameTranscoder {
 
 	/* Builder */
 	public static FileNameTranscoder transcoder(Charset fuseCharset, Charset nioCharset, Normalizer.Form fuseNormalization, Normalizer.Form nioNormalization) {
-		if (fuseNormalization != null && UTF_MATCH.matcher(fuseCharset.displayName()).matches() //
-				|| nioNormalization != null && UTF_MATCH.matcher(nioCharset.displayName()).matches()) {
+		if ((fuseNormalization != null && !UTF_MATCH.matcher(fuseCharset.displayName()).matches()) //
+				|| (nioNormalization != null && !UTF_MATCH.matcher(nioCharset.displayName()).matches())) {
 			throw new IllegalArgumentException("Normalization only applicable to utf encodings");
 		}
 		return new FileNameTranscoder(fuseCharset, nioCharset, fuseNormalization, nioNormalization);
