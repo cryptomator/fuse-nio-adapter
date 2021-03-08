@@ -42,7 +42,7 @@ class MacMounter implements Mounter {
 
 	@Override
 	public synchronized Mount mount(Path directory, boolean blocking, boolean debug, EnvironmentVariables envVars) throws CommandFailedException {
-		FileNameTranscoder macFileNameCoding = FileNameTranscoder.transcoder(StandardCharsets.UTF_8, StandardCharsets.UTF_8, Normalizer.Form.NFD, Normalizer.Form.NFC);
+		FileNameTranscoder macFileNameCoding = FileNameTranscoder.transcoder().withFuseNormalization(Normalizer.Form.NFD);
 		FuseNioAdapter fuseAdapter = AdapterFactory.createReadWriteAdapter(directory,254, macFileNameCoding);
 		try {
 			fuseAdapter.mount(envVars.getMountPoint(), blocking, debug, envVars.getFuseFlags());

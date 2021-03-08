@@ -6,25 +6,31 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
-import java.util.Optional;
-import java.util.regex.Pattern;
 
+/**
+ * Class to transcode filenames and path components from one encoding to another.
+ * <p>
+ * Instances created with {@link FileNameTranscoder#transcoder()} default to fuse and nio UTF-8 encoding with NFC normalization. To change encoding and normalization, use the supplied "withXXX()" methods. If an encoding is not part of the UTF famlily, the normalization is ignored.
+ */
 public class FileNameTranscoder {
 
 	private static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
 	private static final Normalizer.Form DEFAULT_NORMALIZATION = Normalizer.Form.NFC;
-	private static final Pattern UTF_MATCH = Pattern.compile("(utf|UTF)-?(8|((16|32)(BE|LE|be|le)?))");
 
 	private final Charset fuseCharset;
 	private final Charset nioCharset;
-	private final Optional<Normalizer.Form> fuseNormalization;
-	private final Optional<Normalizer.Form> nioNormalization;
+	private final Normalizer.Form fuseNormalization;
+	private final Normalizer.Form nioNormalization;
+	private final boolean fuseCharsetIsUTF;
+	private final boolean nioCharsetIsUTF;
 
-	private FileNameTranscoder(Charset fuseCharset, Charset nioCharset, Normalizer.Form fuseNormalization, Normalizer.Form nioNormalization) {
+	FileNameTranscoder(Charset fuseCharset, Charset nioCharset, Normalizer.Form fuseNormalization, Normalizer.Form nioNormalization) {
 		this.fuseCharset = Preconditions.checkNotNull(fuseCharset);
 		this.nioCharset = Preconditions.checkNotNull(nioCharset);
-		this.fuseNormalization = Optional.ofNullable(fuseNormalization);
-		this.nioNormalization = Optional.ofNullable(nioNormalization);
+		this.fuseNormalization = Preconditions.checkNotNull(fuseNormalization);
+		this.nioNormalization = Preconditions.checkNotNull(nioNormalization);
+		this.fuseCharsetIsUTF = fuseCharset.displayName().toUpperCase().startsWith("UTF");
+		this.nioCharsetIsUTF = nioCharset.displayName().toUpperCase().startsWith("UTF");
 	}
 
 	/**
@@ -34,7 +40,7 @@ public class FileNameTranscoder {
 	 * @return The file name encoded with the charset used by FUSE
 	 */
 	public String nioToFuse(String nioFileName) {
-		return transcode(nioFileName, nioCharset, fuseCharset, nioNormalization, fuseNormalization);
+		return transcode(nioFileName, nioCharset, fuseCharset, fuseNormalization, fuseCharsetIsUTF);
 	}
 
 	/**
@@ -44,11 +50,12 @@ public class FileNameTranscoder {
 	 * @return The file name encoded with the charset used by NIO
 	 */
 	public String fuseToNio(String fuseFileName) {
-		return transcode(fuseFileName, fuseCharset, nioCharset, fuseNormalization, nioNormalization);
+		return transcode(fuseFileName, fuseCharset, nioCharset, nioNormalization, nioCharsetIsUTF);
 	}
 
 	/**
 	 * Interprets the given string as FUSE character set encoded and returns the original byte sequence.
+	 *
 	 * @param fuseFileName string from the fuse layer
 	 * @return A byte sequence with the original encoding of the input
 	 */
@@ -58,6 +65,7 @@ public class FileNameTranscoder {
 
 	/**
 	 * Interprets the given string as NIO character set encoded and returns the original byte sequence.
+	 *
 	 * @param nioFileName string from the nio layer
 	 * @return A byte sequence with the original encoding of the input
 	 */
@@ -65,32 +73,34 @@ public class FileNameTranscoder {
 		return nioCharset.encode(nioFileName);
 	}
 
-	private String transcode(String original, Charset srcCharset, Charset dstCharset, Optional<Normalizer.Form> srcNormalization, Optional<Normalizer.Form> dstNormalization) {
+	private String transcode(String original, Charset srcCharset, Charset dstCharset, Normalizer.Form dstNormalization, boolean applyNormalization) {
 		String result = original;
 		if (!srcCharset.equals(dstCharset)) {
 			result = dstCharset.decode(srcCharset.encode(result)).toString();
 		}
-		if (dstNormalization.isPresent()) {
-			if ((srcNormalization.isPresent() && !srcNormalization.get().equals(dstNormalization.get())) || srcNormalization.isEmpty()) {
-				Normalizer.normalize(result, dstNormalization.get());
-			}
+		if (applyNormalization) {
+			result = Normalizer.normalize(result, dstNormalization);
 		}
 		return result;
 	}
 
-	/* Builder */
-	public static FileNameTranscoder transcoder(Charset fuseCharset, Charset nioCharset, Normalizer.Form fuseNormalization, Normalizer.Form nioNormalization) {
-		if ((fuseNormalization != null && !UTF_MATCH.matcher(fuseCharset.displayName()).matches()) //
-				|| (nioNormalization != null && !UTF_MATCH.matcher(nioCharset.displayName()).matches())) {
-			throw new IllegalArgumentException("Normalization only applicable to utf encodings");
-		}
+	/* Builder/Wither */
+	public FileNameTranscoder withFuseCharset(Charset fuseCharset) {
 		return new FileNameTranscoder(fuseCharset, nioCharset, fuseNormalization, nioNormalization);
 	}
 
-	public static FileNameTranscoder transcoder(Charset fuseCharset, Charset nioCharset) {
-		return new FileNameTranscoder(fuseCharset, nioCharset, null, null);
+	public FileNameTranscoder withNioCharset(Charset nioCharset) {
+		return new FileNameTranscoder(fuseCharset, nioCharset, fuseNormalization, nioNormalization);
 	}
-	//TODO: maybe let the FUSE charset be Charset.defaultCharset() ?
+
+	public FileNameTranscoder withFuseNormalization(Normalizer.Form fuseNormalization) {
+		return new FileNameTranscoder(fuseCharset, nioCharset, fuseNormalization, nioNormalization);
+	}
+
+	public FileNameTranscoder withNioNormalization(Normalizer.Form nioNormalization) {
+		return new FileNameTranscoder(fuseCharset, nioCharset, fuseNormalization, nioNormalization);
+	}
+
 	public static FileNameTranscoder transcoder() {
 		return new FileNameTranscoder(DEFAULT_CHARSET, DEFAULT_CHARSET, DEFAULT_NORMALIZATION, DEFAULT_NORMALIZATION);
 	}
