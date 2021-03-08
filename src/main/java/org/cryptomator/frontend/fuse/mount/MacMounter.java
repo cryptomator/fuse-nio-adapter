@@ -62,7 +62,6 @@ class MacMounter implements Mounter {
 					"-oatomic_o_trunc",
 					"-oauto_xattr",
 					"-oauto_cache",
-					"-omodules=iconv,from_code=UTF-8,to_code=UTF-8-MAC", // show files names in Unicode NFD encoding
 					"-onoappledouble", // vastly impacts performance for some reason...
 					"-odefault_permissions" // let the kernel assume permissions based on file attributes etc
 			};
