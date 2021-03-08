@@ -51,9 +51,10 @@ class ReadOnlyLinkHandler {
 	public int readlink(Path path, Pointer buf, long size) throws IOException {
 		Path target = Files.readSymbolicLink(path);
 		ByteBuffer fuseEncodedTarget = fileNameTranscoder.interpretAsFuseString(fileNameTranscoder.nioToFuse(target.toString()));
-		int maxSize = size == 0 ? 0 : (int) size - 1;
-		buf.put(0, fuseEncodedTarget.array(),0, fuseEncodedTarget.capacity());
-		buf.putByte(maxSize, (byte) 0x00);
+		int len = (int) Math.min(fuseEncodedTarget.remaining(), size - 1);
+		assert len < size;
+		buf.put(0, fuseEncodedTarget.array(), 0, len);
+		buf.putByte(len, (byte) 0x00); // add null terminator
 		return 0;
 	}
 
