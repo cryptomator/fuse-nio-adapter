@@ -47,10 +47,20 @@ public class FileNameTranscoder {
 		return transcode(fuseFileName, fuseCharset, nioCharset, fuseNormalization, nioNormalization);
 	}
 
+	/**
+	 * Interprets the given string as FUSE character set encoded and returns the original byte sequence.
+	 * @param fuseFileName string from the fuse layer
+	 * @return A byte sequence with the original encoding of the input
+	 */
 	public ByteBuffer interpretAsFuseString(String fuseFileName) {
 		return fuseCharset.encode(fuseFileName);
 	}
 
+	/**
+	 * Interprets the given string as NIO character set encoded and returns the original byte sequence.
+	 * @param nioFileName string from the nio layer
+	 * @return A byte sequence with the original encoding of the input
+	 */
 	public ByteBuffer interpretAsNioString(String nioFileName) {
 		return nioCharset.encode(nioFileName);
 	}
