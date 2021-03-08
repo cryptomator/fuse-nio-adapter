@@ -21,16 +21,16 @@ public class FileNameTranscoder {
 	private final Charset nioCharset;
 	private final Normalizer.Form fuseNormalization;
 	private final Normalizer.Form nioNormalization;
-	private final boolean fuseCharsetIsUTF;
-	private final boolean nioCharsetIsUTF;
+	private final boolean fuseCharsetIsUnicode;
+	private final boolean nioCharsetIsUnicode;
 
 	FileNameTranscoder(Charset fuseCharset, Charset nioCharset, Normalizer.Form fuseNormalization, Normalizer.Form nioNormalization) {
 		this.fuseCharset = Preconditions.checkNotNull(fuseCharset);
 		this.nioCharset = Preconditions.checkNotNull(nioCharset);
 		this.fuseNormalization = Preconditions.checkNotNull(fuseNormalization);
 		this.nioNormalization = Preconditions.checkNotNull(nioNormalization);
-		this.fuseCharsetIsUTF = fuseCharset.displayName().toUpperCase().startsWith("UTF");
-		this.nioCharsetIsUTF = nioCharset.displayName().toUpperCase().startsWith("UTF");
+		this.fuseCharsetIsUnicode = fuseCharset.name().startsWith("UTF");
+		this.nioCharsetIsUnicode = nioCharset.name().startsWith("UTF");
 	}
 
 	/**
@@ -40,7 +40,7 @@ public class FileNameTranscoder {
 	 * @return The file name encoded with the charset used by FUSE
 	 */
 	public String nioToFuse(String nioFileName) {
-		return transcode(nioFileName, nioCharset, fuseCharset, fuseNormalization, fuseCharsetIsUTF);
+		return transcode(nioFileName, nioCharset, fuseCharset, nioNormalization, fuseNormalization, fuseCharsetIsUnicode);
 	}
 
 	/**
@@ -50,7 +50,7 @@ public class FileNameTranscoder {
 	 * @return The file name encoded with the charset used by NIO
 	 */
 	public String fuseToNio(String fuseFileName) {
-		return transcode(fuseFileName, fuseCharset, nioCharset, nioNormalization, nioCharsetIsUTF);
+		return transcode(fuseFileName, fuseCharset, nioCharset, fuseNormalization, nioNormalization, nioCharsetIsUnicode);
 	}
 
 	/**
@@ -73,12 +73,12 @@ public class FileNameTranscoder {
 		return nioCharset.encode(nioFileName);
 	}
 
-	private String transcode(String original, Charset srcCharset, Charset dstCharset, Normalizer.Form dstNormalization, boolean applyNormalization) {
+	private String transcode(String original, Charset srcCharset, Charset dstCharset, Normalizer.Form srcNormalization, Normalizer.Form dstNormalization, boolean applyNormalization) {
 		String result = original;
 		if (!srcCharset.equals(dstCharset)) {
 			result = dstCharset.decode(srcCharset.encode(result)).toString();
 		}
-		if (applyNormalization) {
+		if (applyNormalization && srcNormalization != dstNormalization) {
 			result = Normalizer.normalize(result, dstNormalization);
 		}
 		return result;
