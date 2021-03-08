@@ -23,6 +23,9 @@ public interface FuseNioAdapterComponent {
 		@BindsInstance
 		Builder maxFileNameLength(@Named("maxFileNameLength") int maxFileNameLength);
 
+		@BindsInstance
+		Builder fileNameTranscoder(FileNameTranscoder fileNameTranscoder);
+
 		FuseNioAdapterComponent build();
 	}
 

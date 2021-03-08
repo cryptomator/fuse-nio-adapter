@@ -53,6 +53,7 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 	private final int maxFileNameLength;
 	protected final FileStore fileStore;
 	protected final LockManager lockManager;
+	protected final FileNameTranscoder fileNameTranscoder;
 	private final ReadOnlyDirectoryHandler dirHandler;
 	private final ReadOnlyFileHandler fileHandler;
 	private final ReadOnlyLinkHandler linkHandler;
@@ -60,9 +61,10 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 	private final BooleanSupplier hasOpenFiles;
 
 	@Inject
-	public ReadOnlyAdapter(@Named("root") Path root, @Named("maxFileNameLength") int maxFileNameLength, FileStore fileStore, LockManager lockManager, ReadOnlyDirectoryHandler dirHandler, ReadOnlyFileHandler fileHandler, ReadOnlyLinkHandler linkHandler, FileAttributesUtil attrUtil, OpenFileFactory fileFactory) {
+	public ReadOnlyAdapter(@Named("root") Path root, @Named("maxFileNameLength") int maxFileNameLength, FileNameTranscoder fileNameTranscoder, FileStore fileStore, LockManager lockManager, ReadOnlyDirectoryHandler dirHandler, ReadOnlyFileHandler fileHandler, ReadOnlyLinkHandler linkHandler, FileAttributesUtil attrUtil, OpenFileFactory fileFactory) {
 		this.root = root;
 		this.maxFileNameLength = maxFileNameLength;
+		this.fileNameTranscoder = fileNameTranscoder;
 		this.fileStore = fileStore;
 		this.lockManager = lockManager;
 		this.dirHandler = dirHandler;
@@ -73,7 +75,8 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 	}
 
 	protected Path resolvePath(String absolutePath) {
-		String relativePath = CharMatcher.is('/').trimLeadingFrom(absolutePath);
+		var nioSuitablePath = fileNameTranscoder.fuseToNio(absolutePath);
+		String relativePath = CharMatcher.is('/').trimLeadingFrom(nioSuitablePath);
 		return root.resolve(relativePath);
 	}
 

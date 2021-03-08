@@ -10,11 +10,15 @@ public class AdapterFactory {
 	}
 
 	public static FuseNioAdapter createReadOnlyAdapter(Path root) {
-		return createReadOnlyAdapter(root, DEFAULT_NAME_MAX);
+		return createReadOnlyAdapter(root, DEFAULT_NAME_MAX, FileNameTranscoder.transcoder() );
 	}
 
-	public static FuseNioAdapter createReadOnlyAdapter(Path root, int maxFileNameLength) {
-		FuseNioAdapterComponent comp = DaggerFuseNioAdapterComponent.builder().root(root).maxFileNameLength(maxFileNameLength).build();
+	public static FuseNioAdapter createReadOnlyAdapter(Path root, int maxFileNameLength, FileNameTranscoder fileNameTranscoder) {
+		FuseNioAdapterComponent comp = DaggerFuseNioAdapterComponent.builder()
+				.root(root)
+				.maxFileNameLength(maxFileNameLength)
+				.fileNameTranscoder(fileNameTranscoder)
+				.build();
 		return comp.readOnlyAdapter();
 	}
 
@@ -23,7 +27,12 @@ public class AdapterFactory {
 	}
 
 	public static FuseNioAdapter createReadWriteAdapter(Path root, int maxFileNameLength) {
-		FuseNioAdapterComponent comp = DaggerFuseNioAdapterComponent.builder().root(root).maxFileNameLength(maxFileNameLength).build();
+		FuseNioAdapterComponent comp = DaggerFuseNioAdapterComponent.builder().root(root).maxFileNameLength(maxFileNameLength).fileNameTranscoder(FileNameTranscoder.transcoder()).build();
+		return comp.readWriteAdapter();
+	}
+
+	public static FuseNioAdapter createReadWriteAdapter(Path root, int maxFileNameLength, FileNameTranscoder fileNameTranscoder) {
+		FuseNioAdapterComponent comp = DaggerFuseNioAdapterComponent.builder().root(root).maxFileNameLength(maxFileNameLength).fileNameTranscoder(fileNameTranscoder).build();
 		return comp.readWriteAdapter();
 	}
 }

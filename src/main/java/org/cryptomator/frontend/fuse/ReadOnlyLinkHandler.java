@@ -7,7 +7,7 @@ import ru.serce.jnrfuse.struct.FileStat;
 
 import javax.inject.Inject;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -19,10 +19,12 @@ class ReadOnlyLinkHandler {
 	private static final Logger LOG = LoggerFactory.getLogger(ReadOnlyLinkHandler.class);
 
 	private final FileAttributesUtil attrUtil;
+	private final FileNameTranscoder fileNameTranscoder;
 
 	@Inject
-	public ReadOnlyLinkHandler(FileAttributesUtil attrUtil) {
+	public ReadOnlyLinkHandler(FileAttributesUtil attrUtil, FileNameTranscoder fileNameTranscoder) {
 		this.attrUtil = attrUtil;
+		this.fileNameTranscoder = fileNameTranscoder;
 	}
 
 	public int getattr(Path path, BasicFileAttributes attrs, FileStat stat) {
@@ -48,9 +50,9 @@ class ReadOnlyLinkHandler {
 	 */
 	public int readlink(Path path, Pointer buf, long size) throws IOException {
 		Path target = Files.readSymbolicLink(path);
-		String result = target.toString();
+		ByteBuffer fuseEncodedTarget = fileNameTranscoder.interpretAsFuseString(fileNameTranscoder.nioToFuse(target.toString()));
 		int maxSize = size == 0 ? 0 : (int) size - 1;
-		buf.putString(0, result, maxSize, StandardCharsets.UTF_8);
+		buf.put(0, fuseEncodedTarget.array(),0, fuseEncodedTarget.capacity());
 		buf.putByte(maxSize, (byte) 0x00);
 		return 0;
 	}
