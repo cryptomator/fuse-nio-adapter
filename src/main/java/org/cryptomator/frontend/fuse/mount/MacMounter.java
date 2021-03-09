@@ -42,8 +42,9 @@ class MacMounter implements Mounter {
 
 	@Override
 	public synchronized Mount mount(Path directory, boolean blocking, boolean debug, EnvironmentVariables envVars) throws CommandFailedException {
-		FileNameTranscoder macFileNameCoding = FileNameTranscoder.transcoder().withFuseNormalization(Normalizer.Form.NFD);
-		FuseNioAdapter fuseAdapter = AdapterFactory.createReadWriteAdapter(directory,254, macFileNameCoding);
+		FuseNioAdapter fuseAdapter = AdapterFactory.createReadWriteAdapter(directory, //
+				AdapterFactory.DEFAULT_MAX_FILENAMELENGTH, //
+				envVars.getFileNameTranscoder().orElse(FileNameTranscoder.transcoder().withFuseNormalization(Normalizer.Form.NFD)));
 		try {
 			fuseAdapter.mount(envVars.getMountPoint(), blocking, debug, envVars.getFuseFlags());
 		} catch (RuntimeException e) {

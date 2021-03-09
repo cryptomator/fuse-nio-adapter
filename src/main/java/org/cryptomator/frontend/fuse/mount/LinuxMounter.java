@@ -1,6 +1,7 @@
 package org.cryptomator.frontend.fuse.mount;
 
 import org.cryptomator.frontend.fuse.AdapterFactory;
+import org.cryptomator.frontend.fuse.FileNameTranscoder;
 import org.cryptomator.frontend.fuse.FuseNioAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,7 +22,9 @@ class LinuxMounter implements Mounter {
 
 	@Override
 	public synchronized Mount mount(Path directory, boolean blocking, boolean debug, EnvironmentVariables envVars) throws CommandFailedException {
-		FuseNioAdapter fuseAdapter = AdapterFactory.createReadWriteAdapter(directory);
+		FuseNioAdapter fuseAdapter = AdapterFactory.createReadWriteAdapter(directory, //
+				AdapterFactory.DEFAULT_MAX_FILENAMELENGTH, //
+				envVars.getFileNameTranscoder().orElse(FileNameTranscoder.transcoder()));
 		try {
 			fuseAdapter.mount(envVars.getMountPoint(), blocking, debug, envVars.getFuseFlags());
 		} catch (RuntimeException e) {
