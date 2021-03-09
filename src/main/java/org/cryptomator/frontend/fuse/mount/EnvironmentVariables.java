@@ -8,10 +8,10 @@ import java.util.Optional;
 public class EnvironmentVariables {
 
 	private final Path mountPoint;
-	private final Optional<FileNameTranscoder> fileNameTranscoder;
+	private final FileNameTranscoder fileNameTranscoder;
 	private final String[] fuseFlags;
 
-	private EnvironmentVariables(Path mountPoint, String[] fuseFlags, Optional<FileNameTranscoder> fileNameTranscoder) {
+	private EnvironmentVariables(Path mountPoint, String[] fuseFlags, FileNameTranscoder fileNameTranscoder) {
 		this.mountPoint = mountPoint;
 		this.fuseFlags = fuseFlags;
 		this.fileNameTranscoder = fileNameTranscoder;
@@ -29,7 +29,7 @@ public class EnvironmentVariables {
 		return fuseFlags;
 	}
 
-	public Optional<FileNameTranscoder> getFileNameTranscoder() {
+	public FileNameTranscoder getFileNameTranscoder() {
 		return fileNameTranscoder;
 	}
 
@@ -37,7 +37,7 @@ public class EnvironmentVariables {
 
 		private Path mountPoint = null;
 		private String[] fuseFlags;
-		private Optional<FileNameTranscoder> fileNameTranscoder = Optional.empty();
+		private FileNameTranscoder fileNameTranscoder;
 
 		public EnvironmentVariablesBuilder withMountPoint(Path mountPoint) {
 			this.mountPoint = mountPoint;
@@ -50,7 +50,7 @@ public class EnvironmentVariables {
 		}
 
 		public EnvironmentVariablesBuilder withFileNameTranscoder(FileNameTranscoder fileNameTranscoder) {
-			this.fileNameTranscoder = Optional.of(fileNameTranscoder);
+			this.fileNameTranscoder = fileNameTranscoder;
 			return this;
 		}
 

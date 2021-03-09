@@ -44,7 +44,7 @@ class MacMounter implements Mounter {
 	public synchronized Mount mount(Path directory, boolean blocking, boolean debug, EnvironmentVariables envVars) throws CommandFailedException {
 		FuseNioAdapter fuseAdapter = AdapterFactory.createReadWriteAdapter(directory, //
 				AdapterFactory.DEFAULT_MAX_FILENAMELENGTH, //
-				envVars.getFileNameTranscoder().orElse(FileNameTranscoder.transcoder().withFuseNormalization(Normalizer.Form.NFD)));
+				envVars.getFileNameTranscoder());
 		try {
 			fuseAdapter.mount(envVars.getMountPoint(), blocking, debug, envVars.getFuseFlags());
 		} catch (RuntimeException e) {
@@ -69,6 +69,11 @@ class MacMounter implements Mounter {
 		} catch (IOException e) {
 			throw new UncheckedIOException(e);
 		}
+	}
+
+	@Override
+	public FileNameTranscoder defaultFileNameTranscoder() {
+		return FileNameTranscoder.transcoder().withFuseNormalization(Normalizer.Form.NFD);
 	}
 
 	/**
