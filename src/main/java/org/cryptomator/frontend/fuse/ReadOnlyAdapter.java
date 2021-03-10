@@ -53,6 +53,7 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 	private final int maxFileNameLength;
 	protected final FileStore fileStore;
 	protected final LockManager lockManager;
+	protected final FileNameTranscoder fileNameTranscoder;
 	private final ReadOnlyDirectoryHandler dirHandler;
 	private final ReadOnlyFileHandler fileHandler;
 	private final ReadOnlyLinkHandler linkHandler;
@@ -60,9 +61,10 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 	private final BooleanSupplier hasOpenFiles;
 
 	@Inject
-	public ReadOnlyAdapter(@Named("root") Path root, @Named("maxFileNameLength") int maxFileNameLength, FileStore fileStore, LockManager lockManager, ReadOnlyDirectoryHandler dirHandler, ReadOnlyFileHandler fileHandler, ReadOnlyLinkHandler linkHandler, FileAttributesUtil attrUtil, OpenFileFactory fileFactory) {
+	public ReadOnlyAdapter(@Named("root") Path root, @Named("maxFileNameLength") int maxFileNameLength, FileNameTranscoder fileNameTranscoder, FileStore fileStore, LockManager lockManager, ReadOnlyDirectoryHandler dirHandler, ReadOnlyFileHandler fileHandler, ReadOnlyLinkHandler linkHandler, FileAttributesUtil attrUtil, OpenFileFactory fileFactory) {
 		this.root = root;
 		this.maxFileNameLength = maxFileNameLength;
+		this.fileNameTranscoder = fileNameTranscoder;
 		this.fileStore = fileStore;
 		this.lockManager = lockManager;
 		this.dirHandler = dirHandler;
@@ -101,7 +103,7 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 	@Override
 	public int access(String path, int mask) {
 		try {
-			Path node = resolvePath(path);
+			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
 			Set<AccessMode> accessModes = attrUtil.accessModeMaskToSet(mask);
 			return checkAccess(node, accessModes);
 		} catch (RuntimeException e) {
@@ -135,7 +137,7 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 	public int readlink(String path, Pointer buf, long size) {
 		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
 			 DataLock dataLock = pathLock.lockDataForReading()) {
-			Path node = resolvePath(path);
+			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
 			return linkHandler.readlink(node, buf, size);
 		} catch (NotLinkException | NoSuchFileException e) {
 			LOG.trace("readlink {} failed, node not found or not a symlink", path);
@@ -150,7 +152,7 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 	public int getattr(String path, FileStat stat) {
 		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
 			 DataLock dataLock = pathLock.lockDataForReading()) {
-			Path node = resolvePath(path);
+			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
 			BasicFileAttributes attrs;
 			if (fileStore.supportsFileAttributeView(PosixFileAttributeView.class)) {
 				attrs = Files.readAttributes(node, PosixFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
@@ -183,7 +185,7 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 	public int readdir(String path, Pointer buf, FuseFillDir filler, @off_t long offset, FuseFileInfo fi) {
 		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
 			 DataLock dataLock = pathLock.lockDataForReading()) {
-			Path node = resolvePath(path);
+			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
 			LOG.trace("readdir {}", path);
 			return dirHandler.readdir(node, buf, filler, offset, fi);
 		} catch (NotDirectoryException e) {
@@ -199,7 +201,7 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 	public int open(String path, FuseFileInfo fi) {
 		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
 			 DataLock dataLock = pathLock.lockDataForReading()) {
-			Path node = resolvePath(path);
+			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
 			LOG.trace("open {} ({})", path, fi.fh.get());
 			fileHandler.open(node, fi);
 			return 0;

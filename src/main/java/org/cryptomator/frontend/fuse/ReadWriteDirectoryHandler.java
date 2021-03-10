@@ -11,8 +11,8 @@ import java.nio.file.attribute.PosixFileAttributes;
 public class ReadWriteDirectoryHandler extends ReadOnlyDirectoryHandler {
 
 	@Inject
-	public ReadWriteDirectoryHandler(FileAttributesUtil attrUtil) {
-		super(attrUtil);
+	public ReadWriteDirectoryHandler(FileAttributesUtil attrUtil, FileNameTranscoder fileNameTranscoder) {
+		super(attrUtil, fileNameTranscoder);
 	}
 
 	@Override

@@ -51,8 +51,8 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 	private final BitMaskEnumUtil bitMaskUtil;
 
 	@Inject
-	public ReadWriteAdapter(@Named("root") Path root, @Named("maxFileNameLength") int maxFileNameLength, FileStore fileStore, LockManager lockManager, ReadWriteDirectoryHandler dirHandler, ReadWriteFileHandler fileHandler, ReadOnlyLinkHandler linkHandler, FileAttributesUtil attrUtil, BitMaskEnumUtil bitMaskUtil, OpenFileFactory fileFactory) {
-		super(root, maxFileNameLength, fileStore, lockManager, dirHandler, fileHandler, linkHandler, attrUtil, fileFactory);
+	public ReadWriteAdapter(@Named("root") Path root, @Named("maxFileNameLength") int maxFileNameLength, FileNameTranscoder fileNameTranscoder, FileStore fileStore, LockManager lockManager, ReadWriteDirectoryHandler dirHandler, ReadWriteFileHandler fileHandler, ReadOnlyLinkHandler linkHandler, FileAttributesUtil attrUtil, BitMaskEnumUtil bitMaskUtil, OpenFileFactory fileFactory) {
+		super(root, maxFileNameLength, fileNameTranscoder, fileStore, lockManager, dirHandler, fileHandler, linkHandler, attrUtil, fileFactory);
 		this.fileHandler = fileHandler;
 		this.attrUtil = attrUtil;
 		this.bitMaskUtil = bitMaskUtil;
@@ -67,7 +67,7 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 	public int mkdir(String path, @mode_t long mode) {
 		try (PathLock pathLock = lockManager.createPathLock(path).forWriting();
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
-			Path node = resolvePath(path);
+			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
 			LOG.trace("mkdir {} ({})", path, mode);
 			Files.createDirectory(node);
 			return 0;
@@ -83,20 +83,19 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 	}
 
 	@Override
-	public int symlink(String oldpath, String newpath) {
-		try (PathLock pathLock = lockManager.createPathLock(newpath).forWriting();
+	public int symlink(String targetPath, String linkPath) {
+		try (PathLock pathLock = lockManager.createPathLock(linkPath).forWriting();
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
-			Path link = resolvePath(newpath);
-			Path target = link.getFileSystem().getPath(oldpath);
-			;
-			LOG.trace("symlink {} -> {}", newpath, oldpath);
+			Path link = resolvePath(fileNameTranscoder.fuseToNio(linkPath));
+			Path target = resolvePath(fileNameTranscoder.fuseToNio(targetPath));
+			LOG.trace("symlink {} -> {}", linkPath, targetPath);
 			Files.createSymbolicLink(link, target);
 			return 0;
 		} catch (FileAlreadyExistsException e) {
-			LOG.warn("symlink {} -> {} failed, file already exists.", newpath, oldpath);
+			LOG.warn("symlink {} -> {} failed, file already exists.", linkPath, targetPath);
 			return -ErrorCodes.EEXIST();
 		} catch (FileSystemException e) {
-			return getErrorCodeForGenericFileSystemException(e, "symlink " + oldpath + " -> " + newpath);
+			return getErrorCodeForGenericFileSystemException(e, "symlink " + targetPath + " -> " + linkPath);
 		} catch (IOException | RuntimeException e) {
 			LOG.error("symlink failed.", e);
 			return -ErrorCodes.EIO();
@@ -107,7 +106,7 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 	public int create(String path, @mode_t long mode, FuseFileInfo fi) {
 		try (PathLock pathLock = lockManager.createPathLock(path).forWriting();
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
-			Path node = resolvePath(path);
+			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
 			Set<OpenFlags> flags = bitMaskUtil.bitMaskToSet(OpenFlags.class, fi.flags.longValue());
 			LOG.trace("create {} with flags {}", path, flags);
 			if (fileStore.supportsFileAttributeView(PosixFileAttributeView.class)) {
@@ -138,7 +137,7 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 	public int chmod(String path, @mode_t long mode) {
 		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
-			Path node = resolvePath(path);
+			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
 			LOG.trace("chmod {} ({})", path, mode);
 			Files.setPosixFilePermissions(node, attrUtil.octalModeToPosixPermissions(mode));
 			return 0;
@@ -158,7 +157,7 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 	public int unlink(String path) {
 		try (PathLock pathLock = lockManager.createPathLock(path).forWriting();
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
-			Path node = resolvePath(path);
+			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
 			if (Files.isDirectory(node, LinkOption.NOFOLLOW_LINKS)) {
 				LOG.warn("unlink {} failed, node is a directory.", path);
 				return -ErrorCodes.EISDIR();
@@ -179,7 +178,7 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 	public int rmdir(String path) {
 		try (PathLock pathLock = lockManager.createPathLock(path).forWriting();
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
-			Path node = resolvePath(path);
+			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
 			if (!Files.isDirectory(node, LinkOption.NOFOLLOW_LINKS)) {
 				throw new NotDirectoryException(path);
 			}
@@ -225,8 +224,8 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 			 PathLock newPathLock = lockManager.createPathLock(newPath).forWriting();
 			 DataLock newDataLock = newPathLock.lockDataForWriting()) {
 			// TODO: recursively check for open file handles
-			Path nodeOld = resolvePath(oldPath);
-			Path nodeNew = resolvePath(newPath);
+			Path nodeOld = resolvePath(fileNameTranscoder.fuseToNio(oldPath));
+			Path nodeNew = resolvePath(fileNameTranscoder.fuseToNio(newPath));
 			LOG.trace("rename {} to {}", oldPath, newPath);
 			Files.move(nodeOld, nodeNew, StandardCopyOption.REPLACE_EXISTING);
 			return 0;
@@ -254,7 +253,7 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 		assert timespec.length == 2;
 		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
-			Path node = resolvePath(path);
+			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
 			LOG.trace("utimens {} (last modification {} sec {} nsec, last access {} sec {} nsec)", path, timespec[1].tv_sec.get(), timespec[1].tv_nsec.longValue(), timespec[0].tv_sec.get(), timespec[0].tv_nsec.longValue());
 			fileHandler.utimens(node, timespec[1], timespec[0]);
 			return 0;
@@ -291,7 +290,7 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 	public int truncate(String path, @off_t long size) {
 		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
-			Path node = resolvePath(path);
+			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
 			LOG.trace("truncate {} {}", path, size);
 			fileHandler.truncate(node, size);
 			return 0;
@@ -335,5 +334,5 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 			return -ErrorCodes.EIO();
 		}
 	}
-	
+
 }

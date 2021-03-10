@@ -1,5 +1,7 @@
 package org.cryptomator.frontend.fuse.mount;
 
+import org.cryptomator.frontend.fuse.FileNameTranscoder;
+
 import java.nio.file.Path;
 
 public interface Mounter {
@@ -13,5 +15,9 @@ public interface Mounter {
 	String[] defaultMountFlags();
 
 	boolean isApplicable();
+
+	default FileNameTranscoder defaultFileNameTranscoder() {
+		return FileNameTranscoder.transcoder();
+	}
 
 }

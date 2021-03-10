@@ -17,7 +17,9 @@ class WindowsMounter implements Mounter {
 
 	@Override
 	public synchronized Mount mount(Path directory, boolean blocking, boolean debug, EnvironmentVariables envVars) throws CommandFailedException {
-		FuseNioAdapter fuseAdapter = AdapterFactory.createReadWriteAdapter(directory);
+		FuseNioAdapter fuseAdapter = AdapterFactory.createReadWriteAdapter(directory, //
+				AdapterFactory.DEFAULT_MAX_FILENAMELENGTH, //
+				envVars.getFileNameTranscoder());
 		try {
 			fuseAdapter.mount(envVars.getMountPoint(), blocking, debug, envVars.getFuseFlags());
 		} catch (RuntimeException e) {
@@ -41,7 +43,7 @@ class WindowsMounter implements Mounter {
 			String path = WinPathUtils.getWinFspPath(); //Result only matters for debug-message; null-check is included in lib
 			LOG.trace("Found WinFsp installation at {}", path);
 			return true;
-		} catch(FuseException exc) {
+		} catch (FuseException exc) {
 			LOG.debug("Failed to find a WinFsp installation; that's only a problem if you want to use FUSE on Windows. Exception text: \"{}\"", exc.getMessage());
 			return false;
 		}

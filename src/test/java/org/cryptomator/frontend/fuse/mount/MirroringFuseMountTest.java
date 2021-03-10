@@ -181,6 +181,7 @@ public class MirroringFuseMountTest {
 		EnvironmentVariables envVars = EnvironmentVariables.create()
 				.withFlags(mounter.defaultMountFlags())
 				.withMountPoint(mountPoint)
+				.withFileNameTranscoder(mounter.defaultFileNameTranscoder())
 				.build();
 		try (Mount mnt = mounter.mount(pathToMirror, envVars)) {
 			LOG.info("Mounted successfully. Enter anything to stop the server...");

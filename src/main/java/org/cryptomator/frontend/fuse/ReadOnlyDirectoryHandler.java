@@ -25,10 +25,12 @@ public class ReadOnlyDirectoryHandler {
 	private static final Path SAME_DIR = Paths.get(".");
 	private static final Path PARENT_DIR = Paths.get("..");
 	protected final FileAttributesUtil attrUtil;
+	private final FileNameTranscoder fileNameTranscoder;
 
 	@Inject
-	public ReadOnlyDirectoryHandler(FileAttributesUtil attrUtil) {
+	public ReadOnlyDirectoryHandler(FileAttributesUtil attrUtil, FileNameTranscoder fileNameTranscoder) {
 		this.attrUtil = attrUtil;
+		this.fileNameTranscoder = fileNameTranscoder;
 	}
 
 	public int getattr(Path path, BasicFileAttributes attrs, FileStat stat) {
@@ -75,7 +77,7 @@ public class ReadOnlyDirectoryHandler {
 			Iterator<Path> iter = Iterators.concat(sameAndParent, ds.iterator());
 			while (iter.hasNext()) {
 				String fileName = iter.next().getFileName().toString();
-				if (filler.apply(buf, fileName, null, 0) != 0) {
+				if (filler.apply(buf, fileNameTranscoder.nioToFuse(fileName), null, 0) != 0) {
 					return -ErrorCodes.ENOMEM();
 				}
 			}
