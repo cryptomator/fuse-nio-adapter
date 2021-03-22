@@ -1,6 +1,6 @@
 [![Build Status](https://github.com/cryptomator/fuse-nio-adapter/workflows/Build/badge.svg)](https://github.com/cryptomator/fuse-nio-adapter/actions?query=workflow%3ABuild)
-[![Codacy Code Quality](https://app.codacy.com/project/badge/Grade/47914e82b4c54f39b6150c24b83d7d09)](https://www.codacy.com/gh/cryptomator/fuse-nio-adapter)
-[![Codacy Coverage](https://app.codacy.com/project/badge/Coverage/47914e82b4c54f39b6150c24b83d7d09)](https://www.codacy.com/gh/cryptomator/fuse-nio-adapter)
+[![Codacy Code Quality](https://app.codacy.com/project/badge/Grade/47914e82b4c54f39b6150c24b83d7d09)](https://www.codacy.com/gh/cryptomator/fuse-nio-adapter/dashboard)
+[![Codacy Coverage](https://app.codacy.com/project/badge/Coverage/47914e82b4c54f39b6150c24b83d7d09)](https://www.codacy.com/gh/cryptomator/fuse-nio-adapter/dashboard)
 [![Known Vulnerabilities](https://snyk.io/test/github/cryptomator/fuse-nio-adapter/badge.svg)](https://snyk.io/test/github/cryptomator/fuse-nio-adapter)
 
 # fuse-nio-adapter
