@@ -4,6 +4,11 @@ import org.cryptomator.frontend.fuse.AdapterFactory;
 import org.cryptomator.frontend.fuse.FuseNioAdapter;
 
 import java.nio.file.Path;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public abstract class AbstractMounter implements Mounter {
 
@@ -13,11 +18,26 @@ public abstract class AbstractMounter implements Mounter {
 				AdapterFactory.DEFAULT_MAX_FILENAMELENGTH, //
 				envVars.getFileNameTranscoder());
 		try {
-			fuseAdapter.mount(envVars.getMountPoint(), false, debug, envVars.getFuseFlags());
-		} catch (RuntimeException e) {
-			throw new CommandFailedException(e);
+			CompletableFuture.runAsync(() -> fuseAdapter.mount(envVars.getMountPoint(), true, debug, envVars.getFuseFlags()), Executors.newSingleThreadExecutor())
+					.whenComplete((voit, throwable) -> {
+						//notify observer, i.e. afterMountExit.run();
+						if (throwable != null) {
+							//javadoc of whenComplete:
+							//if this stage completed exceptionally and the supplied action throws an exception, then the returned stage completes exceptionally with this stage's exception.
+							//hence, just throw something
+							throw new RuntimeException(); //
+						}
+					}).get(1000, TimeUnit.MILLISECONDS);
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+		} catch (ExecutionException e) {
+			e.printStackTrace();
+			throw new CommandFailedException(e.getCause());
+		} catch (TimeoutException e) {
+			//up and runnning
+			return createMountObject(fuseAdapter, envVars);
 		}
-		return createMountObject(fuseAdapter, envVars);
+		throw new CommandFailedException("Mounting failed for unknown reason.");
 	}
 
 	@Override
