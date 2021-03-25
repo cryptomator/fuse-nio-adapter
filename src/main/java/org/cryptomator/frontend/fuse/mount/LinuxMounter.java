@@ -1,6 +1,5 @@
 package org.cryptomator.frontend.fuse.mount;
 
-import org.cryptomator.frontend.fuse.AdapterFactory;
 import org.cryptomator.frontend.fuse.FuseNioAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,24 +12,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.TimeUnit;
 
-class LinuxMounter implements Mounter {
+class LinuxMounter extends AbstractMounter {
 
 	private static final Logger LOG = LoggerFactory.getLogger(LinuxMounter.class);
 	private static final boolean IS_LINUX = System.getProperty("os.name").toLowerCase().contains("linux");
 	private static final Path USER_HOME = Paths.get(System.getProperty("user.home"));
-
-	@Override
-	public synchronized Mount mount(Path directory, EnvironmentVariables envVars, boolean debug) throws CommandFailedException {
-		FuseNioAdapter fuseAdapter = AdapterFactory.createReadWriteAdapter(directory, //
-				AdapterFactory.DEFAULT_MAX_FILENAMELENGTH, //
-				envVars.getFileNameTranscoder());
-		try {
-			fuseAdapter.mount(envVars.getMountPoint(), false, debug, envVars.getFuseFlags());
-		} catch (RuntimeException e) {
-			throw new CommandFailedException(e);
-		}
-		return new LinuxMount(fuseAdapter, envVars);
-	}
 
 	@Override
 	public String[] defaultMountFlags() {
@@ -48,6 +34,11 @@ class LinuxMounter implements Mounter {
 	@Override
 	public boolean isApplicable() {
 		return IS_LINUX;
+	}
+
+	@Override
+	protected Mount createMountObject(FuseNioAdapter fuseNioAdapter, EnvironmentVariables envVars) {
+		return new LinuxMount(fuseNioAdapter, envVars);
 	}
 
 	private static class LinuxMount extends AbstractMount {
