@@ -16,12 +16,12 @@ class WindowsMounter implements Mounter {
 	private static final boolean IS_APPLICABLE = Platform.getNativePlatform().getOS() == Platform.OS.WINDOWS && isWinFspInstalled();
 
 	@Override
-	public synchronized Mount mount(Path directory, boolean blocking, boolean debug, EnvironmentVariables envVars) throws CommandFailedException {
+	public synchronized Mount mount(Path directory, EnvironmentVariables envVars, boolean debug) throws CommandFailedException {
 		FuseNioAdapter fuseAdapter = AdapterFactory.createReadWriteAdapter(directory, //
 				AdapterFactory.DEFAULT_MAX_FILENAMELENGTH, //
 				envVars.getFileNameTranscoder());
 		try {
-			fuseAdapter.mount(envVars.getMountPoint(), blocking, debug, envVars.getFuseFlags());
+			fuseAdapter.mount(envVars.getMountPoint(), false, debug, envVars.getFuseFlags());
 		} catch (RuntimeException e) {
 			throw new CommandFailedException(e);
 		}
