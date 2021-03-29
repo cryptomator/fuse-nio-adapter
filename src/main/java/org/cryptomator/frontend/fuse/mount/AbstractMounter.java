@@ -13,14 +13,14 @@ import java.util.concurrent.TimeoutException;
 public abstract class AbstractMounter implements Mounter {
 
 	@Override
-	public synchronized Mount mount(Path directory, EnvironmentVariables envVars, boolean debug) throws CommandFailedException {
+	public synchronized Mount mount(Path directory, EnvironmentVariables envVars, Runnable onFuseExit, boolean debug) throws CommandFailedException {
 		FuseNioAdapter fuseAdapter = AdapterFactory.createReadWriteAdapter(directory, //
 				AdapterFactory.DEFAULT_MAX_FILENAMELENGTH, //
 				envVars.getFileNameTranscoder());
 		try {
 			CompletableFuture.runAsync(() -> fuseAdapter.mount(envVars.getMountPoint(), true, debug, envVars.getFuseFlags()), Executors.newSingleThreadExecutor())
 					.whenComplete((voit, throwable) -> {
-						//notify observer, i.e. afterMountExit.run();
+						onFuseExit.run();
 						if (throwable != null) {
 							//javadoc of whenComplete:
 							//if this stage completed exceptionally and the supplied action throws an exception, then the returned stage completes exceptionally with this stage's exception.

@@ -7,10 +7,14 @@ import java.nio.file.Path;
 public interface Mounter {
 
 	default Mount mount(Path directory, EnvironmentVariables envVars) throws CommandFailedException {
-		return mount(directory, envVars, false);
+		return mount(directory, envVars, () -> {});
 	}
 
-	Mount mount(Path directory, EnvironmentVariables envVars, boolean debug) throws CommandFailedException;
+	default Mount mount(Path directory, EnvironmentVariables envVars, Runnable onFuseExit) throws CommandFailedException {
+		return mount(directory, envVars, onFuseExit, false);
+	}
+
+	Mount mount(Path directory, EnvironmentVariables envVars, Runnable onFuseExit, boolean debug) throws CommandFailedException;
 
 	String[] defaultMountFlags();
 
