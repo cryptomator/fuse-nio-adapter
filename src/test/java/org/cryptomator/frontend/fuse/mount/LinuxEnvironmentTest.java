@@ -16,7 +16,6 @@ public class LinuxEnvironmentTest {
 			EnvironmentVariables envVars = EnvironmentVariables.create()
 					.withFlags(mounter.defaultMountFlags())
 					.withMountPoint(mountPoint)
-					.withRevealCommand("nautilus")
 					.build();
 			Path tmp = Paths.get("/tmp");
 			try (Mount mnt = mounter.mount(tmp, envVars)) {
