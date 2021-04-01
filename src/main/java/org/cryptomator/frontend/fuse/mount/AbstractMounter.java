@@ -42,8 +42,9 @@ public abstract class AbstractMounter implements Mounter {
             if (!mountSuccessSignal.await(MOUNT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
                 if (exception.get() != null) {
                     throw new FuseMountException(exception.get());
+                } else {
+                    throw new FuseMountException("Mounting operation timed out");
                 }
-                throw new FuseMountException("Mounting operation timed out");
             }
             return createMountObject(fuseAdapter, envVars);
         } catch (InterruptedException e) {

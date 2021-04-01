@@ -9,7 +9,7 @@ import ru.serce.jnrfuse.struct.*;
 import java.nio.file.Path;
 import java.util.concurrent.CountDownLatch;
 
-public class MountSuccessFuseDecorator implements FuseFS {
+class MountSuccessFuseDecorator implements FuseFS {
 
     private final FuseNioAdapter delegate;
     private final CountDownLatch mountSuccessSignal;
