@@ -22,23 +22,23 @@ public interface Mount extends AutoCloseable {
 	/**
 	 * Gracefully attempts to unmount the FUSE volume.
 	 *
-	 * @throws CommandFailedException
+	 * @throws FuseMountException
 	 */
-	void unmount() throws CommandFailedException;
+	void unmount() throws FuseMountException;
 
 	/**
 	 * Forcefully unmounts the FUSE volume and releases corresponding resources.
 	 *
-	 * @throws CommandFailedException
+	 * @throws FuseMountException
 	 */
-	void unmountForced() throws CommandFailedException;
+	void unmountForced() throws FuseMountException;
 
 	/**
 	 * Releases associated resources
 	 *
-	 * @throws CommandFailedException If closing failed
+	 * @throws FuseMountException If closing failed
 	 * @throws IllegalStateException If still mounted
 	 */
 	@Override
-	void close() throws CommandFailedException, IllegalStateException;
+	void close() throws FuseMountException, IllegalStateException;
 }

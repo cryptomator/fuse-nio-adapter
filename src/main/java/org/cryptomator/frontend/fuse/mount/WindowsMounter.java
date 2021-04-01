@@ -1,32 +1,16 @@
 package org.cryptomator.frontend.fuse.mount;
 
 import jnr.ffi.Platform;
-import org.cryptomator.frontend.fuse.AdapterFactory;
 import org.cryptomator.frontend.fuse.FuseNioAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.serce.jnrfuse.FuseException;
 import ru.serce.jnrfuse.utils.WinPathUtils;
 
-import java.nio.file.Path;
-
-class WindowsMounter implements Mounter {
+class WindowsMounter extends AbstractMounter {
 
 	private static final Logger LOG = LoggerFactory.getLogger(WindowsMounter.class);
 	private static final boolean IS_APPLICABLE = Platform.getNativePlatform().getOS() == Platform.OS.WINDOWS && isWinFspInstalled();
-
-	@Override
-	public synchronized Mount mount(Path directory, boolean blocking, boolean debug, EnvironmentVariables envVars) throws CommandFailedException {
-		FuseNioAdapter fuseAdapter = AdapterFactory.createReadWriteAdapter(directory, //
-				AdapterFactory.DEFAULT_MAX_FILENAMELENGTH, //
-				envVars.getFileNameTranscoder());
-		try {
-			fuseAdapter.mount(envVars.getMountPoint(), blocking, debug, envVars.getFuseFlags());
-		} catch (RuntimeException e) {
-			throw new CommandFailedException(e);
-		}
-		return new WindowsMount(fuseAdapter, envVars);
-	}
 
 	@Override
 	public String[] defaultMountFlags() {
@@ -36,6 +20,11 @@ class WindowsMounter implements Mounter {
 	@Override
 	public boolean isApplicable() {
 		return IS_APPLICABLE;
+	}
+
+	@Override
+	protected Mount createMountObject(FuseNioAdapter fuseNioAdapter, EnvironmentVariables envVars) {
+		return new WindowsMount(fuseNioAdapter, envVars);
 	}
 
 	private static boolean isWinFspInstalled() {
