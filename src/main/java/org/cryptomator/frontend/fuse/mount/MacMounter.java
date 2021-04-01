@@ -143,7 +143,7 @@ class MacMounter extends AbstractMounter {
 		}
 
 		@Override
-		public void unmountInternal() throws CommandFailedException {
+		public void unmountInternal() throws FuseMountException {
 			if (!fuseAdapter.isMounted()) {
 				return;
 			}
@@ -155,7 +155,7 @@ class MacMounter extends AbstractMounter {
 		}
 
 		@Override
-		public void unmountForcedInternal() throws CommandFailedException {
+		public void unmountForcedInternal() throws FuseMountException {
 			if (!fuseAdapter.isMounted()) {
 				return;
 			}
@@ -166,7 +166,7 @@ class MacMounter extends AbstractMounter {
 			fuseAdapter.setUnmounted();
 		}
 
-		private void assertUmountSucceeded(Process proc) throws CommandFailedException {
+		private void assertUmountSucceeded(Process proc) throws FuseMountException {
 			if (proc.exitValue() == 0) {
 				return;
 			}
@@ -176,10 +176,10 @@ class MacMounter extends AbstractMounter {
 					LOG.info("Already unmounted");
 					return;
 				} else {
-					throw new CommandFailedException("Unmount failed. STDERR: " + stderr);
+					throw new FuseMountException("Unmount failed. STDERR: " + stderr);
 				}
 			} catch (IOException e) {
-				throw new CommandFailedException(e);
+				throw new FuseMountException(e);
 			}
 		}
 

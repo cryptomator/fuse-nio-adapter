@@ -9,18 +9,19 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
 
 public abstract class AbstractMounter implements Mounter {
 
 	@Override
-	public synchronized Mount mount(Path directory, EnvironmentVariables envVars, Runnable onFuseExit, boolean debug) throws CommandFailedException {
+	public synchronized Mount mount(Path directory, EnvironmentVariables envVars, Consumer<Throwable> onFuseExit, boolean debug) throws FuseMountException {
 		FuseNioAdapter fuseAdapter = AdapterFactory.createReadWriteAdapter(directory, //
 				AdapterFactory.DEFAULT_MAX_FILENAMELENGTH, //
 				envVars.getFileNameTranscoder());
 		try {
 			CompletableFuture.runAsync(() -> fuseAdapter.mount(envVars.getMountPoint(), true, debug, envVars.getFuseFlags()), Executors.newSingleThreadExecutor())
 					.whenComplete((voit, throwable) -> {
-						onFuseExit.run();
+						onFuseExit.accept(throwable);
 						if (throwable != null) {
 							//javadoc of whenComplete:
 							//if this stage completed exceptionally and the supplied action throws an exception, then the returned stage completes exceptionally with this stage's exception.
@@ -32,12 +33,12 @@ public abstract class AbstractMounter implements Mounter {
 			Thread.currentThread().interrupt();
 		} catch (ExecutionException e) {
 			e.printStackTrace();
-			throw new CommandFailedException(e.getCause());
+			throw new FuseMountException(e.getCause());
 		} catch (TimeoutException e) {
 			//up and runnning
 			return createMountObject(fuseAdapter, envVars);
 		}
-		throw new CommandFailedException("Mounting failed for unknown reason.");
+		throw new FuseMountException("Mounting failed for unknown reason.");
 	}
 
 	@Override

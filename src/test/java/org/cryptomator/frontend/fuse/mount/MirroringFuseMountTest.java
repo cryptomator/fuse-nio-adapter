@@ -193,13 +193,13 @@ public class MirroringFuseMountTest {
 			System.in.read();
 			try {
 				mnt.unmount();
-			} catch (CommandFailedException e) {
+			} catch (FuseMountException e) {
 				LOG.info("Unable to perform regular unmount.", e);
 				LOG.info("Forcing unmount...");
 				mnt.unmountForced();
 			}
 			LOG.info("Unmounted successfully. Exiting...");
-		} catch (IOException | CommandFailedException e) {
+		} catch (IOException | FuseMountException e) {
 			LOG.error("Mount failed", e);
 		}
 	}
