@@ -7,6 +7,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.impl.SimpleLogger;
 import ru.serce.jnrfuse.struct.FuseFileInfo;
@@ -34,6 +36,7 @@ public class AccessPatternIntegrationTest {
 
 	@Test
 	@DisplayName("simulate TextEdit.app's access pattern during save")
+	@DisabledOnOs(OS.WINDOWS)
 	void testAppleAutosaveAccessPattern() {
 		// echo "asd" > foo.txt
 		FuseFileInfo fi1 = new MockFuseFileInfo();
@@ -74,6 +77,7 @@ public class AccessPatternIntegrationTest {
 
 	@Test
 	@DisplayName("create, move and delete symlinks")
+	@DisabledOnOs(OS.WINDOWS)
 	void testCreateMoveAndDeleteSymlinks() {
 		// touch foo.txt
 		FuseFileInfo fi1 = new MockFuseFileInfo();
