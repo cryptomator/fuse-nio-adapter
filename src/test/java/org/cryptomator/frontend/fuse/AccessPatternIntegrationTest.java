@@ -36,7 +36,6 @@ public class AccessPatternIntegrationTest {
 
 	@Test
 	@DisplayName("simulate TextEdit.app's access pattern during save")
-	@DisabledOnOs(OS.WINDOWS)
 	void testAppleAutosaveAccessPattern() {
 		// echo "asd" > foo.txt
 		FuseFileInfo fi1 = new MockFuseFileInfo();
@@ -77,7 +76,7 @@ public class AccessPatternIntegrationTest {
 
 	@Test
 	@DisplayName("create, move and delete symlinks")
-	@DisabledOnOs(OS.WINDOWS)
+	@DisabledOnOs(OS.WINDOWS) // Symlinks require either admin priviliges or enalbed developer mode on windows
 	void testCreateMoveAndDeleteSymlinks() {
 		// touch foo.txt
 		FuseFileInfo fi1 = new MockFuseFileInfo();
