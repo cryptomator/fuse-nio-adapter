@@ -87,7 +87,7 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 		try (PathLock pathLock = lockManager.createPathLock(linkPath).forWriting();
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
 			Path link = resolvePath(fileNameTranscoder.fuseToNio(linkPath));
-			Path target = resolvePath(fileNameTranscoder.fuseToNio(targetPath));
+			Path target = link.getFileSystem().getPath(fileNameTranscoder.fuseToNio(targetPath));
 			LOG.trace("symlink {} -> {}", linkPath, targetPath);
 			Files.createSymbolicLink(link, target);
 			return 0;
