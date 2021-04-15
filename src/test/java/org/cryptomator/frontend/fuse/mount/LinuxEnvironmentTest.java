@@ -27,7 +27,7 @@ public class LinuxEnvironmentTest {
 				System.out.println("Wait for it...");
 				System.in.read();
 				mnt.unmountForced();
-			} catch (IOException | CommandFailedException e) {
+			} catch (IOException | FuseMountException e) {
 				e.printStackTrace();
 			}
 		} else {

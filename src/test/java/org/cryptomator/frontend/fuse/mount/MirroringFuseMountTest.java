@@ -14,6 +14,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Scanner;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 public class MirroringFuseMountTest {
 
@@ -183,7 +184,8 @@ public class MirroringFuseMountTest {
 				.withMountPoint(mountPoint)
 				.withFileNameTranscoder(mounter.defaultFileNameTranscoder())
 				.build();
-		try (Mount mnt = mounter.mount(pathToMirror, envVars)) {
+		Consumer<Throwable> onFuseMainExit = throwable -> System.out.println("The fuse main loop exited.");
+		try (Mount mnt = mounter.mount(pathToMirror, envVars, onFuseMainExit)) {
 			LOG.info("Mounted successfully. Enter anything to stop the server...");
 			try {
 				mnt.reveal(new AwtFrameworkRevealer());
@@ -193,13 +195,13 @@ public class MirroringFuseMountTest {
 			System.in.read();
 			try {
 				mnt.unmount();
-			} catch (CommandFailedException e) {
+			} catch (FuseMountException e) {
 				LOG.info("Unable to perform regular unmount.", e);
 				LOG.info("Forcing unmount...");
 				mnt.unmountForced();
 			}
 			LOG.info("Unmounted successfully. Exiting...");
-		} catch (IOException | CommandFailedException e) {
+		} catch (IOException | FuseMountException e) {
 			LOG.error("Mount failed", e);
 		}
 	}

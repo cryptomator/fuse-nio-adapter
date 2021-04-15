@@ -7,6 +7,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.impl.SimpleLogger;
 import ru.serce.jnrfuse.struct.FuseFileInfo;
@@ -74,6 +76,7 @@ public class AccessPatternIntegrationTest {
 
 	@Test
 	@DisplayName("create, move and delete symlinks")
+	@DisabledOnOs(OS.WINDOWS) // Symlinks require either admin privileges or enabled developer mode on windows
 	void testCreateMoveAndDeleteSymlinks() {
 		// touch foo.txt
 		FuseFileInfo fi1 = new MockFuseFileInfo();
@@ -81,25 +84,43 @@ public class AccessPatternIntegrationTest {
 
 		// ln -s foo.txt bar.txt
 		adapter.symlink("foo.txt", "/bar.txt");
+		assertSymlinkTargetExists("/bar.txt", false);
 
 		// mkdir test
 		adapter.mkdir("test", 0755);
 
 		// ln -s test test2
 		adapter.symlink("test", "/test2");
+		assertSymlinkTargetExists("/test2", true);
+
+		// ln -sr ../foo.txt test/baz
+		adapter.symlink("../foo.txt", "test/baz.txt");
+		assertSymlinkTargetExists("/bar.txt", false);
 
 		// move both to subdir
 		adapter.rename("/foo.txt", "/test/foo.txt");
 		adapter.rename("/bar.txt", "/test/bar.txt");
+		assertSymlinkTargetExists("/test/bar.txt", false);
 
 		// delete all
 		adapter.unlink("/test2");
 		adapter.unlink("/test/foo.txt");
 		adapter.unlink("/test/bar.txt");
+		adapter.unlink("/test/baz.txt");
 		adapter.rmdir("/test");
 	}
 
+	private void assertSymlinkTargetExists(String symlink, boolean targetIsDirectory) {
+		FuseFileInfo fi = new MockFuseFileInfo();
+		int returnCode = targetIsDirectory ? adapter.opendir(symlink, fi) : adapter.open(symlink, fi);
+		if (returnCode == 0) {
+			int err = targetIsDirectory ? adapter.releasedir(symlink, fi) : adapter.release(symlink, fi);
+		}
+		Assertions.assertEquals(0, returnCode);
+	}
+
 	private static class MockFuseFileInfo extends FuseFileInfo {
+
 		public MockFuseFileInfo() {
 			super(Runtime.getSystemRuntime());
 		}

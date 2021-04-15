@@ -16,16 +16,16 @@ class ProcessUtil {
 	 * 
 	 * @param proc A finished process
 	 * @param expectedExitValue Exit code returned by the process
-	 * @throws CommandFailedException Thrown in case of unexpected exit values
+	 * @throws FuseMountException Thrown in case of unexpected exit values
 	 */
-	public static void assertExitValue(Process proc, int expectedExitValue) throws CommandFailedException {
+	public static void assertExitValue(Process proc, int expectedExitValue) throws FuseMountException {
 		int actualExitValue = proc.exitValue();
 		if (actualExitValue != expectedExitValue) {
 			try {
 				String error = toString(proc.getErrorStream(), StandardCharsets.UTF_8);
-				throw new CommandFailedException("Command failed with exit code " + actualExitValue + ". Expected " + expectedExitValue + ". Stderr: " + error);
+				throw new FuseMountException("Command failed with exit code " + actualExitValue + ". Expected " + expectedExitValue + ". Stderr: " + error);
 			} catch (IOException e) {
-				throw new CommandFailedException("Command failed with exit code " + actualExitValue + ". Expected " + expectedExitValue + ".");
+				throw new FuseMountException("Command failed with exit code " + actualExitValue + ". Expected " + expectedExitValue + ".");
 			}
 		}
 	}
@@ -37,16 +37,16 @@ class ProcessUtil {
 	 * @param timeout Maximum time to wait
 	 * @param unit Time unit of <code>timeout</code>
 	 * @return The finished process.
-	 * @throws CommandFailedException If an I/O error occurs when starting the process.
+	 * @throws FuseMountException If an I/O error occurs when starting the process.
 	 * @throws CommandTimeoutException Thrown in case of a timeout
 	 */
-	public static Process startAndWaitFor(ProcessBuilder processBuilder, long timeout, TimeUnit unit) throws CommandFailedException, CommandTimeoutException {
+	public static Process startAndWaitFor(ProcessBuilder processBuilder, long timeout, TimeUnit unit) throws FuseMountException, CommandTimeoutException {
 		try {
 			Process proc = processBuilder.start();
 			waitFor(proc, timeout, unit);
 			return proc;
 		} catch (IOException e) {
-			throw new CommandFailedException(e);
+			throw new FuseMountException(e);
 		}
 	}
 
@@ -74,7 +74,7 @@ class ProcessUtil {
 		return CharStreams.toString(new InputStreamReader(in, charset));
 	}
 
-	public static class CommandTimeoutException extends CommandFailedException {
+	public static class CommandTimeoutException extends FuseMountException {
 
 		public CommandTimeoutException() {
 			super("Command timed out.");

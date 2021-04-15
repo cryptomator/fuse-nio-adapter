@@ -28,32 +28,32 @@ abstract class AbstractMount implements Mount {
 	}
 
 	@Override
-	public void unmount() throws CommandFailedException {
+	public void unmount() throws FuseMountException {
 		if (fuseAdapter.isInUse()) {
-			throw new CommandFailedException("Unmount refused: There are open files or pending operations.");
+			throw new FuseMountException("Unmount refused: There are open files or pending operations.");
 		}
 
 		unmountInternal();
 	}
 
 	@Override
-	public void unmountForced() throws CommandFailedException {
+	public void unmountForced() throws FuseMountException {
 		unmountForcedInternal();
 	}
 
-	protected abstract void unmountInternal() throws CommandFailedException;
+	protected abstract void unmountInternal() throws FuseMountException;
 
-	protected abstract void unmountForcedInternal() throws CommandFailedException;
+	protected abstract void unmountForcedInternal() throws FuseMountException;
 
 	@Override
-	public void close() throws CommandFailedException {
+	public void close() throws FuseMountException {
 		if (this.fuseAdapter.isMounted()) {
 			throw new IllegalStateException("Can not close file system adapter while still mounted.");
 		}
 		try {
 			this.fuseAdapter.close();
 		} catch (Exception e) {
-			throw new CommandFailedException(e);
+			throw new FuseMountException(e);
 		}
 	}
 }

@@ -1,6 +1,5 @@
 package org.cryptomator.frontend.fuse.mount;
 
-import org.cryptomator.frontend.fuse.AdapterFactory;
 import org.cryptomator.frontend.fuse.FileNameTranscoder;
 import org.cryptomator.frontend.fuse.FuseNioAdapter;
 import org.slf4j.Logger;
@@ -30,7 +29,7 @@ import java.text.Normalizer;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
-class MacMounter implements Mounter {
+class MacMounter extends AbstractMounter {
 
 	private static final Logger LOG = LoggerFactory.getLogger(MacMounter.class);
 	private static final boolean IS_MAC = System.getProperty("os.name").toLowerCase().contains("mac");
@@ -39,19 +38,6 @@ class MacMounter implements Mounter {
 	private static final String OSXFUSE_VERSIONFILE_LOCATION = "/Library/Filesystems/osxfuse.fs/Contents/version.plist";
 	private static final String OSXFUSE_VERSIONFILE_XPATH = "/plist/dict/key[.='CFBundleShortVersionString']/following-sibling::string[1]";
 	private static final String PLIST_DTD_URL = "http://www.apple.com/DTDs/PropertyList-1.0.dtd";
-
-	@Override
-	public synchronized Mount mount(Path directory, boolean blocking, boolean debug, EnvironmentVariables envVars) throws CommandFailedException {
-		FuseNioAdapter fuseAdapter = AdapterFactory.createReadWriteAdapter(directory, //
-				AdapterFactory.DEFAULT_MAX_FILENAMELENGTH, //
-				envVars.getFileNameTranscoder());
-		try {
-			fuseAdapter.mount(envVars.getMountPoint(), blocking, debug, envVars.getFuseFlags());
-		} catch (RuntimeException e) {
-			throw new CommandFailedException(e);
-		}
-		return new MacMount(fuseAdapter, envVars);
-	}
 
 	@Override
 	public String[] defaultMountFlags() {
@@ -83,6 +69,11 @@ class MacMounter implements Mounter {
 	public boolean isApplicable() {
 		return IS_MAC && Files.exists(Paths.get("/usr/local/lib/libosxfuse.2.dylib")); //
 //				&& installedVersionSupported(); // FIXME: #52
+	}
+
+	@Override
+	protected Mount createMountObject(FuseNioAdapter fuseNioAdapter, EnvironmentVariables envVars) {
+		return new MacMount(fuseNioAdapter, envVars);
 	}
 
 	public boolean installedVersionSupported() {
@@ -152,7 +143,7 @@ class MacMounter implements Mounter {
 		}
 
 		@Override
-		public void unmountInternal() throws CommandFailedException {
+		public void unmountInternal() throws FuseMountException {
 			if (!fuseAdapter.isMounted()) {
 				return;
 			}
@@ -164,7 +155,7 @@ class MacMounter implements Mounter {
 		}
 
 		@Override
-		public void unmountForcedInternal() throws CommandFailedException {
+		public void unmountForcedInternal() throws FuseMountException {
 			if (!fuseAdapter.isMounted()) {
 				return;
 			}
@@ -175,7 +166,7 @@ class MacMounter implements Mounter {
 			fuseAdapter.setUnmounted();
 		}
 
-		private void assertUmountSucceeded(Process proc) throws CommandFailedException {
+		private void assertUmountSucceeded(Process proc) throws FuseMountException {
 			if (proc.exitValue() == 0) {
 				return;
 			}
@@ -185,10 +176,10 @@ class MacMounter implements Mounter {
 					LOG.info("Already unmounted");
 					return;
 				} else {
-					throw new CommandFailedException("Unmount failed. STDERR: " + stderr);
+					throw new FuseMountException("Unmount failed. STDERR: " + stderr);
 				}
 			} catch (IOException e) {
-				throw new CommandFailedException(e);
+				throw new FuseMountException(e);
 			}
 		}
 

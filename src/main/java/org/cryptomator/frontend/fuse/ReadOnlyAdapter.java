@@ -39,6 +39,9 @@ import java.nio.file.attribute.PosixFileAttributes;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.BooleanSupplier;
 
 /**
@@ -59,6 +62,7 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 	private final ReadOnlyLinkHandler linkHandler;
 	private final FileAttributesUtil attrUtil;
 	private final BooleanSupplier hasOpenFiles;
+	private final CountDownLatch initSignaler;
 
 	@Inject
 	public ReadOnlyAdapter(@Named("root") Path root, @Named("maxFileNameLength") int maxFileNameLength, FileNameTranscoder fileNameTranscoder, FileStore fileStore, LockManager lockManager, ReadOnlyDirectoryHandler dirHandler, ReadOnlyFileHandler fileHandler, ReadOnlyLinkHandler linkHandler, FileAttributesUtil attrUtil, OpenFileFactory fileFactory) {
@@ -72,6 +76,7 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 		this.linkHandler = linkHandler;
 		this.attrUtil = attrUtil;
 		this.hasOpenFiles = () -> fileFactory.getOpenFileCount() != 0;
+		this.initSignaler = new CountDownLatch(1);
 	}
 
 	protected Path resolvePath(String absolutePath) {
@@ -251,6 +256,12 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 	}
 
 	@Override
+	public Pointer init(Pointer p) {
+		initSignaler.countDown();
+		return p;
+	}
+
+	@Override
 	public void destroy(Pointer initResult) {
 		try {
 			close();
@@ -270,6 +281,13 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 			return hasOpenFiles.getAsBoolean();
 		} catch (AlreadyLockedException e) {
 			return true;
+		}
+	}
+
+	@Override
+	public void awaitInitCall(long timeoutMillis) throws InterruptedException, TimeoutException {
+		if (!initSignaler.await(timeoutMillis, TimeUnit.MILLISECONDS)) {
+			throw new TimeoutException("fuse init() not called after " + timeoutMillis + " milliseconds.");
 		}
 	}
 
