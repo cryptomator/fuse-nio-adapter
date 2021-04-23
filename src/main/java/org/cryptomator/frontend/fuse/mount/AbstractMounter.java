@@ -11,7 +11,7 @@ import java.util.function.Consumer;
 
 public abstract class AbstractMounter implements Mounter {
 
-	private static final int MOUNT_TIMEOUT_MILLIS = 10000;
+	private static final int MOUNT_TIMEOUT_MILLIS = Integer.getInteger("org.cryptomator.frontend.fuse.mountTimeOut",10000);
 	private static final AtomicInteger MOUNT_COUNTER = new AtomicInteger(0);
 
 	@Override
