@@ -186,8 +186,9 @@ public class MirroringFuseMountTest {
 				.withMountPoint(mountPoint)
 				.withFileNameTranscoder(mounter.defaultFileNameTranscoder())
 				.build();
-		Consumer<Throwable> onFuseMainExit = throwable -> System.out.println("The fuse main loop exited.");
-		try (Mount mnt = mounter.mount(pathToMirror, envVars, onFuseMainExit)) {
+		CountDownLatch barrier = new CountDownLatch(1);
+		Consumer<Throwable> onFuseMainExit = throwable -> barrier.countDown();
+		try (Mount mnt = mounter.mount(pathToMirror, envVars, onFuseMainExit, false)) {
 			LOG.info("Mounted successfully. Enter anything to stop the server...");
 			try {
 				mnt.reveal(new AwtFrameworkRevealer());
