@@ -77,7 +77,7 @@ class MacMounter extends AbstractMounter {
 		if (installedVersion == null) {
 			return false;
 		} else {
-			return VersionCompare.compareVersions(installedVersion, MACFUSE_MINIMUM_SUPPORTED_VERSION) > 0;
+			return VersionCompare.compareVersions(installedVersion, MACFUSE_MINIMUM_SUPPORTED_VERSION) >= 0;
 		}
 	}
 
