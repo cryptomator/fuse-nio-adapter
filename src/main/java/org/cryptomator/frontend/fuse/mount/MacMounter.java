@@ -2,6 +2,7 @@ package org.cryptomator.frontend.fuse.mount;
 
 import org.cryptomator.frontend.fuse.FileNameTranscoder;
 import org.cryptomator.frontend.fuse.FuseNioAdapter;
+import org.cryptomator.frontend.fuse.VersionCompare;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -26,7 +27,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.text.Normalizer;
-import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 class MacMounter extends AbstractMounter {
@@ -34,9 +34,9 @@ class MacMounter extends AbstractMounter {
 	private static final Logger LOG = LoggerFactory.getLogger(MacMounter.class);
 	private static final boolean IS_MAC = System.getProperty("os.name").toLowerCase().contains("mac");
 	private static final Path USER_HOME = Paths.get(System.getProperty("user.home"));
-	private static final int[] OSXFUSE_MINIMUM_SUPPORTED_VERSION = new int[]{3, 8, 2};
-	private static final String OSXFUSE_VERSIONFILE_LOCATION = "/Library/Filesystems/osxfuse.fs/Contents/version.plist";
-	private static final String OSXFUSE_VERSIONFILE_XPATH = "/plist/dict/key[.='CFBundleShortVersionString']/following-sibling::string[1]";
+	private static final String MACFUSE_MINIMUM_SUPPORTED_VERSION = "4.0.4";
+	private static final String MACFUSE_VERSIONFILE_LOCATION = "/Library/Filesystems/macfuse.fs/Contents/version.plist";
+	private static final String MACFUSE_VERSIONFILE_XPATH = "/plist/dict/key[.='CFBundleShortVersionString']/following-sibling::string[1]";
 	private static final String PLIST_DTD_URL = "http://www.apple.com/DTDs/PropertyList-1.0.dtd";
 
 	@Override
@@ -62,13 +62,9 @@ class MacMounter extends AbstractMounter {
 		return FileNameTranscoder.transcoder().withFuseNormalization(Normalizer.Form.NFD);
 	}
 
-	/**
-	 * @return <code>true</code> if on OS X and osxfuse with a higher version than the minimum supported one is installed.
-	 */
 	@Override
 	public boolean isApplicable() {
-		return IS_MAC && Files.exists(Paths.get("/usr/local/lib/libosxfuse.2.dylib")); //
-//				&& installedVersionSupported(); // FIXME: #52
+		return IS_MAC && Files.exists(Paths.get("/usr/local/lib/libosxfuse.2.dylib")) && installedVersionSupported();
 	}
 
 	@Override
@@ -77,52 +73,35 @@ class MacMounter extends AbstractMounter {
 	}
 
 	public boolean installedVersionSupported() {
-		String versionString = getVersionString();
-		if (versionString == null) {
-			LOG.error("Did not find {} in document {}.", OSXFUSE_VERSIONFILE_XPATH, OSXFUSE_VERSIONFILE_LOCATION);
+		String installedVersion = getInstalledVersion(MACFUSE_VERSIONFILE_LOCATION, MACFUSE_VERSIONFILE_XPATH);
+		if (installedVersion == null) {
 			return false;
-		}
-
-		Integer[] parsedVersion = Arrays.stream(versionString.split("\\.")).map(s -> Integer.valueOf(s)).toArray(Integer[]::new);
-		for (int i = 0; i < OSXFUSE_MINIMUM_SUPPORTED_VERSION.length && i < parsedVersion.length; i++) {
-			if (parsedVersion[i] < OSXFUSE_MINIMUM_SUPPORTED_VERSION[i]) {
-				return false;
-			} else if (parsedVersion[i] > OSXFUSE_MINIMUM_SUPPORTED_VERSION[i]) {
-				return true;
-			}
-		}
-
-		if (OSXFUSE_MINIMUM_SUPPORTED_VERSION.length <= parsedVersion.length) {
-			return true;
 		} else {
-			return false;
+			return VersionCompare.compareVersions(installedVersion, MACFUSE_MINIMUM_SUPPORTED_VERSION) > 0;
 		}
 	}
 
-
-	/**
-	 * @return Value for {@value OSXFUSE_VERSIONFILE_XPATH} in {@value OSXFUSE_VERSIONFILE_LOCATION} or <code>null</code> if this value is not present.
-	 */
-	private String getVersionString() {
-		Path plistFile = Paths.get(OSXFUSE_VERSIONFILE_LOCATION);
+	private String getInstalledVersion(String plistFileLocation, String versionXPath) {
+		Path plistFile = Paths.get(plistFileLocation);
 		DocumentBuilderFactory domFactory = DocumentBuilderFactory.newInstance();
 		XPath xPath = XPathFactory.newInstance().newXPath();
 		try (InputStream in = Files.newInputStream(plistFile, StandardOpenOption.READ)) {
 			DocumentBuilder docBuilder = domFactory.newDocumentBuilder();
 			docBuilder.setEntityResolver(this::resolveEntity);
 			Document doc = docBuilder.parse(in);
-			NodeList nodeList = (NodeList) xPath.compile(OSXFUSE_VERSIONFILE_XPATH).evaluate(doc, XPathConstants.NODESET);
+			NodeList nodeList = (NodeList) xPath.compile(versionXPath).evaluate(doc, XPathConstants.NODESET);
 			Node node = nodeList.item(0);
 			if (node == null) {
+				LOG.error("Did not find {} in document {}.", versionXPath, plistFileLocation);
 				return null; // not found
 			} else {
 				return node.getTextContent();
 			}
 		} catch (ParserConfigurationException | SAXException | XPathException e) {
-			LOG.error("Could not parse " + OSXFUSE_VERSIONFILE_LOCATION + " to detect version of OSXFUSE.", e);
+			LOG.error("Could not parse " + plistFileLocation + " to detect version of macFUSE.", e);
 			return null;
 		} catch (IOException e) {
-			LOG.error("Could not read " + OSXFUSE_VERSIONFILE_LOCATION + " to detect version of OSXFUSE.", e);
+			LOG.error("Could not read " + plistFileLocation + " to detect version of macFUSE.", e);
 			return null;
 		}
 	}
