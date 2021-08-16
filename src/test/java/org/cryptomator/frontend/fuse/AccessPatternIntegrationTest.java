@@ -4,6 +4,7 @@ import jnr.ffi.Pointer;
 import jnr.ffi.Runtime;
 import jnr.ffi.provider.jffi.ByteBufferMemoryIO;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -11,7 +12,9 @@ import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.impl.SimpleLogger;
+import ru.serce.jnrfuse.FuseException;
 import ru.serce.jnrfuse.struct.FuseFileInfo;
+import ru.serce.jnrfuse.utils.WinPathUtils;
 
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
@@ -31,6 +34,7 @@ public class AccessPatternIntegrationTest {
 
 	@BeforeEach
 	void setup(@TempDir Path tmpDir) {
+		Assumptions.assumeTrue(onWindowsWinFspInstalled(), "WinFSP seem not to be installed.");
 		adapter = AdapterFactory.createReadWriteAdapter(tmpDir);
 	}
 
@@ -72,6 +76,15 @@ public class AccessPatternIntegrationTest {
 		adapter.release("/foo.txt", fi3);
 		Assertions.assertEquals(6, numRead);
 		Assertions.assertArrayEquals("asdasd".getBytes(US_ASCII), Arrays.copyOf(buf.array(), numRead));
+	}
+
+	private boolean onWindowsWinFspInstalled() {
+		try {
+			return !WinPathUtils.getWinFspPath().isBlank();
+		} catch (FuseException e) {
+			//TODO: log?
+			return false;
+		}
 	}
 
 	@Test

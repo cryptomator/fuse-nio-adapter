@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.cryptomator</groupId>
 	<artifactId>fuse-nio-adapter</artifactId>
-	<version>1.3.1</version>
+	<version>1.3.2</version>
 	<name>FUSE-NIO-Adapter</name>
 	<description>Access resources at a given NIO path via FUSE.</description>
 	<url>https://github.com/cryptomator/fuse-nio-adapter</url>
@@ -20,13 +20,15 @@
 
 		<!-- dependencies -->
 		<jnrfuse.version>0.5.5</jnrfuse.version>
-		<dagger.version>2.31.2</dagger.version>
-		<guava.version>30.1-jre</guava.version>
-		<slf4j.version>1.7.30</slf4j.version>
+		<!-- TODO: bump dependency once this project has a proper module.info -->
+		<dagger.version>2.36</dagger.version>
+		<guava.version>30.1.1-jre</guava.version>
+		<slf4j.version>1.7.32</slf4j.version>
 		
 		<!-- test dependencies -->
-		<junit.jupiter.version>5.7.1</junit.jupiter.version>
-		<mockito.version>3.7.7</mockito.version>
+		<junit.jupiter.version>5.7.2</junit.jupiter.version>
+		<mockito.version>3.11.2</mockito.version>
+		<!--TODO: bump dependency once 1.6.0 is officially released -->
 		<cryptofs.version>1.9.14</cryptofs.version>
 	</properties>
 
@@ -115,6 +117,19 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
+
+	<repositories>
+		<repository>
+			<id>maven-central</id>
+			<name>Maven Central Repo</name>
+			<url>https://repo.maven.apache.org/maven2</url>
+		</repository>
+		<repository>
+			<id>google-maven</id>
+			<name>Google Maven Repo</name>
+			<url>https://maven.google.com</url>
+		</repository>
+	</repositories>
 
 	<build>
 		<plugins>

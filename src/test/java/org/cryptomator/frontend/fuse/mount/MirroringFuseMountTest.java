@@ -14,6 +14,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Scanner;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 public class MirroringFuseMountTest {
@@ -184,8 +186,9 @@ public class MirroringFuseMountTest {
 				.withMountPoint(mountPoint)
 				.withFileNameTranscoder(mounter.defaultFileNameTranscoder())
 				.build();
-		Consumer<Throwable> onFuseMainExit = throwable -> System.out.println("The fuse main loop exited.");
-		try (Mount mnt = mounter.mount(pathToMirror, envVars, onFuseMainExit)) {
+		CountDownLatch barrier = new CountDownLatch(1);
+		Consumer<Throwable> onFuseMainExit = throwable -> barrier.countDown();
+		try (Mount mnt = mounter.mount(pathToMirror, envVars, onFuseMainExit, false)) {
 			LOG.info("Mounted successfully. Enter anything to stop the server...");
 			try {
 				mnt.reveal(new AwtFrameworkRevealer());
@@ -203,6 +206,17 @@ public class MirroringFuseMountTest {
 			LOG.info("Unmounted successfully. Exiting...");
 		} catch (IOException | FuseMountException e) {
 			LOG.error("Mount failed", e);
+		}
+
+		try {
+			if (!barrier.await(5000, TimeUnit.MILLISECONDS)) {
+				LOG.error("Wait on onFuseExit action to finish exceeded timeout. Exiting ...");
+			} else {
+				LOG.info("onExit action executed.");
+			}
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			LOG.error("Main thread interrupted. Exiting without waiting for onFuseExit action");
 		}
 	}
 }
