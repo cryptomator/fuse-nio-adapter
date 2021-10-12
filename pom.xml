@@ -124,11 +124,6 @@
 			<name>Maven Central Repo</name>
 			<url>https://repo.maven.apache.org/maven2</url>
 		</repository>
-		<repository>
-			<id>google-maven</id>
-			<name>Google Maven Repo</name>
-			<url>https://maven.google.com</url>
-		</repository>
 	</repositories>
 
 	<build>
@@ -186,6 +181,24 @@
 						</goals>
 					</execution>
 				</executions>
+				<configuration>
+					<sourceFileExcludes>
+						<sourceFileExclude>**/*_*</sourceFileExclude>
+						<sourceFileExclude>**/Dagger*</sourceFileExclude>
+					</sourceFileExcludes>
+					<!-- All this configuration is required until we can properly modularize this lib -->
+					<additionalDependencies>
+						<additionalDependency>
+							<groupId>jakarta.inject</groupId>
+							<artifactId>jakarta.inject-api</artifactId>
+							<version>1.0.3</version>
+						</additionalDependency>
+					</additionalDependencies>
+					<additionalOptions>
+						<option>--add-modules</option>
+						<option>java.xml,java.compiler</option>
+					</additionalOptions>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>
