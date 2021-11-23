@@ -54,7 +54,7 @@ class WindowsMounter extends AbstractMounter {
 
 		@Override
 		protected void unmountForcedInternal() {
-			unmountInternal();
+			fuseAdapter.unmountForced();
 		}
 
 	}

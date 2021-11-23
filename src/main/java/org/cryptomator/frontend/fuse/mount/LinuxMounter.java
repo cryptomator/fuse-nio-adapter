@@ -64,11 +64,7 @@ class LinuxMounter extends AbstractMounter {
 			if (!fuseAdapter.isMounted()) {
 				return;
 			}
-			ProcessBuilder command = new ProcessBuilder("fusermount", "-u", "-z", "--", mountPoint.getFileName().toString());
-			command.directory(mountPoint.getParent().toFile());
-			Process proc = ProcessUtil.startAndWaitFor(command, 5, TimeUnit.SECONDS);
-			assertUmountSucceeded(proc);
-			fuseAdapter.setUnmounted();
+			fuseAdapter.unmountForced();
 		}
 
 		private void assertUmountSucceeded(Process proc) throws FuseMountException {

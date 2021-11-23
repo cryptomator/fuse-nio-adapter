@@ -36,4 +36,5 @@ public interface FuseNioAdapter extends FuseFS, AutoCloseable {
 	 */
 	void awaitInitCall(long timeOutMillis) throws InterruptedException, TimeoutException;
 
+	void unmountForced();
 }
