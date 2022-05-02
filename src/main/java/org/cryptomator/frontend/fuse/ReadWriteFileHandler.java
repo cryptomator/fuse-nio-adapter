@@ -99,7 +99,7 @@ public class ReadWriteFileHandler extends ReadOnlyFileHandler implements Closeab
 
 	public void truncate(Path path, long size) throws IOException {
 		try (FileChannel fc = FileChannel.open(path, StandardOpenOption.WRITE)) {
-			fc.truncate(size);
+			TruncateOrExpandFileChannelUtility.execute(fc, size);
 		}
 	}
 
