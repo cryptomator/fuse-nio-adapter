@@ -28,8 +28,7 @@
 		<!-- test dependencies -->
 		<junit.jupiter.version>5.7.2</junit.jupiter.version>
 		<mockito.version>3.11.2</mockito.version>
-		<!--TODO: bump dependency once 1.6.0 is officially released -->
-		<cryptofs.version>1.9.14</cryptofs.version>
+		<cryptofs.version>2.4.1</cryptofs.version>
 	</properties>
 
 	<licenses>
