@@ -3,6 +3,8 @@ package org.cryptomator.frontend.fuse.mount;
 import com.google.common.base.Preconditions;
 import org.cryptomator.cryptofs.CryptoFileSystemProperties;
 import org.cryptomator.cryptofs.CryptoFileSystemProvider;
+import org.cryptomator.cryptofs.DirStructure;
+import org.cryptomator.cryptolib.common.MasterkeyFileAccess;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.impl.SimpleLogger;
@@ -12,6 +14,8 @@ import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.Scanner;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
@@ -58,16 +62,21 @@ public class MirroringFuseMountTest {
 	 */
 	public static class WindowsCryptoFsMirror {
 
-		public static void main(String args[]) throws IOException {
+		public static void main(String args[]) throws IOException, NoSuchAlgorithmException {
 			Preconditions.checkState(OS_NAME.contains("win"), "Test designed to run on Windows.");
 
 			try (Scanner scanner = new Scanner(System.in)) {
 				System.out.println("Enter path to the vault you want to mirror:");
 				Path vaultPath = Paths.get(scanner.nextLine());
-				Preconditions.checkArgument(CryptoFileSystemProvider.containsVault(vaultPath, "masterkey.cryptomator"), "Not a vault: " + vaultPath);
+				Preconditions.checkArgument(CryptoFileSystemProvider.checkDirStructureForVault(vaultPath, "vault.cryptomator", "masterkey.cryptomator") == DirStructure.VAULT, "Not a vault: " + vaultPath);
+
 				System.out.println("Enter vault password:");
 				String passphrase = scanner.nextLine();
-				CryptoFileSystemProperties props = CryptoFileSystemProperties.withPassphrase(passphrase).withFlags().build();
+
+				SecureRandom csprng = SecureRandom.getInstanceStrong();
+				CryptoFileSystemProperties props = CryptoFileSystemProperties.cryptoFileSystemProperties()
+						.withKeyLoader(url -> new MasterkeyFileAccess(new byte[0], csprng).load(vaultPath.resolve("masterkey.cryptomator"), passphrase))
+						.build();
 				try (FileSystem cryptoFs = CryptoFileSystemProvider.newFileSystem(vaultPath, props)) {
 					Path p = cryptoFs.getPath("/");
 					System.out.println("Enter mount point:");
@@ -111,16 +120,21 @@ public class MirroringFuseMountTest {
 	 */
 	public static class LinuxCryptoFsMirror {
 
-		public static void main(String args[]) throws IOException {
+		public static void main(String args[]) throws IOException, NoSuchAlgorithmException {
 			Preconditions.checkState(OS_NAME.contains("linux"), "Test designed to run on Linux.");
 
 			try (Scanner scanner = new Scanner(System.in)) {
 				System.out.println("Enter path to the vault you want to mirror:");
 				Path vaultPath = Paths.get(scanner.nextLine());
-				Preconditions.checkArgument(CryptoFileSystemProvider.containsVault(vaultPath, "masterkey.cryptomator"), "Not a vault: " + vaultPath);
+				Preconditions.checkArgument(CryptoFileSystemProvider.checkDirStructureForVault(vaultPath, "vault.cryptomator", "masterkey.cryptomator") == DirStructure.VAULT, "Not a vault: " + vaultPath);
+
 				System.out.println("Enter vault password:");
 				String passphrase = scanner.nextLine();
-				CryptoFileSystemProperties props = CryptoFileSystemProperties.withPassphrase(passphrase).withFlags().build();
+
+				SecureRandom csprng = SecureRandom.getInstanceStrong();
+				CryptoFileSystemProperties props = CryptoFileSystemProperties.cryptoFileSystemProperties()
+						.withKeyLoader(url -> new MasterkeyFileAccess(new byte[0], csprng).load(vaultPath.resolve("masterkey.cryptomator"), passphrase))
+						.build();
 				try (FileSystem cryptoFs = CryptoFileSystemProvider.newFileSystem(vaultPath, props)) {
 					Path p = cryptoFs.getPath("/");
 					System.out.println("Enter mount point:");
@@ -158,16 +172,21 @@ public class MirroringFuseMountTest {
 	 */
 	public static class MacCryptoFsMirror {
 
-		public static void main(String args[]) throws IOException {
+		public static void main(String args[]) throws IOException, NoSuchAlgorithmException {
 			Preconditions.checkState(OS_NAME.contains("mac"), "Test designed to run on macOS.");
 
 			try (Scanner scanner = new Scanner(System.in)) {
 				System.out.println("Enter path to the vault you want to mirror:");
 				Path vaultPath = Paths.get(scanner.nextLine());
-				Preconditions.checkArgument(CryptoFileSystemProvider.containsVault(vaultPath, "masterkey.cryptomator"), "Not a vault: " + vaultPath);
+				Preconditions.checkArgument(CryptoFileSystemProvider.checkDirStructureForVault(vaultPath, "vault.cryptomator", "masterkey.cryptomator") == DirStructure.VAULT, "Not a vault: " + vaultPath);
+
 				System.out.println("Enter vault password:");
 				String passphrase = scanner.nextLine();
-				CryptoFileSystemProperties props = CryptoFileSystemProperties.withPassphrase(passphrase).withFlags().build();
+
+				SecureRandom csprng = SecureRandom.getInstanceStrong();
+				CryptoFileSystemProperties props = CryptoFileSystemProperties.cryptoFileSystemProperties()
+						.withKeyLoader(url -> new MasterkeyFileAccess(new byte[0], csprng).load(vaultPath.resolve("masterkey.cryptomator"), passphrase))
+						.build();
 				try (FileSystem cryptoFs = CryptoFileSystemProvider.newFileSystem(vaultPath, props)) {
 					Path p = cryptoFs.getPath("/");
 					Path m = Paths.get("/Volumes/" + UUID.randomUUID().toString());
@@ -219,4 +238,9 @@ public class MirroringFuseMountTest {
 			LOG.error("Main thread interrupted. Exiting without waiting for onFuseExit action");
 		}
 	}
+
+	private static boolean isVaultDir(Path vaultPath) throws IOException {
+		return CryptoFileSystemProvider.checkDirStructureForVault(vaultPath, "vault.cryptomator", "masterkey.cryptomator") == DirStructure.VAULT;
+	}
 }
+
