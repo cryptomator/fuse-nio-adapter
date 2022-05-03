@@ -12,8 +12,8 @@ public class TruncateOrExpandFileChannelUtility {
 	/**
 	 * Truncates this channel's file to the given size by following the POSIX standard.
 	 * <p>
-	 * Unlike {@link java.nio.channels.FileChannel#truncate(long size)} `FileChannel.truncate`,
-	 * this version extends the file if it is shorter by using zero bytes as defined in the POSIX standard.
+	 * Unlike {@link java.nio.channels.FileChannel#truncate(long size)}, this implementation
+	 * extends the file if it is shorter by using zero bytes as defined in the POSIX standard.
 	 *
 	 * @param channel channel's file
 	 * @param size    target size
