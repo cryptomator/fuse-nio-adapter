@@ -108,7 +108,7 @@ public class OpenFile implements Closeable {
 	}
 
 	public void truncate(long size) throws IOException {
-		channel.truncate(size);
+		FileChannelUtil.truncateOrExpand(channel, size);
 	}
 
 	@Override
