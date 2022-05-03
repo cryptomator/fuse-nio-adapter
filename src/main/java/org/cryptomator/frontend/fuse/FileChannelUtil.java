@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
-public class TruncateOrExpandFileChannelUtility {
+public class FileChannelUtil {
 
 	private static final int BUFFER_SIZE = 4096;
 	private static final ByteBuffer BUFFER = ByteBuffer.allocate(BUFFER_SIZE);
@@ -19,7 +19,7 @@ public class TruncateOrExpandFileChannelUtility {
 	 * @param size    target size
 	 * @throws IOException If an exception occurs during truncate or write.
 	 */
-	public static void execute(FileChannel channel, long size) throws IOException {
+	public static void truncateOrExpand(FileChannel channel, long size) throws IOException {
 		long currentSize = channel.size();
 		if (size <= currentSize) {
 			channel.truncate(size);

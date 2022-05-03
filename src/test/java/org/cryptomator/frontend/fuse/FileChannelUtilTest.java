@@ -14,7 +14,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 
-public class TruncateOrExpandFileChannelUtilityTest {
+public class FileChannelUtilTest {
 
 	private static final String FILE_NAME = "foo.bar";
 	private static final int CURRENT_SIZE = 3000;
@@ -27,7 +27,7 @@ public class TruncateOrExpandFileChannelUtilityTest {
 		Files.write(tempFile, new byte[CURRENT_SIZE], StandardOpenOption.WRITE, StandardOpenOption.CREATE_NEW);
 		try (var ch = Mockito.spy(FileChannel.open(tempFile, StandardOpenOption.WRITE))) {
 
-			TruncateOrExpandFileChannelUtility.execute(ch, wantedSize);
+			FileChannelUtil.truncateOrExpand(ch, wantedSize);
 
 			Mockito.verify(ch).truncate(wantedSize);
 			Mockito.verify(ch, Mockito.never()).write(Mockito.any(ByteBuffer.class));
@@ -45,7 +45,7 @@ public class TruncateOrExpandFileChannelUtilityTest {
 		Files.write(tempFile, new byte[CURRENT_SIZE], StandardOpenOption.WRITE, StandardOpenOption.CREATE_NEW);
 		try (var ch = Mockito.spy(FileChannel.open(tempFile, StandardOpenOption.WRITE))) {
 
-			TruncateOrExpandFileChannelUtility.execute(ch, wantedSize);
+			FileChannelUtil.truncateOrExpand(ch, wantedSize);
 
 			Mockito.verify(ch).position(CURRENT_SIZE);
 			Mockito.verify(ch, Mockito.atLeastOnce()).write(Mockito.any(ByteBuffer.class));
