@@ -1,6 +1,7 @@
 package org.cryptomator.frontend.fuse.mount;
 
 import org.cryptomator.frontend.fuse.FuseNioAdapter;
+import org.cryptomator.jfuse.api.Fuse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,38 +38,22 @@ class LinuxMounter extends AbstractMounter {
 	}
 
 	@Override
-	protected Mount createMountObject(FuseNioAdapter fuseNioAdapter, EnvironmentVariables envVars) {
-		return new LinuxMount(fuseNioAdapter, envVars);
+	protected Mount createMountObject(FuseNioAdapter fuseNioAdapter, Fuse fuse, EnvironmentVariables envVars) {
+		return new LinuxMount(fuseNioAdapter, fuse, envVars);
 	}
 
 	private static class LinuxMount extends AbstractMount {
 
-		private LinuxMount(FuseNioAdapter fuseAdapter, EnvironmentVariables envVars) {
-			super(fuseAdapter, envVars.getMountPoint());
+		private LinuxMount(FuseNioAdapter fuseAdapter, Fuse fuse, EnvironmentVariables envVars) {
+			super(fuseAdapter, fuse, envVars.getMountPoint());
 		}
 
 		@Override
-		public void unmountInternal() throws FuseMountException {
-			if (!fuseAdapter.isMounted()) {
-				return;
-			}
+		public void unmountGracefully() throws FuseMountException {
 			ProcessBuilder command = new ProcessBuilder("fusermount", "-u", "--", mountPoint.getFileName().toString());
 			command.directory(mountPoint.getParent().toFile());
 			Process proc = ProcessUtil.startAndWaitFor(command, 5, TimeUnit.SECONDS);
 			assertUmountSucceeded(proc);
-			fuseAdapter.setUnmounted();
-		}
-
-		@Override
-		public void unmountForcedInternal() throws FuseMountException {
-			if (!fuseAdapter.isMounted()) {
-				return;
-			}
-			ProcessBuilder command = new ProcessBuilder("fusermount", "-u", "-z", "--", mountPoint.getFileName().toString());
-			command.directory(mountPoint.getParent().toFile());
-			Process proc = ProcessUtil.startAndWaitFor(command, 5, TimeUnit.SECONDS);
-			assertUmountSucceeded(proc);
-			fuseAdapter.setUnmounted();
 		}
 
 		private void assertUmountSucceeded(Process proc) throws FuseMountException {
@@ -79,7 +64,6 @@ class LinuxMounter extends AbstractMounter {
 				String stderr = ProcessUtil.toString(proc.getErrorStream(), StandardCharsets.US_ASCII).toLowerCase();
 				if (stderr.contains("not mounted") || stderr.contains("no such file or directory")) {
 					LOG.info("Already unmounted");
-					return;
 				} else {
 					throw new FuseMountException("Unmount failed. STDERR: " + stderr);
 				}

@@ -1,9 +1,8 @@
 package org.cryptomator.frontend.fuse;
 
-import jnr.ffi.Pointer;
+import org.cryptomator.jfuse.api.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.serce.jnrfuse.struct.FileStat;
 
 import javax.inject.Inject;
 import java.io.IOException;
@@ -27,15 +26,14 @@ class ReadOnlyLinkHandler {
 		this.fileNameTranscoder = fileNameTranscoder;
 	}
 
-	public int getattr(Path path, BasicFileAttributes attrs, FileStat stat) {
+	public int getattr(Path path, BasicFileAttributes attrs, Stat stat) {
 		if (attrs instanceof PosixFileAttributes) {
 			PosixFileAttributes posixAttrs = (PosixFileAttributes) attrs;
-			long mode = attrUtil.posixPermissionsToOctalMode(posixAttrs.permissions());
-			mode = mode & 0555;
-			stat.st_mode.set(FileStat.S_IFLNK | mode);
+			stat.setPermissions(posixAttrs.permissions());
 		} else {
-			stat.st_mode.set(FileStat.S_IFLNK | 0555);
+			stat.setMode(0555);
 		}
+		stat.toggleLnk(true);
 		attrUtil.copyBasicFileAttributesFromNioToFuse(attrs, stat);
 		return 0;
 	}
@@ -48,13 +46,13 @@ class ReadOnlyLinkHandler {
 	 * @return
 	 * @throws IOException
 	 */
-	public int readlink(Path path, Pointer buf, long size) throws IOException {
+	public int readlink(Path path, ByteBuffer buf, long size) throws IOException {
 		Path target = Files.readSymbolicLink(path);
 		ByteBuffer fuseEncodedTarget = fileNameTranscoder.interpretAsFuseString(fileNameTranscoder.nioToFuse(target.toString()));
 		int len = (int) Math.min(fuseEncodedTarget.remaining(), size - 1);
 		assert len < size;
 		buf.put(0, fuseEncodedTarget.array(), 0, len);
-		buf.putByte(len, (byte) 0x00); // add null terminator
+		buf.put(len, (byte) 0x00); // add null terminator
 		return 0;
 	}
 

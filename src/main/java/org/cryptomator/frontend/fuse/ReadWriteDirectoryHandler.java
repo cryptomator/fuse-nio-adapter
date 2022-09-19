@@ -1,6 +1,6 @@
 package org.cryptomator.frontend.fuse;
 
-import ru.serce.jnrfuse.struct.FileStat;
+import org.cryptomator.jfuse.api.Stat;
 
 import javax.inject.Inject;
 import java.nio.file.Path;
@@ -16,14 +16,13 @@ public class ReadWriteDirectoryHandler extends ReadOnlyDirectoryHandler {
 	}
 
 	@Override
-	public int getattr(Path node, BasicFileAttributes attrs, FileStat stat) {
+	public int getattr(Path node, BasicFileAttributes attrs, Stat stat) {
 		int result = super.getattr(node, attrs, stat);
 		if (attrs instanceof PosixFileAttributes) {
 			PosixFileAttributes posixAttrs = (PosixFileAttributes) attrs;
-			long mode = attrUtil.posixPermissionsToOctalMode(posixAttrs.permissions());
-			stat.st_mode.set(FileStat.S_IFDIR | mode);
+			stat.setPermissions(posixAttrs.permissions());
 		} else {
-			stat.st_mode.set(FileStat.S_IFDIR | 0755);
+			stat.toggleMode(0755, true);
 		}
 		return result;
 	}

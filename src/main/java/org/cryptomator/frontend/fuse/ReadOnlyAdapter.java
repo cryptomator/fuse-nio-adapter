@@ -3,25 +3,22 @@ package org.cryptomator.frontend.fuse;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Strings;
 import com.google.common.collect.Iterables;
-import jnr.ffi.Pointer;
-import jnr.ffi.types.off_t;
-import jnr.ffi.types.size_t;
 import org.cryptomator.frontend.fuse.locks.AlreadyLockedException;
 import org.cryptomator.frontend.fuse.locks.DataLock;
 import org.cryptomator.frontend.fuse.locks.LockManager;
 import org.cryptomator.frontend.fuse.locks.PathLock;
+import org.cryptomator.jfuse.api.DirFiller;
+import org.cryptomator.jfuse.api.Errno;
+import org.cryptomator.jfuse.api.FileInfo;
+import org.cryptomator.jfuse.api.Stat;
+import org.cryptomator.jfuse.api.Statvfs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.serce.jnrfuse.ErrorCodes;
-import ru.serce.jnrfuse.FuseFillDir;
-import ru.serce.jnrfuse.FuseStubFS;
-import ru.serce.jnrfuse.struct.FileStat;
-import ru.serce.jnrfuse.struct.FuseFileInfo;
-import ru.serce.jnrfuse.struct.Statvfs;
 
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.AccessMode;
@@ -39,19 +36,17 @@ import java.nio.file.attribute.PosixFileAttributes;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.function.BooleanSupplier;
 
 /**
  * Read-Only FUSE-NIO-Adapter based on Sergey Tselovalnikov's <a href="https://github.com/SerCeMan/jnr-fuse/blob/0.5.1/src/main/java/ru/serce/jnrfuse/examples/HelloFuse.java">HelloFuse</a>
  */
 @PerAdapter
-public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
+public class ReadOnlyAdapter implements FuseNioAdapter {
 
 	private static final Logger LOG = LoggerFactory.getLogger(ReadOnlyAdapter.class);
 	private static final int BLOCKSIZE = 4096;
+	protected final Errno errno;
 	protected final Path root;
 	private final int maxFileNameLength;
 	protected final FileStore fileStore;
@@ -62,10 +57,10 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 	private final ReadOnlyLinkHandler linkHandler;
 	private final FileAttributesUtil attrUtil;
 	private final BooleanSupplier hasOpenFiles;
-	private final CountDownLatch initSignaler;
 
 	@Inject
-	public ReadOnlyAdapter(@Named("root") Path root, @Named("maxFileNameLength") int maxFileNameLength, FileNameTranscoder fileNameTranscoder, FileStore fileStore, LockManager lockManager, ReadOnlyDirectoryHandler dirHandler, ReadOnlyFileHandler fileHandler, ReadOnlyLinkHandler linkHandler, FileAttributesUtil attrUtil, OpenFileFactory fileFactory) {
+	public ReadOnlyAdapter(Errno errno, @Named("root") Path root, @Named("maxFileNameLength") int maxFileNameLength, FileNameTranscoder fileNameTranscoder, FileStore fileStore, LockManager lockManager, ReadOnlyDirectoryHandler dirHandler, ReadOnlyFileHandler fileHandler, ReadOnlyLinkHandler linkHandler, FileAttributesUtil attrUtil, OpenFileFactory fileFactory) {
+		this.errno = errno;
 		this.root = root;
 		this.maxFileNameLength = maxFileNameLength;
 		this.fileNameTranscoder = fileNameTranscoder;
@@ -76,7 +71,29 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 		this.linkHandler = linkHandler;
 		this.attrUtil = attrUtil;
 		this.hasOpenFiles = () -> fileFactory.getOpenFileCount() != 0;
-		this.initSignaler = new CountDownLatch(1);
+	}
+
+	@Override
+	public Errno errno() {
+		return errno;
+	}
+
+	@Override
+	public Set<Operation> supportedOperations() {
+		return Set.of(Operation.ACCESS,
+				Operation.CHMOD,
+				Operation.CREATE,
+				Operation.DESTROY,
+				Operation.GET_ATTR,
+				Operation.INIT,
+				Operation.OPEN,
+				Operation.OPEN_DIR,
+				Operation.READ,
+				Operation.READLINK,
+				Operation.READ_DIR,
+				Operation.RELEASE,
+				Operation.RELEASE_DIR,
+				Operation.STATFS);
 	}
 
 	protected Path resolvePath(String absolutePath) {
@@ -91,17 +108,17 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 			long avail = fileStore.getUsableSpace();
 			long tBlocks = total / BLOCKSIZE;
 			long aBlocks = avail / BLOCKSIZE;
-			stbuf.f_bsize.set(BLOCKSIZE);
-			stbuf.f_frsize.set(BLOCKSIZE);
-			stbuf.f_blocks.set(tBlocks);
-			stbuf.f_bavail.set(aBlocks);
-			stbuf.f_bfree.set(aBlocks);
-			stbuf.f_namemax.set(maxFileNameLength);
+			stbuf.setBsize(BLOCKSIZE);
+			stbuf.setFrsize(BLOCKSIZE);
+			stbuf.setBlocks(tBlocks);
+			stbuf.setBavail(aBlocks);
+			stbuf.setBfree(aBlocks);
+			stbuf.setNameMax(maxFileNameLength);
 			LOG.trace("statfs {} ({} / {})", path, avail, total);
 			return 0;
 		} catch (IOException | RuntimeException e) {
 			LOG.error("statfs " + path + " failed.", e);
-			return -ErrorCodes.EIO();
+			return -errno.eio();
 		}
 	}
 
@@ -113,7 +130,7 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 			return checkAccess(node, accessModes);
 		} catch (RuntimeException e) {
 			LOG.error("checkAccess failed.", e);
-			return -ErrorCodes.EIO();
+			return -errno.eio();
 		}
 	}
 
@@ -129,32 +146,32 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 			path.getFileSystem().provider().checkAccess(path, Iterables.toArray(requiredAccessModes, AccessMode.class));
 			return 0;
 		} catch (NoSuchFileException e) {
-			return -ErrorCodes.ENOENT();
+			return -errno.enoent();
 		} catch (AccessDeniedException e) {
-			return -ErrorCodes.EACCES();
+			return -errno.eacces();
 		} catch (IOException e) {
 			LOG.error("checkAccess failed.", e);
-			return -ErrorCodes.EIO();
+			return -errno.eio();
 		}
 	}
 
 	@Override
-	public int readlink(String path, Pointer buf, long size) {
+	public int readlink(String path, ByteBuffer buf, long size) {
 		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
 			 DataLock dataLock = pathLock.lockDataForReading()) {
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
 			return linkHandler.readlink(node, buf, size);
 		} catch (NotLinkException | NoSuchFileException e) {
 			LOG.trace("readlink {} failed, node not found or not a symlink", path);
-			return -ErrorCodes.ENOENT();
+			return -errno.enoent();
 		} catch (IOException | RuntimeException e) {
 			LOG.error("readlink failed.", e);
-			return -ErrorCodes.EIO();
+			return -errno.eio();
 		}
 	}
 
 	@Override
-	public int getattr(String path, FileStat stat) {
+	public int getattr(String path, Stat stat, FileInfo fi) {
 		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
 			 DataLock dataLock = pathLock.lockDataForReading()) {
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
@@ -177,53 +194,53 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 		} catch (NoSuchFileException e) {
 			// see Files.notExists
 			LOG.trace("getattr {} failed, node not found", path);
-			return -ErrorCodes.ENOENT();
+			return -errno.enoent();
 		} catch (FileSystemException e) {
 			return getErrorCodeForGenericFileSystemException(e, "getattr " + path);
 		} catch (IOException | RuntimeException e) {
 			LOG.error("getattr failed.", e);
-			return -ErrorCodes.EIO();
+			return -errno.eio();
 		}
 	}
 
 	@Override
-	public int readdir(String path, Pointer buf, FuseFillDir filler, @off_t long offset, FuseFileInfo fi) {
+	public int readdir(String path, DirFiller filler, long offset, FileInfo fi, int flags) {
 		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
 			 DataLock dataLock = pathLock.lockDataForReading()) {
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
 			LOG.trace("readdir {}", path);
-			return dirHandler.readdir(node, buf, filler, offset, fi);
+			return dirHandler.readdir(node, filler, offset, fi);
 		} catch (NotDirectoryException e) {
 			LOG.error("readdir {} failed, node is not a directory.", path);
-			return -ErrorCodes.ENOENT();
+			return -errno.enoent();
 		} catch (IOException | RuntimeException e) {
 			LOG.error("readdir failed.", e);
-			return -ErrorCodes.EIO();
+			return -errno.eio();
 		}
 	}
 
 	@Override
-	public int open(String path, FuseFileInfo fi) {
+	public int open(String path, FileInfo fi) {
 		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
 			 DataLock dataLock = pathLock.lockDataForReading()) {
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
-			LOG.trace("open {} ({})", path, fi.fh.get());
+			LOG.trace("open {} ({})", path, fi.getFh());
 			fileHandler.open(node, fi);
 			return 0;
 		} catch (NoSuchFileException e) {
 			LOG.warn("open {} failed, file not found.", path);
-			return -ErrorCodes.ENOENT();
+			return -errno.enoent();
 		} catch (AccessDeniedException e) {
 			LOG.warn("Attempted to open file with unsupported flags.", e);
-			return -ErrorCodes.EROFS();
+			return -errno.erofs();
 		} catch (IOException | RuntimeException e) {
 			LOG.error("open " + path + " failed.", e);
-			return -ErrorCodes.EIO();
+			return -errno.eio();
 		}
 	}
 
 	@Override
-	public int read(String path, Pointer buf, @size_t long size, @off_t long offset, FuseFileInfo fi) {
+	public int read(String path, ByteBuffer buf, long size, long offset, FileInfo fi) {
 		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
 			 DataLock dataLock = pathLock.lockDataForReading()) {
 			LOG.trace("read {} bytes from file {} starting at {}...", size, path, offset);
@@ -231,38 +248,32 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 			LOG.trace("read {} bytes from file {}", read, path);
 			return read;
 		} catch (ClosedChannelException e) {
-			LOG.warn("read {} failed, invalid file handle {}", path, fi.fh.get());
-			return -ErrorCodes.EBADF();
+			LOG.warn("read {} failed, invalid file handle {}", path, fi.getFh());
+			return -errno.ebadf();
 		} catch (IOException | RuntimeException e) {
 			LOG.error("read " + path + " failed.", e);
-			return -ErrorCodes.EIO();
+			return -errno.eio();
 		}
 	}
 
 	@Override
-	public int release(String path, FuseFileInfo fi) {
+	public int release(String path, FileInfo fi) {
 		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
 			 DataLock dataLock = pathLock.lockDataForReading()) {
-			LOG.trace("release {} ({})", path, fi.fh.get());
+			LOG.trace("release {} ({})", path, fi.getFh());
 			fileHandler.release(fi);
 			return 0;
 		} catch (ClosedChannelException e) {
-			LOG.warn("release {} failed, invalid file handle {}", path, fi.fh.get());
-			return -ErrorCodes.EBADF();
+			LOG.warn("release {} failed, invalid file handle {}", path, fi.getFh());
+			return -errno.ebadf();
 		} catch (IOException | RuntimeException e) {
 			LOG.error("release " + path + " failed.", e);
-			return -ErrorCodes.EIO();
+			return -errno.eio();
 		}
 	}
 
 	@Override
-	public Pointer init(Pointer p) {
-		initSignaler.countDown();
-		return p;
-	}
-
-	@Override
-	public void destroy(Pointer initResult) {
+	public void destroy() {
 		try {
 			close();
 		} catch (IOException | RuntimeException e) {
@@ -271,32 +282,11 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 	}
 
 	@Override
-	public boolean isMounted() {
-		return mounted.get();
-	}
-
-	@Override
 	public boolean isInUse() {
 		try (PathLock pLock = lockManager.createPathLock("/").tryForWriting()) {
 			return hasOpenFiles.getAsBoolean();
 		} catch (AlreadyLockedException e) {
 			return true;
-		}
-	}
-
-	@Override
-	public void awaitInitCall(long timeoutMillis) throws InterruptedException, TimeoutException {
-		if (!initSignaler.await(timeoutMillis, TimeUnit.MILLISECONDS)) {
-			throw new TimeoutException("fuse init() not called after " + timeoutMillis + " milliseconds.");
-		}
-	}
-
-	@Override
-	public void setUnmounted() {
-		if (mounted.compareAndSet(true, false)) {
-			LOG.debug("Marked file system adapter as unmounted.");
-		} else {
-			LOG.trace("File system adapter already unmounted.");
 		}
 	}
 
@@ -315,12 +305,12 @@ public class ReadOnlyAdapter extends FuseStubFS implements FuseNioAdapter {
 	 */
 	protected int getErrorCodeForGenericFileSystemException(FileSystemException e, String opDesc) {
 		String reason = Strings.nullToEmpty(e.getReason());
-		if (reason.contains("path too long") || reason.contains("name too long")) {
-			LOG.warn("{} {} failed, name too long.", opDesc);
-			return -ErrorCodes.ENAMETOOLONG();
-		} else {
+//		if (reason.contains("path too long") || reason.contains("name too long")) {
+//			LOG.warn("{} {} failed, name too long.", opDesc);
+//			return -ErrorCodes.ENAMETOOLONG();
+//		} else {
 			LOG.error(opDesc + " failed.", e);
-			return -ErrorCodes.EIO();
-		}
+			return -errno.eio();
+//		}
 	}
 }

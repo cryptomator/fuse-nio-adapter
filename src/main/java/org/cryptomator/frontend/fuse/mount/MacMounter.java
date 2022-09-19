@@ -3,6 +3,7 @@ package org.cryptomator.frontend.fuse.mount;
 import org.cryptomator.frontend.fuse.FileNameTranscoder;
 import org.cryptomator.frontend.fuse.FuseNioAdapter;
 import org.cryptomator.frontend.fuse.VersionCompare;
+import org.cryptomator.jfuse.api.Fuse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -68,8 +69,8 @@ class MacMounter extends AbstractMounter {
 	}
 
 	@Override
-	protected Mount createMountObject(FuseNioAdapter fuseNioAdapter, EnvironmentVariables envVars) {
-		return new MacMount(fuseNioAdapter, envVars);
+	protected Mount createMountObject(FuseNioAdapter fuseNioAdapter, Fuse fuse, EnvironmentVariables envVars) {
+		return new MacMount(fuseNioAdapter, fuse, envVars);
 	}
 
 	public boolean installedVersionSupported() {
@@ -117,32 +118,16 @@ class MacMounter extends AbstractMounter {
 
 	private static class MacMount extends AbstractMount {
 
-		private MacMount(FuseNioAdapter fuseAdapter, EnvironmentVariables envVars) {
-			super(fuseAdapter, envVars.getMountPoint());
+		private MacMount(FuseNioAdapter fuseAdapter, Fuse fuse, EnvironmentVariables envVars) {
+			super(fuseAdapter, fuse, envVars.getMountPoint());
 		}
 
 		@Override
-		public void unmountInternal() throws FuseMountException {
-			if (!fuseAdapter.isMounted()) {
-				return;
-			}
+		public void unmountGracefully() throws FuseMountException {
 			ProcessBuilder command = new ProcessBuilder("umount", "--", mountPoint.getFileName().toString());
 			command.directory(mountPoint.getParent().toFile());
 			Process proc = ProcessUtil.startAndWaitFor(command, 5, TimeUnit.SECONDS);
 			assertUmountSucceeded(proc);
-			fuseAdapter.setUnmounted();
-		}
-
-		@Override
-		public void unmountForcedInternal() throws FuseMountException {
-			if (!fuseAdapter.isMounted()) {
-				return;
-			}
-			ProcessBuilder command = new ProcessBuilder("umount", "-f", "--", mountPoint.getFileName().toString());
-			command.directory(mountPoint.getParent().toFile());
-			Process proc = ProcessUtil.startAndWaitFor(command, 5, TimeUnit.SECONDS);
-			assertUmountSucceeded(proc);
-			fuseAdapter.setUnmounted();
 		}
 
 		private void assertUmountSucceeded(Process proc) throws FuseMountException {
@@ -153,7 +138,6 @@ class MacMounter extends AbstractMounter {
 				String stderr = ProcessUtil.toString(proc.getErrorStream(), StandardCharsets.US_ASCII);
 				if (stderr.contains("not currently mounted")) {
 					LOG.info("Already unmounted");
-					return;
 				} else {
 					throw new FuseMountException("Unmount failed. STDERR: " + stderr);
 				}

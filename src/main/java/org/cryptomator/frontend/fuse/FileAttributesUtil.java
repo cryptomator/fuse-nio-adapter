@@ -1,8 +1,6 @@
 package org.cryptomator.frontend.fuse;
 
-import jnr.posix.util.Platform;
-import ru.serce.jnrfuse.flags.AccessConstants;
-import ru.serce.jnrfuse.struct.FileStat;
+import org.cryptomator.jfuse.api.Stat;
 
 import javax.inject.Inject;
 import java.nio.file.AccessMode;
@@ -11,6 +9,7 @@ import java.nio.file.attribute.PosixFilePermission;
 import java.util.EnumSet;
 import java.util.Set;
 
+@SuppressWarnings("OctalInteger")
 @PerAdapter
 public class FileAttributesUtil {
 
@@ -25,9 +24,9 @@ public class FileAttributesUtil {
 	public Set<AccessMode> accessModeMaskToSet(int mask) {
 		Set<AccessMode> accessModes = EnumSet.noneOf(AccessMode.class);
 		// @formatter:off
-		if ((mask & AccessConstants.R_OK) == AccessConstants.R_OK) accessModes.add(AccessMode.READ);
-		if ((mask & AccessConstants.W_OK) == AccessConstants.W_OK) accessModes.add(AccessMode.WRITE);
-		if ((mask & AccessConstants.X_OK) == AccessConstants.X_OK) accessModes.add(AccessMode.EXECUTE);
+		if ((mask & 4) == 4) accessModes.add(AccessMode.READ);
+		if ((mask & 2) == 2) accessModes.add(AccessMode.WRITE);
+		if ((mask & 1) == 1) accessModes.add(AccessMode.EXECUTE);
 		// @formatter:on
 		return accessModes;
 	}
@@ -48,49 +47,36 @@ public class FileAttributesUtil {
 		return result;
 	}
 
-	public void copyBasicFileAttributesFromNioToFuse(BasicFileAttributes attrs, FileStat stat) {
+	public void copyBasicFileAttributesFromNioToFuse(BasicFileAttributes attrs, Stat stat) {
+		stat.toggleMode(0170000, false); // reset file type bits
 		if (attrs.isDirectory()) {
-			stat.st_mode.set(stat.st_mode.longValue() | FileStat.S_IFDIR);
+			stat.toggleDir(true);
 		} else if (attrs.isRegularFile()) {
-			stat.st_mode.set(stat.st_mode.longValue() | FileStat.S_IFREG);
+			stat.toggleReg(true);
 		} else if (attrs.isSymbolicLink()) {
-			stat.st_mode.set(stat.st_mode.longValue() | FileStat.S_IFLNK);
+			stat.toggleLnk(true);
 		}
-		stat.st_uid.set(DUMMY_UID);
-		stat.st_gid.set(DUMMY_GID);
-		stat.st_mtim.tv_sec.set(attrs.lastModifiedTime().toInstant().getEpochSecond());
-		stat.st_mtim.tv_nsec.set(attrs.lastModifiedTime().toInstant().getNano());
-		stat.st_ctim.tv_sec.set(attrs.creationTime().toInstant().getEpochSecond());
-		stat.st_ctim.tv_nsec.set(attrs.creationTime().toInstant().getNano());
-		if (Platform.IS_MAC || Platform.IS_WINDOWS) {
-			assert stat.st_birthtime != null;
-			stat.st_birthtime.tv_sec.set(attrs.creationTime().toInstant().getEpochSecond());
-			stat.st_birthtime.tv_nsec.set(attrs.creationTime().toInstant().getNano());
-		}
-		stat.st_atim.tv_sec.set(attrs.lastAccessTime().toInstant().getEpochSecond());
-		stat.st_atim.tv_nsec.set(attrs.lastAccessTime().toInstant().getNano());
-		stat.st_size.set(attrs.size());
-		stat.st_nlink.set(1);
-		// make sure to nil certain fields known to contain garbage from uninitialized memory
-		// fixes alleged permission bugs, see https://github.com/cryptomator/fuse-nio-adapter/issues/19
-		if (Platform.IS_MAC) {
-			stat.st_flags.set(0);
-			stat.st_gen.set(0);
-		}
+//		stat.st_uid.set(DUMMY_UID);
+//		stat.st_gid.set(DUMMY_GID);
+		stat.mTime().set(attrs.lastModifiedTime().toInstant());
+		stat.birthTime().set(attrs.creationTime().toInstant());
+		stat.aTime().set(attrs.lastAccessTime().toInstant());
+		stat.setSize(attrs.size());
+		stat.setNLink((short) 1);
 	}
 
 	public long posixPermissionsToOctalMode(Set<PosixFilePermission> permissions) {
 		long mode = 0;
 		// @formatter:off
-		if (permissions.contains(PosixFilePermission.OWNER_READ)) mode = mode | FileStat.S_IRUSR;
-		if (permissions.contains(PosixFilePermission.GROUP_READ)) mode = mode | FileStat.S_IRGRP;
-		if (permissions.contains(PosixFilePermission.OTHERS_READ)) mode = mode | FileStat.S_IROTH;
-		if (permissions.contains(PosixFilePermission.OWNER_WRITE)) mode = mode | FileStat.S_IWUSR;
-		if (permissions.contains(PosixFilePermission.GROUP_WRITE)) mode = mode | FileStat.S_IWGRP;
-		if (permissions.contains(PosixFilePermission.OTHERS_WRITE)) mode = mode | FileStat.S_IWOTH;
-		if (permissions.contains(PosixFilePermission.OWNER_EXECUTE)) mode = mode | FileStat.S_IXUSR;
-		if (permissions.contains(PosixFilePermission.GROUP_EXECUTE)) mode = mode | FileStat.S_IXGRP;
-		if (permissions.contains(PosixFilePermission.OTHERS_EXECUTE)) mode = mode | FileStat.S_IXOTH;
+		if (permissions.contains(PosixFilePermission.OWNER_READ))     mode = mode | 0400;
+		if (permissions.contains(PosixFilePermission.GROUP_READ))     mode = mode | 0040;
+		if (permissions.contains(PosixFilePermission.OTHERS_READ))    mode = mode | 0004;
+		if (permissions.contains(PosixFilePermission.OWNER_WRITE))    mode = mode | 0200;
+		if (permissions.contains(PosixFilePermission.GROUP_WRITE))    mode = mode | 0020;
+		if (permissions.contains(PosixFilePermission.OTHERS_WRITE))   mode = mode | 0002;
+		if (permissions.contains(PosixFilePermission.OWNER_EXECUTE))  mode = mode | 0100;
+		if (permissions.contains(PosixFilePermission.GROUP_EXECUTE))  mode = mode | 0010;
+		if (permissions.contains(PosixFilePermission.OTHERS_EXECUTE)) mode = mode | 0001;
 		// @formatter:on
 		return mode;
 	}

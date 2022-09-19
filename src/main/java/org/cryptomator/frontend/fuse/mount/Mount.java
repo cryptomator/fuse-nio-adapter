@@ -24,17 +24,10 @@ public interface Mount extends AutoCloseable {
 	 *
 	 * @throws FuseMountException
 	 */
-	void unmount() throws FuseMountException;
+	void unmountGracefully() throws FuseMountException;
 
 	/**
-	 * Forcefully unmounts the FUSE volume and releases corresponding resources.
-	 *
-	 * @throws FuseMountException
-	 */
-	void unmountForced() throws FuseMountException;
-
-	/**
-	 * Releases associated resources
+	 * Force-Unmounts the volume and releases associated resources
 	 *
 	 * @throws FuseMountException If closing failed
 	 * @throws IllegalStateException If still mounted
