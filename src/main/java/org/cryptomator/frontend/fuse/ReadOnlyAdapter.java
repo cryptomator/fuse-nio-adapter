@@ -204,6 +204,11 @@ public class ReadOnlyAdapter implements FuseNioAdapter {
 	}
 
 	@Override
+	public int opendir(String path, FileInfo fi) {
+		return 0; // TODO
+	}
+
+	@Override
 	public int readdir(String path, DirFiller filler, long offset, FileInfo fi, int flags) {
 		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
 			 DataLock dataLock = pathLock.lockDataForReading()) {
@@ -217,6 +222,11 @@ public class ReadOnlyAdapter implements FuseNioAdapter {
 			LOG.error("readdir failed.", e);
 			return -errno.eio();
 		}
+	}
+
+	@Override
+	public int releasedir(String path, FileInfo fi) {
+		return 0; // TODO
 	}
 
 	@Override

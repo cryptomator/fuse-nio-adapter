@@ -14,7 +14,9 @@ import org.slf4j.impl.SimpleLogger;
 
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
+import java.util.Set;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
@@ -38,7 +40,7 @@ public class AccessPatternIntegrationTest {
 	@DisplayName("simulate TextEdit.app's access pattern during save")
 	void testAppleAutosaveAccessPattern() {
 		// echo "asd" > foo.txt
-		FileInfo fi1 = Mockito.mock(FileInfo.class);
+		FileInfo fi1 = Mockito.spy(new SimpleFileInfo());
 		adapter.create("/foo.txt", 0644, fi1);
 		adapter.write("/foo.txt", US_ASCII.encode("asd"), 3, 0, fi1);
 
@@ -46,7 +48,7 @@ public class AccessPatternIntegrationTest {
 		adapter.mkdir("foo.txt-temp3000", 0755);
 
 		// echo "asdasd" > foo.txt-temp3000/foo.txt
-		FileInfo fi2 = Mockito.mock(FileInfo.class);
+		FileInfo fi2 = Mockito.spy(new SimpleFileInfo());
 		adapter.create("/foo.txt-temp3000/foo.txt", 0644, fi2);
 		adapter.write("/foo.txt-temp3000/foo.txt", US_ASCII.encode("asdasd"), 6, 0, fi2);
 
@@ -66,7 +68,7 @@ public class AccessPatternIntegrationTest {
 
 		// cat foo.txt == "asdasd"
 		ByteBuffer buf = ByteBuffer.allocate(7);
-		FileInfo fi3 = Mockito.mock(FileInfo.class);
+		FileInfo fi3 = Mockito.spy(new SimpleFileInfo());
 		adapter.open("/foo.txt", fi3);
 		int numRead = adapter.read("/foo.txt", buf, 7, 0, fi3);
 		adapter.release("/foo.txt", fi3);
@@ -118,6 +120,35 @@ public class AccessPatternIntegrationTest {
 			int err = targetIsDirectory ? adapter.releasedir(symlink, fi) : adapter.release(symlink, fi);
 		}
 		Assertions.assertEquals(0, returnCode);
+	}
+
+	private static class SimpleFileInfo implements FileInfo {
+
+		private long fh;
+		@Override
+		public void setFh(long fh) {
+			this.fh = fh;
+		}
+
+		@Override
+		public long getFh() {
+			return fh;
+		}
+
+		@Override
+		public int getFlags() {
+			return 0;
+		}
+
+		@Override
+		public Set<StandardOpenOption> getOpenFlags() {
+			return Set.of();
+		}
+
+		@Override
+		public long getLockOwner() {
+			return 0;
+		}
 	}
 
 }
