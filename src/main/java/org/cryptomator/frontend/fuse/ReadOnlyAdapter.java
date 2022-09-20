@@ -38,9 +38,6 @@ import java.util.EnumSet;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
 
-/**
- * Read-Only FUSE-NIO-Adapter based on Sergey Tselovalnikov's <a href="https://github.com/SerCeMan/jnr-fuse/blob/0.5.1/src/main/java/ru/serce/jnrfuse/examples/HelloFuse.java">HelloFuse</a>
- */
 @PerAdapter
 public class ReadOnlyAdapter implements FuseNioAdapter {
 
