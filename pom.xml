@@ -62,6 +62,21 @@
             <artifactId>jfuse-mac</artifactId>
             <version>${jfuse.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.cryptomator</groupId>
+            <artifactId>jfuse-win-amd64</artifactId>
+            <version>${jfuse.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.cryptomator</groupId>
+            <artifactId>jfuse-linux-amd64</artifactId>
+            <version>${jfuse.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.cryptomator</groupId>
+            <artifactId>jfuse-linux-aarch64</artifactId>
+            <version>${jfuse.version}</version>
+        </dependency>
 
         <!-- DI -->
         <dependency>
