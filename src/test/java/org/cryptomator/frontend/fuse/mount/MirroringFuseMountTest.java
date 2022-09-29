@@ -18,10 +18,12 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Scanner;
 import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 
+/**
+ * Test programs to mirror an existing directory or vault.
+ * <p>
+ * Run with {@code --enable-native-access=ALL-UNNAMED -Djava.library.path=/usr/local/lib} (or wherever your fuse libs are located)
+ */
 public class MirroringFuseMountTest {
 
 	static {
@@ -205,35 +207,21 @@ public class MirroringFuseMountTest {
 				.withMountPoint(mountPoint)
 				.withFileNameTranscoder(mounter.defaultFileNameTranscoder())
 				.build();
-		CountDownLatch barrier = new CountDownLatch(1);
-		Consumer<Throwable> onFuseMainExit = throwable -> barrier.countDown();
-		try (Mount mnt = mounter.mount(pathToMirror, envVars, onFuseMainExit, false)) {
-			LOG.info("Mounted successfully. Enter anything to stop the server...");
+		try (Mount mnt = mounter.mount(pathToMirror, envVars)) {
+			LOG.info("Mounted successfully. Enter anything to unmount...");
 			try {
 				mnt.reveal(new AwtFrameworkRevealer());
 			} catch (Exception e) {
 				LOG.warn("Reveal failed.", e);
 			}
 			System.in.read();
-			try {
-				mnt.unmountGracefully();
-			} catch (FuseMountException e) {
-				LOG.info("Unable to perform regular unmount.", e);
-				LOG.info("Forcing unmount...");
+			if (!mnt.unmountGracefully()) {
+				LOG.warn("Unable to perform regular unmount. Forcing unmount...");
 			}
 		} catch (IOException | FuseMountException e) {
 			LOG.error("Mount failed", e);
-		}
-
-		try {
-			if (!barrier.await(5000, TimeUnit.MILLISECONDS)) {
-				LOG.error("Wait on onFuseExit action to finish exceeded timeout. Exiting ...");
-			} else {
-				LOG.info("onExit action executed.");
-			}
-		} catch (InterruptedException e) {
-			Thread.currentThread().interrupt();
-			LOG.error("Main thread interrupted. Exiting without waiting for onFuseExit action");
+		} finally {
+			LOG.info("Unmounted");
 		}
 	}
 

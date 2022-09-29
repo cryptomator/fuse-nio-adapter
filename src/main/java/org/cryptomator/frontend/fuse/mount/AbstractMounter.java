@@ -12,11 +12,8 @@ import java.util.function.Consumer;
 
 public abstract class AbstractMounter implements Mounter {
 
-	private static final int MOUNT_TIMEOUT_MILLIS = Integer.getInteger("org.cryptomator.frontend.fuse.mountTimeOut",10000);
-	private static final AtomicInteger MOUNT_COUNTER = new AtomicInteger(0);
-
 	@Override
-	public synchronized Mount mount(Path directory, EnvironmentVariables envVars, Consumer<Throwable> onFuseExit, boolean debug) throws FuseMountException {
+	public synchronized Mount mount(Path directory, EnvironmentVariables envVars) throws FuseMountException {
 		var builder = Fuse.builder();
 		var fuseAdapter = AdapterFactory.createReadWriteAdapter(directory, //
 				builder.errno(), //

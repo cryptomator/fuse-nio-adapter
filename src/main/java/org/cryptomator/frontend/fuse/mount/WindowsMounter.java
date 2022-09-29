@@ -43,9 +43,5 @@ class WindowsMounter extends AbstractMounter {
 			super(fuseAdapter, fuse, envVars.getMountPoint());
 		}
 
-		@Override
-		public void unmountGracefully() throws FuseMountException {
-			throw new FuseMountException("Graceful unmount not supported on Windows");
-		}
 	}
 }

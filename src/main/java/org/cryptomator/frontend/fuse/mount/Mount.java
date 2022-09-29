@@ -22,9 +22,11 @@ public interface Mount extends AutoCloseable {
 	/**
 	 * Gracefully attempts to unmount the FUSE volume.
 	 *
-	 * @throws FuseMountException
+	 * @return Whether graceful unmount succeeded
 	 */
-	void unmountGracefully() throws FuseMountException;
+	default boolean unmountGracefully() {
+		return false;
+	}
 
 	/**
 	 * Force-Unmounts the volume and releases associated resources

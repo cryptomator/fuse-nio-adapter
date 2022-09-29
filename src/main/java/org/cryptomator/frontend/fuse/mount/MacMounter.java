@@ -123,11 +123,16 @@ class MacMounter extends AbstractMounter {
 		}
 
 		@Override
-		public void unmountGracefully() throws FuseMountException {
+		public boolean unmountGracefully() {
 			ProcessBuilder command = new ProcessBuilder("umount", "--", mountPoint.getFileName().toString());
 			command.directory(mountPoint.getParent().toFile());
-			Process proc = ProcessUtil.startAndWaitFor(command, 5, TimeUnit.SECONDS);
-			assertUmountSucceeded(proc);
+			try {
+				Process proc = ProcessUtil.startAndWaitFor(command, 5, TimeUnit.SECONDS);
+				assertUmountSucceeded(proc);
+				return true;
+			} catch (FuseMountException e) {
+				return false;
+			}
 		}
 
 		private void assertUmountSucceeded(Process proc) throws FuseMountException {

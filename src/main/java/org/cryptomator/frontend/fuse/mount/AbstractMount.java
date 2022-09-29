@@ -1,11 +1,10 @@
 package org.cryptomator.frontend.fuse.mount;
 
-import com.google.common.base.Preconditions;
 import org.cryptomator.frontend.fuse.FuseNioAdapter;
 import org.cryptomator.jfuse.api.Fuse;
 
 import java.nio.file.Path;
-import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
 
 abstract class AbstractMount implements Mount {
 
@@ -28,9 +27,6 @@ abstract class AbstractMount implements Mount {
 	public void reveal(Revealer revealer) throws Exception {
 		revealer.reveal(mountPoint);
 	}
-
-	@Override
-	public abstract void unmountGracefully() throws FuseMountException;
 
 	@Override
 	public void close() throws FuseMountException {
