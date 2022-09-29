@@ -118,6 +118,8 @@ class MacMounter extends AbstractMounter {
 
 	private static class MacMount extends AbstractMount {
 
+		private boolean mounted = true;
+
 		private MacMount(FuseNioAdapter fuseAdapter, Fuse fuse, EnvironmentVariables envVars) {
 			super(fuseAdapter, fuse, envVars.getMountPoint());
 		}
@@ -129,9 +131,32 @@ class MacMounter extends AbstractMounter {
 			try {
 				Process proc = ProcessUtil.startAndWaitFor(command, 5, TimeUnit.SECONDS);
 				assertUmountSucceeded(proc);
+				mounted = false;
 				return true;
 			} catch (FuseMountException e) {
 				return false;
+			}
+		}
+
+		@Override
+		public void close() throws FuseMountException {
+			try {
+				if (mounted) {
+					unmountForcfully();
+				}
+			} finally {
+				super.close();
+			}
+		}
+
+		private void unmountForcfully() {
+			ProcessBuilder command = new ProcessBuilder("umount", "-f", "--", mountPoint.getFileName().toString());
+			command.directory(mountPoint.getParent().toFile());
+			try {
+				Process proc = ProcessUtil.startAndWaitFor(command, 5, TimeUnit.SECONDS);
+				assertUmountSucceeded(proc);
+			} catch (FuseMountException e) {
+				LOG.warn("Forced unmount failed", e);
 			}
 		}
 
