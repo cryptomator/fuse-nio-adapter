@@ -47,23 +47,17 @@ public class OpenFile implements Closeable {
 		} else if (num > Integer.MAX_VALUE) {
 			throw new IOException("Requested too many bytes");
 		} else {
-			ByteBuffer bb = ByteBuffer.allocate(BUFFER_SIZE);
-			int pos = 0;
-			channel.position(offset);
-			LOG.trace("Attempting to read {}-{}:", offset, offset + num);
+			int read = 0;
 			do {
-				long remaining = num - pos;
-				int read = readNext(bb, remaining);
-				if (read == -1) {
+				int r = channel.read(buf, offset + read);
+				if (r == -1) {
 					LOG.trace("Reached EOF");
-					return pos; // reached EOF
+					return read;
 				} else {
-					LOG.trace("Reading {}-{}", offset + pos, offset + pos + read);
-					buf.put(pos, bb, 0, read);
-					pos += read;
+					read += r;
 				}
-			} while (pos < (int) num);
-			return pos;
+			} while (read < num);
+			return read;
 		}
 	}
 
@@ -74,32 +68,17 @@ public class OpenFile implements Closeable {
 	 * @param num Number of bytes to write
 	 * @param offset Position of first byte to write at
 	 * @return Actual number of bytes written
-	 *         TODO: only the bytes which contains information or also some filling zeros?
 	 * @throws IOException If an exception occurs during write.
 	 */
 	public synchronized int write(ByteBuffer buf, long num, long offset) throws IOException {
 		if (num > Integer.MAX_VALUE) {
 			throw new IOException("Requested too many bytes");
 		}
-		ByteBuffer bb = ByteBuffer.allocate(BUFFER_SIZE);
 		int written = 0;
-		channel.position(offset);
 		do {
-			long remaining = num - written;
-			bb.clear();
-			int len = (int) Math.min(remaining, bb.capacity());
-			buf.get(written, bb.array(), 0, len);
-			bb.limit(len);
-			channel.write(bb); // TODO check return value
-			written += len;
-		} while (written < (int) num);
+			written += channel.write(buf, offset + written);
+		} while (written < num);
 		return written;
-	}
-
-	private int readNext(ByteBuffer readBuf, long num) throws IOException {
-		readBuf.clear();
-		readBuf.limit((int) Math.min(readBuf.capacity(), num));
-		return channel.read(readBuf);
 	}
 
 	@Override
