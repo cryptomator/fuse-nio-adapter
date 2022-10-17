@@ -46,6 +46,7 @@ public class OpenFile implements Closeable {
 		if (offset >= size) {
 			return 0;
 		} else {
+			num = Math.min(size - offset, num);
 			ByteBuffer bb = ByteBuffer.allocate(BUFFER_SIZE);
 			long pos = 0;
 			channel.position(offset);
@@ -53,14 +54,9 @@ public class OpenFile implements Closeable {
 			do {
 				long remaining = num - pos;
 				int read = readNext(bb, remaining);
-				if (read == -1) {
-					LOG.trace("Reached EOF");
-					return (int) pos; // reached EOF TODO: wtf cast
-				} else {
-					LOG.trace("Reading {}-{}", offset + pos, offset + pos + read);
-					buf.put(pos, bb.array(), 0, read);
-					pos += read;
-				}
+				LOG.trace("Reading {}-{}", offset + pos, offset + pos + read);
+				buf.put(pos, bb.array(), 0, read);
+				pos += read;
 			} while (pos < num);
 			return (int) pos; // TODO wtf cast
 		}
