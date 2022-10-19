@@ -3,7 +3,7 @@
 <suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
     <suppress>
         <notes><![CDATA[Suppress known vulnerabilities in FUSE libraries for jfuse.]]></notes>
-        <gav regex="true">^org\.cryptomator:jfuse-.*$</gav>
+        <gav regex="true">^org\.cryptomator:jfuse.*$</gav>
 
         <!-- See: https://nvd.nist.gov/vuln/detail/CVE-2010-3879 -->
         <!-- Last Modified: 08/16/2017 - Awaiting reanalysis -->
