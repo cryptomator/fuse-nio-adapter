@@ -22,7 +22,7 @@ public class ReadWriteDirectoryHandler extends ReadOnlyDirectoryHandler {
 			PosixFileAttributes posixAttrs = (PosixFileAttributes) attrs;
 			stat.setPermissions(posixAttrs.permissions());
 		} else {
-			stat.toggleMode(0755, true);
+			stat.setModeBits(0755);
 		}
 		return result;
 	}

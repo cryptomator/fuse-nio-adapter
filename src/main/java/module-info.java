@@ -3,7 +3,7 @@ module org.cryptomator.frontend.fuse {
 	exports org.cryptomator.frontend.fuse.locks;
 	exports org.cryptomator.frontend.fuse.mount;
 
-	requires org.cryptomator.jfuse.api;
+	requires org.cryptomator.jfuse;
 	requires javax.inject;
 	requires java.desktop;
 	requires org.slf4j;

@@ -38,7 +38,7 @@ public class ReadWriteFileHandler extends ReadOnlyFileHandler implements Closeab
 			PosixFileAttributes posixAttrs = (PosixFileAttributes) attrs;
 			stat.setPermissions(posixAttrs.permissions());
 		} else if (result == 0) {
-			stat.toggleMode(0777, true);
+			stat.setModeBits(0777);
 		}
 		return result;
 	}

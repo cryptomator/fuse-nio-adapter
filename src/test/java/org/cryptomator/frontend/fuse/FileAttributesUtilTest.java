@@ -80,7 +80,7 @@ public class FileAttributesUtilTest {
 		Mockito.doReturn(btime).when(stat).birthTime();
 		util.copyBasicFileAttributesFromNioToFuse(attr, stat);
 
-		Mockito.verify(stat).toggleDir(true);
+		Mockito.verify(stat).setModeBits(Stat.S_IFDIR);
 		Mockito.verify(mtime).set(Instant.ofEpochSecond(424242L, 42L));
 		Mockito.verify(atime).set(Instant.ofEpochSecond(424242L, 42L));
 		Mockito.verify(btime).set(Instant.ofEpochSecond(424242L, 42L));

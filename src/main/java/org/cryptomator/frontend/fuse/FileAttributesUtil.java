@@ -48,13 +48,13 @@ public class FileAttributesUtil {
 	}
 
 	public void copyBasicFileAttributesFromNioToFuse(BasicFileAttributes attrs, Stat stat) {
-		stat.toggleMode(0170000, false); // reset file type bits
+		stat.unsetModeBits(Stat.S_IFMT);
 		if (attrs.isDirectory()) {
-			stat.toggleDir(true);
+			stat.setModeBits(Stat.S_IFDIR);
 		} else if (attrs.isRegularFile()) {
-			stat.toggleReg(true);
+			stat.setModeBits(Stat.S_IFREG);
 		} else if (attrs.isSymbolicLink()) {
-			stat.toggleLnk(true);
+			stat.setModeBits(Stat.S_IFLNK);
 		}
 //		stat.st_uid.set(DUMMY_UID);
 //		stat.st_gid.set(DUMMY_GID);
