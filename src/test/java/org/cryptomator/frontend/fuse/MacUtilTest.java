@@ -1,4 +1,4 @@
-package org.cryptomator.frontend.fuse.mount;
+package org.cryptomator.frontend.fuse;
 
 import org.cryptomator.frontend.fuse.MacUtil;
 import org.junit.jupiter.api.Assertions;

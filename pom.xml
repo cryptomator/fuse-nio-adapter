@@ -57,6 +57,13 @@
             <version>${jfuse.version}</version>
         </dependency>
 
+        <!-- Mount API -->
+        <dependency>
+            <groupId>org.cryptomator</groupId>
+            <artifactId>integrations-api</artifactId>
+            <version>1.2.0-SNAPSHOT</version>
+        </dependency>
+
         <!-- DI -->
         <dependency>
             <groupId>com.google.dagger</groupId>
