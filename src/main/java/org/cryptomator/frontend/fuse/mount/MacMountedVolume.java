@@ -43,6 +43,7 @@ class MacMountedVolume implements MountProvider.MountedVolume {
 			Process p = command.start();
 			p.waitFor(10, TimeUnit.SECONDS);
 			fuse.close();
+			unmounted = true;
 		} catch (TimeoutException | IOException | InterruptedException e) {
 			throw new UnmountFailedException(e);
 		}

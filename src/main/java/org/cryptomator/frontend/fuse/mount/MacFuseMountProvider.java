@@ -72,13 +72,13 @@ public class MacFuseMountProvider implements MountProvider {
 		// see: https://github.com/osxfuse/osxfuse/wiki/Mount-options
 		try {
 			return "-ovolname=TODO" // TODO
-					+ "-ouid=" + Files.getAttribute(USER_HOME, "unix:uid") //
-					+ "-ogid=" + Files.getAttribute(USER_HOME, "unix:gid") //
-					+ "-oatomic_o_trunc" //
-					+ "-oauto_xattr" //
-					+ "-oauto_cache" //
-					+ "-onoappledouble" // vastly impacts performance for some reason...
-					+ "-odefault_permissions"; // let the kernel assume permissions based on file attributes etc
+					+ " -ouid=" + Files.getAttribute(USER_HOME, "unix:uid") //
+					+ " -ogid=" + Files.getAttribute(USER_HOME, "unix:gid") //
+					+ " -oatomic_o_trunc" //
+					+ " -oauto_xattr" //
+					+ " -oauto_cache" //
+					+ " -onoappledouble" // vastly impacts performance for some reason...
+					+ " -odefault_permissions"; // let the kernel assume permissions based on file attributes etc
 		} catch (IOException e) {
 			throw new UncheckedIOException(e);
 		}

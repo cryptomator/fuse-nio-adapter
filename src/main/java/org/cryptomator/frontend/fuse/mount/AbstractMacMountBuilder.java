@@ -5,6 +5,7 @@ import org.cryptomator.integrations.mount.MountProvider;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -28,7 +29,8 @@ abstract class AbstractMacMountBuilder implements MountProvider.MountBuilder {
 	@Override
 	public MountProvider.MountBuilder setMountFlags(String mountFlagsString) {
 		// we assume that each flag starts with "-"
-		this.mountFlags = Pattern.compile("\\s?-").splitAsStream(mountFlagsString).map("-"::concat).collect(Collectors.toUnmodifiableSet());
+		var notEmpty = Predicate.not(String::isBlank);
+		this.mountFlags = Pattern.compile("\\s?-").splitAsStream(mountFlagsString).filter(notEmpty).map("-"::concat).collect(Collectors.toUnmodifiableSet());
 		return this;
 	}
 

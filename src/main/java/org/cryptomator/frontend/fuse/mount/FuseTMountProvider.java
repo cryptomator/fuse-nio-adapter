@@ -55,7 +55,7 @@ public class FuseTMountProvider implements MountProvider {
 
 	@Override
 	public Set<Features> supportedFeatures() {
-		return EnumSet.of(Features.DEFAULT_MOUNT_POINT, Features.DEFAULT_MOUNT_FLAGS, Features.CUSTOM_FLAGS, Features.UNMOUNT_FORCED, Features.READ_ONLY, Features.MOUNT_POINT_EMPTY_DIR);
+		return EnumSet.of(Features.DEFAULT_MOUNT_FLAGS, Features.CUSTOM_FLAGS, Features.UNMOUNT_FORCED, Features.READ_ONLY, Features.MOUNT_POINT_EMPTY_DIR);
 	}
 
 	// TODO adjust API
@@ -69,9 +69,9 @@ public class FuseTMountProvider implements MountProvider {
 		// https://github.com/macos-fuse-t/fuse-t/wiki#supported-mount-options
 		try {
 			return "-ovolname=TODO" //
-					+ "-ouid=" + Files.getAttribute(USER_HOME, "unix:uid") //
-					+ "-ogid=" + Files.getAttribute(USER_HOME, "unix:gid") //
-					+ "-orwsize=262144";
+					+ " -ouid=" + Files.getAttribute(USER_HOME, "unix:uid") //
+					+ " -ogid=" + Files.getAttribute(USER_HOME, "unix:gid") //
+					+ " -orwsize=262144";
 		} catch (IOException e) {
 			throw new UncheckedIOException(e);
 		}
