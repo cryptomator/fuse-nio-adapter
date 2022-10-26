@@ -1,0 +1,16 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="CryptoFS Mirror" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="org.cryptomator.frontend.fuse.mount.MirroringFuseMountTest$CryptoFsMirror" />
+    <module name="fuse-nio-adapter" />
+    <option name="VM_PARAMETERS" value="--enable-native-access=ALL-UNNAMED" />
+    <extension name="coverage">
+      <pattern>
+        <option name="PATTERN" value="org.cryptomator.frontend.fuse.*" />
+        <option name="ENABLED" value="true" />
+      </pattern>
+    </extension>
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
