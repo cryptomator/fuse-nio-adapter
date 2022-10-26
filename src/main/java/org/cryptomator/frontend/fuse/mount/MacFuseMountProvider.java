@@ -1,16 +1,16 @@
 package org.cryptomator.frontend.fuse.mount;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Streams;
 import org.cryptomator.frontend.fuse.AdapterFactory;
 import org.cryptomator.frontend.fuse.FileNameTranscoder;
 import org.cryptomator.integrations.common.OperatingSystem;
 import org.cryptomator.integrations.common.Priority;
+import org.cryptomator.integrations.mount.Mount;
+import org.cryptomator.integrations.mount.MountBuilder;
 import org.cryptomator.integrations.mount.MountFailedException;
+import org.cryptomator.integrations.mount.MountFeature;
 import org.cryptomator.integrations.mount.MountProvider;
 import org.cryptomator.jfuse.api.Fuse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -19,14 +19,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.Normalizer;
 import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
-import java.util.UUID;
-import java.util.function.Consumer;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+
+import static org.cryptomator.integrations.mount.MountFeature.DEFAULT_MOUNT_POINT;
+import static org.cryptomator.integrations.mount.MountFeature.MOUNT_FLAGS;
+import static org.cryptomator.integrations.mount.MountFeature.MOUNT_POINT_EMPTY_DIR;
+import static org.cryptomator.integrations.mount.MountFeature.READ_ONLY;
+import static org.cryptomator.integrations.mount.MountFeature.UNMOUNT_FORCED;
 
 /**
  * Mounts a file system on macOS using macFUSE.
@@ -51,27 +50,25 @@ public class MacFuseMountProvider implements MountProvider {
 	}
 
 	@Override
-	public MountBuilder forPath(Path vfsRoot) {
-		return new MacFuseMountBuilder(vfsRoot);
+	public MountBuilder forFileSystem(Path fileSystemRoot) {
+		return new MacFuseMountBuilder(fileSystemRoot);
 	}
 
 	@Override
-	public Set<Features> supportedFeatures() {
-		return EnumSet.of(Features.DEFAULT_MOUNT_POINT, Features.DEFAULT_MOUNT_FLAGS, Features.CUSTOM_FLAGS, Features.UNMOUNT_FORCED, Features.READ_ONLY, Features.MOUNT_POINT_EMPTY_DIR);
+	public Set<MountFeature> supportedFeatures() {
+		return EnumSet.of(DEFAULT_MOUNT_POINT, MOUNT_FLAGS, UNMOUNT_FORCED, READ_ONLY, MOUNT_POINT_EMPTY_DIR);
 	}
 
-	// TODO adjust API to support volumeName
 	@Override
-	public String getDefaultMountPoint() {
-		return "/Volumes/" + UUID.randomUUID();
+	public Path getDefaultMountPoint(String volumeName) {
+		return Path.of("/Volumes", volumeName);
 	}
 
-	// TODO adjust API to support volumeName
 	@Override
-	public String getDefaultMountFlags() {
+	public String getDefaultMountFlags(String volumeName) {
 		// see: https://github.com/osxfuse/osxfuse/wiki/Mount-options
 		try {
-			return "-ovolname=TODO" // TODO
+			return "-ovolname=" + volumeName //
 					+ " -ouid=" + Files.getAttribute(USER_HOME, "unix:uid") //
 					+ " -ogid=" + Files.getAttribute(USER_HOME, "unix:gid") //
 					+ " -oatomic_o_trunc" //
@@ -91,7 +88,7 @@ public class MacFuseMountProvider implements MountProvider {
 		}
 
 		@Override
-		public MountedVolume mount() throws MountFailedException {
+		public Mount mount() throws MountFailedException {
 			Preconditions.checkNotNull(mountPoint);
 			Preconditions.checkNotNull(mountFlags);
 
@@ -103,7 +100,7 @@ public class MacFuseMountProvider implements MountProvider {
 					FileNameTranscoder.transcoder().withFuseNormalization(Normalizer.Form.NFD));
 			var fuse = builder.build(fuseAdapter);
 			try {
-				fuse.mount("fuse-nio-adapter", mountPoint, mountFlags.toArray(String[]::new));
+				fuse.mount("fuse-nio-adapter", mountPoint, combinedMountFlags().toArray(String[]::new));
 				return new MacMountedVolume(fuse, mountPoint);
 			} catch (org.cryptomator.jfuse.api.MountFailedException e) {
 				throw new MountFailedException(e);

@@ -1,6 +1,6 @@
 package org.cryptomator.frontend.fuse.mount;
 
-import org.cryptomator.integrations.mount.MountProvider;
+import org.cryptomator.integrations.mount.Mount;
 import org.cryptomator.integrations.mount.UnmountFailedException;
 import org.cryptomator.jfuse.api.Fuse;
 import org.slf4j.Logger;
@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
-class MacMountedVolume implements MountProvider.MountedVolume {
+class MacMountedVolume implements Mount {
 
 	private static final Logger LOG = LoggerFactory.getLogger(MacMountedVolume.class);
 

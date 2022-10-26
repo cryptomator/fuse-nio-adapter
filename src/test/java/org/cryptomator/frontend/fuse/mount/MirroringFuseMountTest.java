@@ -6,6 +6,7 @@ import org.cryptomator.cryptofs.CryptoFileSystemProvider;
 import org.cryptomator.cryptofs.DirStructure;
 import org.cryptomator.cryptolib.common.MasterkeyFileAccess;
 import org.cryptomator.integrations.mount.MountFailedException;
+import org.cryptomator.integrations.mount.MountFeature;
 import org.cryptomator.integrations.mount.MountProvider;
 import org.cryptomator.integrations.mount.UnmountFailedException;
 import org.slf4j.Logger;
@@ -82,12 +83,12 @@ public class MirroringFuseMountTest {
 	private static void mount(Path pathToMirror, Scanner scanner) throws MountFailedException {
 		var mountProvider = MountProvider.get().findAny().orElseThrow(() -> new MountFailedException("Did not find a mount provider"));
 		LOG.info("Using mount provider: {}", mountProvider.displayName());
-		var mountBuilder = mountProvider.forPath(pathToMirror);
-		if (mountProvider.supportedFeatures().contains(MountProvider.Features.DEFAULT_MOUNT_FLAGS)) {
-			mountBuilder.setMountFlags(mountProvider.getDefaultMountFlags());
+		var mountBuilder = mountProvider.forFileSystem(pathToMirror);
+		if (mountProvider.supportedFeatures().contains(MountFeature.MOUNT_FLAGS)) {
+			mountBuilder.setMountFlags(mountProvider.getDefaultMountFlags("mirror"));
 		}
-		if (mountProvider.supportedFeatures().contains(MountProvider.Features.DEFAULT_MOUNT_POINT)) {
-			mountBuilder.setMountpoint(Path.of(mountProvider.getDefaultMountPoint()));
+		if (mountProvider.supportedFeatures().contains(MountFeature.DEFAULT_MOUNT_POINT)) {
+			mountBuilder.setMountpoint(mountProvider.getDefaultMountPoint("mirror"));
 		} else {
 			System.out.println("Enter mount point: ");
 			Path m = Paths.get(scanner.nextLine());
@@ -107,7 +108,7 @@ public class MirroringFuseMountTest {
 			try {
 				mount.unmout();
 			} catch (UnmountFailedException e) {
-				if (mountProvider.supportedFeatures().contains(MountProvider.Features.UNMOUNT_FORCED)) {
+				if (mountProvider.supportedFeatures().contains(MountFeature.UNMOUNT_FORCED)) {
 					LOG.warn("Graceful unmount failed. Attempting force-unmount...");
 					mount.unmountForced();
 				}

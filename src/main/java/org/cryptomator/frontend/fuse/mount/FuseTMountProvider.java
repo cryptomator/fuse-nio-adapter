@@ -1,16 +1,16 @@
 package org.cryptomator.frontend.fuse.mount;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Streams;
 import org.cryptomator.frontend.fuse.AdapterFactory;
 import org.cryptomator.frontend.fuse.FileNameTranscoder;
 import org.cryptomator.integrations.common.OperatingSystem;
 import org.cryptomator.integrations.common.Priority;
+import org.cryptomator.integrations.mount.Mount;
+import org.cryptomator.integrations.mount.MountBuilder;
 import org.cryptomator.integrations.mount.MountFailedException;
+import org.cryptomator.integrations.mount.MountFeature;
 import org.cryptomator.integrations.mount.MountProvider;
 import org.cryptomator.jfuse.api.Fuse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -19,12 +19,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.Normalizer;
 import java.util.EnumSet;
-import java.util.HashSet;
 import java.util.Set;
-import java.util.function.Consumer;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+
+import static org.cryptomator.integrations.mount.MountFeature.MOUNT_FLAGS;
+import static org.cryptomator.integrations.mount.MountFeature.MOUNT_POINT_EMPTY_DIR;
+import static org.cryptomator.integrations.mount.MountFeature.PORT;
+import static org.cryptomator.integrations.mount.MountFeature.READ_ONLY;
+import static org.cryptomator.integrations.mount.MountFeature.UNMOUNT_FORCED;
 
 /**
  * Mounts a file system on macOS using fuse-t.
@@ -49,48 +50,52 @@ public class FuseTMountProvider implements MountProvider {
 	}
 
 	@Override
-	public MountBuilder forPath(Path vfsRoot) {
-		return new FuseTMountBuilder(vfsRoot);
+	public MountBuilder forFileSystem(Path fileSystemRoot) {
+		return new FuseTMountBuilder(fileSystemRoot);
 	}
 
 	@Override
-	public Set<Features> supportedFeatures() {
-		return EnumSet.of(Features.DEFAULT_MOUNT_FLAGS, Features.CUSTOM_FLAGS, Features.UNMOUNT_FORCED, Features.READ_ONLY, Features.MOUNT_POINT_EMPTY_DIR);
+	public Set<MountFeature> supportedFeatures() {
+		return EnumSet.of(MOUNT_FLAGS, PORT, UNMOUNT_FORCED, READ_ONLY, MOUNT_POINT_EMPTY_DIR);
 	}
 
-	// TODO adjust API
-	private int defaultPort() {
+	@Override
+	public int getDefaultPort() {
 		return 2049;
 	}
 
-	// TODO adjust API to support volumeName
 	@Override
-	public String getDefaultMountFlags() {
+	public String getDefaultMountFlags(String volumeName) {
 		// https://github.com/macos-fuse-t/fuse-t/wiki#supported-mount-options
-		try {
-			return "-ovolname=TODO" //
-					+ " -ouid=" + Files.getAttribute(USER_HOME, "unix:uid") //
-					+ " -ogid=" + Files.getAttribute(USER_HOME, "unix:gid") //
-					+ " -orwsize=262144";
-		} catch (IOException e) {
-			throw new UncheckedIOException(e);
-		}
+		return "-ovolname=" + volumeName //
+				+ " -orwsize=262144";
 	}
 
 	private static class FuseTMountBuilder extends AbstractMacMountBuilder {
+
+		private int port;
 
 		public FuseTMountBuilder(Path vfsRoot) {
 			super(vfsRoot);
 		}
 
-		// TODO adjust API
+		@Override
 		public MountBuilder setPort(int port) {
-			// set -l flag (NFS server listen address)
+			this.port = port;
 			return this;
 		}
 
 		@Override
-		public MountedVolume mount() throws MountFailedException {
+		protected Set<String> combinedMountFlags() {
+			Set<String> combined = super.combinedMountFlags();
+			if (port != 0) {
+				combined.add("-l" + port);
+			}
+			return combined;
+		}
+
+		@Override
+		public Mount mount() throws MountFailedException {
 			Preconditions.checkNotNull(mountPoint);
 			Preconditions.checkNotNull(mountFlags);
 
@@ -102,7 +107,7 @@ public class FuseTMountProvider implements MountProvider {
 					FileNameTranscoder.transcoder().withFuseNormalization(Normalizer.Form.NFD));
 			var fuse = builder.build(fuseAdapter);
 			try {
-				fuse.mount("fuse-nio-adapter", mountPoint, combinedMountFlags());
+				fuse.mount("fuse-nio-adapter", mountPoint, combinedMountFlags().toArray(String[]::new));
 				return new MacMountedVolume(fuse, mountPoint);
 			} catch (org.cryptomator.jfuse.api.MountFailedException e) {
 				throw new MountFailedException(e);
