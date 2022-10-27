@@ -5,9 +5,6 @@ import org.cryptomator.integrations.mount.MountProvider;
 import org.cryptomator.frontend.fuse.mount.WinFspMountProvider;
 
 module org.cryptomator.frontend.fuse {
-	exports org.cryptomator.frontend.fuse;
-	exports org.cryptomator.frontend.fuse.locks;
-
 	requires org.cryptomator.jfuse;
 	requires org.cryptomator.integrations.api;
 	requires org.slf4j;
