@@ -3,6 +3,7 @@ package org.cryptomator.frontend.fuse.mount;
 import org.cryptomator.frontend.fuse.AdapterFactory;
 import org.cryptomator.frontend.fuse.FileNameTranscoder;
 import org.cryptomator.frontend.fuse.FuseNioAdapter;
+import org.cryptomator.integrations.common.OperatingSystem;
 import org.cryptomator.integrations.mount.Mount;
 import org.cryptomator.integrations.mount.MountBuilder;
 import org.cryptomator.integrations.mount.MountFailedException;
@@ -16,6 +17,7 @@ import java.util.Arrays;
 import java.util.Set;
 import java.util.function.Consumer;
 
+@OperatingSystem(OperatingSystem.Value.WINDOWS)
 public class WinFspMountProvider implements MountProvider {
 
 	private static final Set<MountFeature> FEATURES = Set.of(//
@@ -36,7 +38,7 @@ public class WinFspMountProvider implements MountProvider {
 
 	@Override
 	public boolean isSupported() {
-		return System.getProperty("os.name").toLowerCase().contains("windows") && WinfspUtil.isWinFspInstalled();
+		return WinfspUtil.isWinFspInstalled();
 	}
 
 	@Override
