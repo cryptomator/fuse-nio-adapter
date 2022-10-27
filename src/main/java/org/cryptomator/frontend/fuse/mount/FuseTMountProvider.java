@@ -12,8 +12,6 @@ import org.cryptomator.integrations.mount.MountFeature;
 import org.cryptomator.integrations.mount.MountProvider;
 import org.cryptomator.jfuse.api.Fuse;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -22,7 +20,7 @@ import java.util.EnumSet;
 import java.util.Set;
 
 import static org.cryptomator.integrations.mount.MountFeature.MOUNT_FLAGS;
-import static org.cryptomator.integrations.mount.MountFeature.MOUNT_POINT_EMPTY_DIR;
+import static org.cryptomator.integrations.mount.MountFeature.MOUNT_TO_EXISTING_DIR;
 import static org.cryptomator.integrations.mount.MountFeature.PORT;
 import static org.cryptomator.integrations.mount.MountFeature.READ_ONLY;
 import static org.cryptomator.integrations.mount.MountFeature.UNMOUNT_FORCED;
@@ -56,7 +54,7 @@ public class FuseTMountProvider implements MountProvider {
 
 	@Override
 	public Set<MountFeature> supportedFeatures() {
-		return EnumSet.of(MOUNT_FLAGS, PORT, UNMOUNT_FORCED, READ_ONLY, MOUNT_POINT_EMPTY_DIR);
+		return EnumSet.of(MOUNT_FLAGS, PORT, UNMOUNT_FORCED, READ_ONLY, MOUNT_TO_EXISTING_DIR);
 	}
 
 	@Override
@@ -77,6 +75,16 @@ public class FuseTMountProvider implements MountProvider {
 
 		public FuseTMountBuilder(Path vfsRoot) {
 			super(vfsRoot);
+		}
+
+		@Override
+		public MountBuilder setMountpoint(Path mountPoint) {
+			if (Files.isDirectory(mountPoint)) { // MOUNT_TO_EXISTING_DIR
+				this.mountPoint = mountPoint;
+				return this;
+			} else {
+				throw new IllegalArgumentException("mount point must be an existing directory");
+			}
 		}
 
 		@Override

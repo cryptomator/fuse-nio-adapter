@@ -23,7 +23,7 @@ import java.util.Set;
 
 import static org.cryptomator.integrations.mount.MountFeature.DEFAULT_MOUNT_POINT;
 import static org.cryptomator.integrations.mount.MountFeature.MOUNT_FLAGS;
-import static org.cryptomator.integrations.mount.MountFeature.MOUNT_POINT_EMPTY_DIR;
+import static org.cryptomator.integrations.mount.MountFeature.MOUNT_TO_EXISTING_DIR;
 import static org.cryptomator.integrations.mount.MountFeature.READ_ONLY;
 import static org.cryptomator.integrations.mount.MountFeature.UNMOUNT_FORCED;
 
@@ -56,7 +56,7 @@ public class MacFuseMountProvider implements MountProvider {
 
 	@Override
 	public Set<MountFeature> supportedFeatures() {
-		return EnumSet.of(DEFAULT_MOUNT_POINT, MOUNT_FLAGS, UNMOUNT_FORCED, READ_ONLY, MOUNT_POINT_EMPTY_DIR);
+		return EnumSet.of(DEFAULT_MOUNT_POINT, MOUNT_FLAGS, UNMOUNT_FORCED, READ_ONLY, MOUNT_TO_EXISTING_DIR);
 	}
 
 	@Override
@@ -85,6 +85,17 @@ public class MacFuseMountProvider implements MountProvider {
 
 		public MacFuseMountBuilder(Path vfsRoot) {
 			super(vfsRoot);
+		}
+
+		@Override
+		public MountBuilder setMountpoint(Path mountPoint) {
+			if (mountPoint.startsWith("/Volumes/") && Files.notExists(mountPoint) // DEFAULT_MOUNT_POINT
+					|| Files.isDirectory(mountPoint)) { // MOUNT_TO_EXISTING_DIR
+				this.mountPoint = mountPoint;
+			} else {
+				throw new IllegalArgumentException("mount point must be an existing directory");
+			}
+			return this;
 		}
 
 		@Override

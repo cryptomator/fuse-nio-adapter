@@ -13,6 +13,7 @@ import org.cryptomator.integrations.mount.MountProvider;
 import org.cryptomator.integrations.mount.UnmountFailedException;
 import org.cryptomator.jfuse.api.Fuse;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
@@ -24,8 +25,8 @@ public class WinFspMountProvider implements MountProvider {
 
 	private static final Set<MountFeature> FEATURES = Set.of(//
 			MountFeature.MOUNT_FLAGS, //
-			MountFeature.MOUNT_POINT_DRIVE_LETTER, //
-			MountFeature.MOUNT_POINT_EMPTY_DIR, //
+			MountFeature.MOUNT_AS_DRIVE_LETTER, //
+			MountFeature.MOUNT_WITHIN_EXISTING_PARENT, //
 			MountFeature.UNMOUNT_FORCED, //
 			MountFeature.ON_EXIT_ACTION, //
 			MountFeature.READ_ONLY);
@@ -68,9 +69,19 @@ public class WinFspMountProvider implements MountProvider {
 
 		boolean isReadOnly = false;
 
-
 		WinFspMountBuilder(Path vfsRoot) {
 			super(vfsRoot);
+		}
+
+		@Override
+		public MountBuilder setMountpoint(Path mountPoint) {
+			if (mountPoint.getRoot().equals(mountPoint) // MOUNT_AS_DRIVE_LETTER
+					|| Files.isDirectory(mountPoint.getParent()) && Files.notExists(mountPoint)) { // MOUNT_WITHIN_EXISTING_PARENT
+				this.mountPoint = mountPoint;
+				return this;
+			} else {
+				throw new IllegalArgumentException("mount point must either be a drive letter or a non-existing node within an existing parent");
+			}
 		}
 
 		@Override

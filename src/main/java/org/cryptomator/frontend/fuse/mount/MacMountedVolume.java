@@ -44,7 +44,11 @@ class MacMountedVolume implements Mount {
 			p.waitFor(10, TimeUnit.SECONDS);
 			fuse.close();
 			unmounted = true;
-		} catch (TimeoutException | IOException | InterruptedException e) {
+			// TODO: dedup:
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			throw new UnmountFailedException(e);
+		} catch (TimeoutException | IOException e) {
 			throw new UnmountFailedException(e);
 		}
 	}
@@ -60,7 +64,11 @@ class MacMountedVolume implements Mount {
 			}
 			fuse.close();
 			unmounted = true;
-		} catch (TimeoutException | IOException | InterruptedException e) {
+			// TODO: dedup:
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			throw new UnmountFailedException(e);
+		} catch (TimeoutException | IOException e) {
 			throw new UnmountFailedException(e);
 		}
 	}
