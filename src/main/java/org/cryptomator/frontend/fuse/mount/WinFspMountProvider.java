@@ -55,7 +55,7 @@ public class WinFspMountProvider implements MountProvider {
 	@Override
 	public String getDefaultMountFlags(String mountName) {
 		return String.join(" ",//
-				"-ouid=-1", "-ogid=-1", "-oVolumePrefix=/localhost/\"" + mountName + "\""); //TODO: research and use correct ones
+				"-ouid=-1", "-ogid=-1", "-oVolumePrefix=/localhost/" + mountName); //TODO: research and use correct ones
 	}
 
 	static class WinFspMountBuilder implements MountBuilder {
@@ -114,7 +114,7 @@ public class WinFspMountProvider implements MountProvider {
 					adjustMountFlagsToReadOnly();
 				}
 				fuse.mount("fuse-nio-adapter", mountPoint, mountFlags);
-				return new WinfspMount(fuse, fuseAdapter);
+				return new WinfspMount(fuse, fuseAdapter, mountPoint);
 			} catch (org.cryptomator.jfuse.api.MountFailedException e) {
 				throw new MountFailedException(e);
 			}
@@ -139,11 +139,11 @@ public class WinFspMountProvider implements MountProvider {
 
 	}
 
-	private record WinfspMount(Fuse fuseBinding, FuseNioAdapter fuseNioAdapter) implements Mount {
+	private record WinfspMount(Fuse fuseBinding, FuseNioAdapter fuseNioAdapter, Path mountpoint) implements Mount {
 
 		@Override
 		public Path getAccessPoint() {
-			return null;
+			return mountpoint;
 		}
 
 		@Override
