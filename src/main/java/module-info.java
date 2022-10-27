@@ -1,6 +1,7 @@
 import org.cryptomator.frontend.fuse.mount.FuseTMountProvider;
 import org.cryptomator.frontend.fuse.mount.MacFuseMountProvider;
 import org.cryptomator.integrations.mount.MountProvider;
+import org.cryptomator.frontend.fuse.mount.WinFspMountProvider;
 
 module org.cryptomator.frontend.fuse {
 	exports org.cryptomator.frontend.fuse;
@@ -15,5 +16,5 @@ module org.cryptomator.frontend.fuse {
 	requires dagger;
 	requires com.google.common;
 
-	provides MountProvider with MacFuseMountProvider, FuseTMountProvider;
+	provides MountProvider with MacFuseMountProvider, FuseTMountProvider, WinFspMountProvider;
 }

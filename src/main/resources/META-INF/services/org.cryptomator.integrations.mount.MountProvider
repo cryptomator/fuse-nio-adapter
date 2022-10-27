@@ -1,2 +1,3 @@
 org.cryptomator.frontend.fuse.mount.FuseTMountProvider
 org.cryptomator.frontend.fuse.mount.MacFuseMountProvider
+org.cryptomator.frontend.fuse.mount.WinFspMountProvider
