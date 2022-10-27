@@ -4,6 +4,7 @@ import org.cryptomator.frontend.fuse.AdapterFactory;
 import org.cryptomator.frontend.fuse.FileNameTranscoder;
 import org.cryptomator.frontend.fuse.FuseNioAdapter;
 import org.cryptomator.integrations.common.OperatingSystem;
+import org.cryptomator.integrations.common.Priority;
 import org.cryptomator.integrations.mount.Mount;
 import org.cryptomator.integrations.mount.MountBuilder;
 import org.cryptomator.integrations.mount.MountFailedException;
@@ -13,10 +14,11 @@ import org.cryptomator.integrations.mount.UnmountFailedException;
 import org.cryptomator.jfuse.api.Fuse;
 
 import java.nio.file.Path;
-import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Consumer;
 
+@Priority(100)
 @OperatingSystem(OperatingSystem.Value.WINDOWS)
 public class WinFspMountProvider implements MountProvider {
 
@@ -58,27 +60,17 @@ public class WinFspMountProvider implements MountProvider {
 				"-ouid=-1", "-ogid=-1", "-oVolumePrefix=/localhost/" + mountName); //TODO: research and use correct ones
 	}
 
-	static class WinFspMountBuilder implements MountBuilder {
+	static class WinFspMountBuilder extends AbstractMountBuilder {
 
 		// @formatter:off
 		Consumer<Throwable> onExitAction = e -> {};
 		// @formatter:on
-		Path vfsRoot;
-		Path mountPoint;
-
-		String[] mountFlags = new String[]{};
 
 		boolean isReadOnly = false;
 
 
 		WinFspMountBuilder(Path vfsRoot) {
-			this.vfsRoot = vfsRoot;
-		}
-
-		@Override
-		public MountBuilder setMountpoint(Path p) {
-			this.mountPoint = p;
-			return this;
+			super(vfsRoot);
 		}
 
 		@Override
@@ -88,15 +80,25 @@ public class WinFspMountProvider implements MountProvider {
 		}
 
 		@Override
-		public MountBuilder setMountFlags(String customFlags) {
-			this.mountFlags = customFlags.split(" "); //TODO: scheme is not sufficient!
-			return this;
-		}
-
-		@Override
 		public MountBuilder setReadOnly(boolean mountReadOnly) {
 			isReadOnly = mountReadOnly;
 			return this;
+		}
+
+		//TODO: tests!
+		/**
+		 * Combines the {@link #setMountFlags(String) mount flags} with any additional option that might have
+		 * been set separately.
+		 *
+		 * @return Mutable set of all currently set mount options
+		 */
+		protected Set<String> combinedMountFlags() {
+			var combined = new HashSet<>(mountFlags);
+			if (isReadOnly) {
+				combined.removeIf(flag -> flag.startsWith("-oumask="));
+				combined.add("-oumask=0333");
+			}
+			return combined;
 		}
 
 		@Override
@@ -110,31 +112,11 @@ public class WinFspMountProvider implements MountProvider {
 					FileNameTranscoder.transcoder());
 			try {
 				var fuse = builder.build(fuseAdapter);
-				if( isReadOnly) {
-					adjustMountFlagsToReadOnly();
-				}
-				fuse.mount("fuse-nio-adapter", mountPoint, mountFlags);
+				fuse.mount("fuse-nio-adapter", mountPoint, combinedMountFlags().toArray(String[]::new));
 				return new WinfspMount(fuse, fuseAdapter, mountPoint);
 			} catch (org.cryptomator.jfuse.api.MountFailedException e) {
 				throw new MountFailedException(e);
 			}
-		}
-
-		//TODO: tests!
-		void adjustMountFlagsToReadOnly() {
-			//Search Array
-			boolean match;
-			for (int i = 0; i < mountFlags.length; i++) {
-				match = mountFlags[i].startsWith("-oumask=");
-				if (match) {
-					mountFlags[i] = "-oumask=333";
-					return;
-				}
-			}
-			//if not found, "append" option
-			var tmp = Arrays.copyOf(mountFlags, mountFlags.length + 1);
-			tmp[mountFlags.length] = "-oumask0333";
-			this.mountFlags = tmp;
 		}
 
 	}
