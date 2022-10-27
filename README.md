@@ -6,7 +6,7 @@
 # fuse-nio-adapter
 Provides directory contents specified by a `java.nio.file.Path` via a FUSE filesystem.
 
-Uses [jnr-fuse](https://github.com/SerCeMan/jnr-fuse), i.e. you need to install the specified fuse drivers for your OS.
+Uses [jfuse](https://github.com/cryptomator/jfuse), i.e. you need to install the specified fuse drivers for your OS.
 
 ## Configuration Parameters
 The following system properties are used:

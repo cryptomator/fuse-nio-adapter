@@ -1,12 +1,8 @@
 package org.cryptomator.frontend.fuse;
 
-import ru.serce.jnrfuse.FuseFS;
+import org.cryptomator.jfuse.api.FuseOperations;
 
-import java.util.concurrent.TimeoutException;
-
-public interface FuseNioAdapter extends FuseFS, AutoCloseable {
-
-	boolean isMounted();
+public interface FuseNioAdapter extends FuseOperations, AutoCloseable {
 
 	/**
 	 * Checks if the filesystem is in use (and therefore an unmount attempt should be avoided).
@@ -19,21 +15,4 @@ public interface FuseNioAdapter extends FuseFS, AutoCloseable {
 	 * @return true if the filesystem is in use
 	 */
 	boolean isInUse();
-
-	/**
-	 * Sets mounted to false.
-	 * <p>
-	 * Allows custom unmount implementations to prevent subsequent invocations of {@link #umount()} to run into illegal states.
-	 */
-	void setUnmounted();
-
-	/**
-	 * If the init() callback of fuse_operations is implemented, this method blocks until it is called or a specified timeout is hit. Otherwise returns directly.
-	 *
-	 * @param timeOutMillis the timeout in milliseconds to wait until the init() call
-	 * @throws InterruptedException If the waiting thread is interrupted.
-	 * @throws TimeoutException If the waiting thread waits longer than the specified {@code timeout}.
-	 */
-	void awaitInitCall(long timeOutMillis) throws InterruptedException, TimeoutException;
-
 }
