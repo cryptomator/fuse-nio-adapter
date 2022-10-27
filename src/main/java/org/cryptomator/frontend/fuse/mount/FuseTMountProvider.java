@@ -35,7 +35,6 @@ import static org.cryptomator.integrations.mount.MountFeature.UNMOUNT_FORCED;
 public class FuseTMountProvider implements MountProvider {
 
 	private static final String DYLIB_PATH = "/usr/local/lib/libfuse-t.dylib";
-	private static final Path USER_HOME = Paths.get(System.getProperty("user.home"));
 
 	@Override
 	public String displayName() {
