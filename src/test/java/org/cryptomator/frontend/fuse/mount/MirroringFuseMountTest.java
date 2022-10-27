@@ -96,10 +96,10 @@ public class MirroringFuseMountTest {
 		}
 
 		try (var mount = mountBuilder.mount()) {
-			LOG.info("Mounted successfully to: {}", mount.getAccessPoint());
+			LOG.info("Mounted successfully to: {}", mount.getMountpoint());
 			if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.OPEN)) {
-				LOG.info("Revealing {}...", mount.getAccessPoint());
-				Desktop.getDesktop().open(mount.getAccessPoint().toFile());
+				LOG.info("Revealing {}...", mount.getMountpoint());
+				Desktop.getDesktop().open(mount.getMountpoint().toFile());
 			}
 
 			LOG.info("Enter anything to unmount...");
