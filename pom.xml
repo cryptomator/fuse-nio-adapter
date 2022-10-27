@@ -20,7 +20,7 @@
         <maven.compiler.release>19</maven.compiler.release>
 
         <!-- dependencies -->
-        <integrations-api.version>1.2.0-SNAPSHOT</integrations-api.version>
+        <integrations-api.version>1.2.0-alpha1</integrations-api.version>
         <jfuse.version>0.3.1</jfuse.version>
         <dagger.version>2.43.2</dagger.version>
         <guava.version>30.1.1-jre</guava.version>

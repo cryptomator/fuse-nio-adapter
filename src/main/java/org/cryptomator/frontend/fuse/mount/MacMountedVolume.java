@@ -26,13 +26,8 @@ class MacMountedVolume implements Mount {
 	}
 
 	@Override
-	public Path getAccessPoint() {
+	public Path getMountpoint() {
 		return mountPoint;
-	}
-
-	@Override
-	public void reveal(Consumer<Path> cmd) {
-		cmd.accept(mountPoint);
 	}
 
 	@Override

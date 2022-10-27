@@ -28,8 +28,7 @@ public class WinFspMountProvider implements MountProvider {
 			MountFeature.MOUNT_AS_DRIVE_LETTER, //
 			MountFeature.MOUNT_WITHIN_EXISTING_PARENT, //
 			MountFeature.UNMOUNT_FORCED, //
-			MountFeature.ON_EXIT_ACTION, //
-			MountFeature.READ_ONLY);
+			MountFeature.READ_ONLY); //TODO:evaluate this feature
 
 	public WinFspMountProvider() {
 	}
@@ -63,10 +62,6 @@ public class WinFspMountProvider implements MountProvider {
 
 	static class WinFspMountBuilder extends AbstractMountBuilder {
 
-		// @formatter:off
-		Consumer<Throwable> onExitAction = e -> {};
-		// @formatter:on
-
 		boolean isReadOnly = false;
 
 		WinFspMountBuilder(Path vfsRoot) {
@@ -82,12 +77,6 @@ public class WinFspMountProvider implements MountProvider {
 			} else {
 				throw new IllegalArgumentException("mount point must either be a drive letter or a non-existing node within an existing parent");
 			}
-		}
-
-		@Override
-		public MountBuilder setOnExitAction(Consumer<Throwable> onExitAction) {
-			this.onExitAction = onExitAction;
-			return this;
 		}
 
 		@Override
@@ -135,13 +124,8 @@ public class WinFspMountProvider implements MountProvider {
 	private record WinfspMount(Fuse fuseBinding, FuseNioAdapter fuseNioAdapter, Path mountpoint) implements Mount {
 
 		@Override
-		public Path getAccessPoint() {
+		public Path getMountpoint() {
 			return mountpoint;
-		}
-
-		@Override
-		public void reveal(Consumer<Path> cmd) {
-			//TODO
 		}
 
 		@Override
