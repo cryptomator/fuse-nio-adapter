@@ -28,6 +28,9 @@ import java.util.function.Consumer;
 import static org.cryptomator.integrations.mount.MountFeature.MOUNT_FLAGS;
 import static org.cryptomator.integrations.mount.MountFeature.MOUNT_TO_EXISTING_DIR;
 
+/**
+ * Mounts a file system on Linux using libfuse3.
+ */
 @Priority(100)
 @OperatingSystem(OperatingSystem.Value.LINUX)
 public class LinuxFuseProvider implements MountProvider {
