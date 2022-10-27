@@ -1,3 +1,5 @@
+import org.cryptomator.frontend.fuse.mount.WinFspMountProvider;
+
 module org.cryptomator.frontend.fuse {
 	exports org.cryptomator.frontend.fuse;
 	exports org.cryptomator.frontend.fuse.locks;
@@ -10,4 +12,7 @@ module org.cryptomator.frontend.fuse {
 	requires java.xml;
 	requires dagger;
 	requires com.google.common;
+	requires org.cryptomator.integrations.api;
+
+	provides org.cryptomator.integrations.mount.FilesystemMountProvider with WinFspMountProvider;
 }
