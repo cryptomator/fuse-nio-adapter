@@ -12,15 +12,13 @@ import org.cryptomator.integrations.mount.MountFeature;
 import org.cryptomator.integrations.mount.MountProvider;
 import org.cryptomator.integrations.mount.UnmountFailedException;
 import org.cryptomator.jfuse.api.Fuse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.Normalizer;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -35,6 +33,11 @@ import static org.cryptomator.integrations.mount.MountFeature.MOUNT_TO_EXISTING_
 public class LinuxFuseProvider implements MountProvider {
 
 	private static final Path USER_HOME = Paths.get(System.getProperty("user.home"));
+	private static final String[] LIB_PATHS = {
+			"/usr/lib/libfuse3.so", // default
+			"/lib/x86_64-linux-gnu/libfuse3.so.3", // debian amd64
+			"/lib/aarch64-linux-gnu/libfuse3.so.3" // debiant aarch64
+	};
 
 	@Override
 	public String displayName() {
@@ -43,7 +46,7 @@ public class LinuxFuseProvider implements MountProvider {
 
 	@Override
 	public boolean isSupported() {
-		return true; // TODO: check whether fuse is installed
+		return Arrays.stream(LIB_PATHS).map(Path::of).anyMatch(Files::exists);
 	}
 
 	@Override
@@ -90,8 +93,9 @@ public class LinuxFuseProvider implements MountProvider {
 			Preconditions.checkNotNull(mountPoint);
 			Preconditions.checkNotNull(mountFlags);
 
+			var libPath = Arrays.stream(LIB_PATHS).map(Path::of).filter(Files::exists).map(Path::toString).findAny().orElseThrow();
 			var builder = Fuse.builder();
-			// TODO: do we need some builder.setLibraryPath(DYLIB_PATH);?
+			builder.setLibraryPath(libPath);
 			var fuseAdapter = AdapterFactory.createReadWriteAdapter(vfsRoot, //
 					builder.errno(), //
 					AdapterFactory.DEFAULT_MAX_FILENAMELENGTH, //
