@@ -3,7 +3,6 @@ package org.cryptomator.frontend.fuse;
 import org.cryptomator.jfuse.api.FileInfo;
 import org.cryptomator.jfuse.api.Stat;
 
-import javax.inject.Inject;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -15,16 +14,12 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.PosixFileAttributes;
 import java.util.Set;
 
-@PerAdapter
 public class ReadOnlyFileHandler implements Closeable {
 
 	protected final OpenFileFactory openFiles;
-	protected final FileAttributesUtil attrUtil;
 
-	@Inject
-	public ReadOnlyFileHandler(OpenFileFactory openFiles, FileAttributesUtil attrUtil) {
+	public ReadOnlyFileHandler(OpenFileFactory openFiles) {
 		this.openFiles = openFiles;
-		this.attrUtil = attrUtil;
 	}
 
 	public void open(Path path, FileInfo fi) throws IOException {
@@ -85,7 +80,7 @@ public class ReadOnlyFileHandler implements Closeable {
 		} else {
 			stat.setMode(0555);
 		}
-		attrUtil.copyBasicFileAttributesFromNioToFuse(attrs, stat);
+		FileAttributesUtil.copyBasicFileAttributesFromNioToFuse(attrs, stat);
 		return 0;
 	}
 

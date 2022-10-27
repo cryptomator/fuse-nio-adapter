@@ -5,6 +5,11 @@ import org.cryptomator.jfuse.api.FuseOperations;
 public interface FuseNioAdapter extends FuseOperations, AutoCloseable {
 
 	/**
+	 * The default value for the maximum supported filename length.
+	 */
+	int DEFAULT_MAX_FILENAMELENGTH = 254; // 255 is preferred, but nautilus checks for this value + 1
+
+	/**
 	 * Checks if the filesystem is in use (and therefore an unmount attempt should be avoided).
 	 * <p>
 	 * Important: This function only checks, like the name suggests, if the filesystem is busy and used. A return value of {@code false} should not be considered as an unmount can be safely and successfully executed and thus an unmount may fail.

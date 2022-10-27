@@ -4,7 +4,6 @@ import org.cryptomator.jfuse.api.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
@@ -12,17 +11,11 @@ import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.PosixFileAttributes;
 
-@PerAdapter
 class ReadOnlyLinkHandler {
 
-	private static final Logger LOG = LoggerFactory.getLogger(ReadOnlyLinkHandler.class);
-
-	private final FileAttributesUtil attrUtil;
 	private final FileNameTranscoder fileNameTranscoder;
 
-	@Inject
-	public ReadOnlyLinkHandler(FileAttributesUtil attrUtil, FileNameTranscoder fileNameTranscoder) {
-		this.attrUtil = attrUtil;
+	public ReadOnlyLinkHandler(FileNameTranscoder fileNameTranscoder) {
 		this.fileNameTranscoder = fileNameTranscoder;
 	}
 
@@ -34,7 +27,7 @@ class ReadOnlyLinkHandler {
 			stat.setMode(0555);
 		}
 		stat.setModeBits(Stat.S_IFLNK);
-		attrUtil.copyBasicFileAttributesFromNioToFuse(attrs, stat);
+		FileAttributesUtil.copyBasicFileAttributesFromNioToFuse(attrs, stat);
 		return 0;
 	}
 

@@ -11,9 +11,7 @@ import org.cryptomator.integrations.mount.MountProvider;
 import org.cryptomator.integrations.mount.UnmountFailedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.impl.SimpleLogger;
 
-import java.awt.*;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.FileSystem;
@@ -31,9 +29,9 @@ import java.util.Scanner;
 public class MirroringFuseMountTest {
 
 	static {
-		System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "debug");
-		System.setProperty(SimpleLogger.SHOW_DATE_TIME_KEY, "true");
-		System.setProperty(SimpleLogger.DATE_TIME_FORMAT_KEY, "HH:mm:ss.SSS");
+		System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug");
+		System.setProperty("org.slf4j.simpleLogger.showDateTime", "true");
+		System.setProperty("org.slf4j.simpleLogger.dateTimeFormat", "HH:mm:ss.SSS");
 	}
 
 	private static final Logger LOG = LoggerFactory.getLogger(MirroringFuseMountTest.class);
@@ -97,11 +95,6 @@ public class MirroringFuseMountTest {
 
 		try (var mount = mountBuilder.mount()) {
 			LOG.info("Mounted successfully to: {}", mount.getMountpoint());
-			if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.OPEN)) {
-				LOG.info("Revealing {}...", mount.getMountpoint());
-				Desktop.getDesktop().open(mount.getMountpoint().toFile());
-			}
-
 			LOG.info("Enter anything to unmount...");
 			System.in.read();
 

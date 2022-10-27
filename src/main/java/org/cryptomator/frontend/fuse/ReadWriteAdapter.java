@@ -9,9 +9,8 @@ import org.cryptomator.jfuse.api.TimeSpec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
-import javax.inject.Named;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.file.AccessMode;
@@ -35,18 +34,26 @@ import java.util.Set;
 /**
  *
  */
-@PerAdapter
-public class ReadWriteAdapter extends ReadOnlyAdapter {
+public final class ReadWriteAdapter extends ReadOnlyAdapter {
 
 	private static final Logger LOG = LoggerFactory.getLogger(ReadWriteAdapter.class);
 	private final ReadWriteFileHandler fileHandler;
-	private final FileAttributesUtil attrUtil;
 
-	@Inject
-	public ReadWriteAdapter(Errno errno, @Named("root") Path root, @Named("maxFileNameLength") int maxFileNameLength, FileNameTranscoder fileNameTranscoder, FileStore fileStore, LockManager lockManager, ReadWriteDirectoryHandler dirHandler, ReadWriteFileHandler fileHandler, ReadOnlyLinkHandler linkHandler, FileAttributesUtil attrUtil, OpenFileFactory fileFactory) {
-		super(errno, root, maxFileNameLength, fileNameTranscoder, fileStore, lockManager, dirHandler, fileHandler, linkHandler, attrUtil, fileFactory);
+	private ReadWriteAdapter(Errno errno, Path root, int maxFileNameLength, FileNameTranscoder fileNameTranscoder, FileStore fileStore, OpenFileFactory openFiles, ReadWriteDirectoryHandler dirHandler, ReadWriteFileHandler fileHandler) {
+		super(errno, root, maxFileNameLength, fileNameTranscoder, fileStore, openFiles, dirHandler, fileHandler);
 		this.fileHandler = fileHandler;
-		this.attrUtil = attrUtil;
+	}
+
+	public static ReadWriteAdapter create(Errno errno, Path root, int maxFileNameLength, FileNameTranscoder fileNameTranscoder) {
+		try {
+			var fileStore = Files.getFileStore(root);
+			var openFiles = new OpenFileFactory();
+			var dirHandler = new ReadWriteDirectoryHandler(fileNameTranscoder);
+			var fileHandler = new ReadWriteFileHandler(openFiles);
+			return new ReadWriteAdapter(errno, root, maxFileNameLength, fileNameTranscoder, fileStore, openFiles, dirHandler, fileHandler);
+		} catch (IOException e) {
+			throw new UncheckedIOException(e);
+		}
 	}
 
 	@Override
@@ -119,7 +126,7 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 			var flags = fi.getOpenFlags();
 			LOG.trace("create {} with flags {}", path, flags);
 			if (fileStore.supportsFileAttributeView(PosixFileAttributeView.class)) {
-				FileAttribute<?> attrs = PosixFilePermissions.asFileAttribute(attrUtil.octalModeToPosixPermissions(mode));
+				FileAttribute<?> attrs = PosixFilePermissions.asFileAttribute(FileAttributesUtil.octalModeToPosixPermissions(mode));
 				fileHandler.createAndOpen(node, fi, attrs);
 			} else {
 				fileHandler.createAndOpen(node, fi);
@@ -148,7 +155,7 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
 			LOG.trace("chmod {} ({})", path, mode);
-			Files.setPosixFilePermissions(node, attrUtil.octalModeToPosixPermissions(mode));
+			Files.setPosixFilePermissions(node, FileAttributesUtil.octalModeToPosixPermissions(mode));
 			return 0;
 		} catch (NoSuchFileException e) {
 			LOG.warn("chmod {} failed, file not found.", path);
@@ -212,7 +219,7 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 	}
 
 	/**
-	 * Specialised method on MacOS due to the usage of the <em>-noappledouble</em> option in the {@link org.cryptomator.frontend.fuse.mount.MacMounter} and the possible existence of AppleDouble or DSStore-Files.
+	 * Specialised method on MacOS due to the usage of the <em>-noappledouble</em> option in the {@link org.cryptomator.frontend.fuse.mount.MacFuseMountProvider} and the possible existence of AppleDouble or DSStore-Files.
 	 *
 	 * @param node the directory path for which is checked for such files
 	 * @throws IOException if an AppleDouble file cannot be deleted or opening of a directory stream fails

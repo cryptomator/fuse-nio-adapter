@@ -10,7 +10,6 @@ import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mockito;
-import org.slf4j.impl.SimpleLogger;
 
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
@@ -23,9 +22,9 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 public class AccessPatternIntegrationTest {
 
 	static {
-		System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "debug");
-		System.setProperty(SimpleLogger.SHOW_DATE_TIME_KEY, "true");
-		System.setProperty(SimpleLogger.DATE_TIME_FORMAT_KEY, "HH:mm:ss.SSS");
+		System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug");
+		System.setProperty("org.slf4j.simpleLogger.showDateTime", "true");
+		System.setProperty("org.slf4j.simpleLogger.dateTimeFormat", "HH:mm:ss.SSS");
 	}
 
 	private FuseNioAdapter adapter;
@@ -33,7 +32,7 @@ public class AccessPatternIntegrationTest {
 	@BeforeEach
 	void setup(@TempDir Path tmpDir) {
 		var builder = Fuse.builder();
-		adapter = AdapterFactory.createReadWriteAdapter(tmpDir, builder.errno());
+		adapter = ReadWriteAdapter.create(builder.errno(), tmpDir, FuseNioAdapter.DEFAULT_MAX_FILENAMELENGTH, FileNameTranscoder.transcoder());
 	}
 
 	@Test

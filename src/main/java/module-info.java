@@ -10,11 +10,7 @@ module org.cryptomator.frontend.fuse {
 
 	requires org.cryptomator.jfuse;
 	requires org.cryptomator.integrations.api;
-	requires javax.inject;
-	requires java.desktop;
 	requires org.slf4j;
-	requires java.xml;
-	requires dagger;
 	requires com.google.common;
 
 	provides MountProvider with LinuxFuseProvider, MacFuseMountProvider, FuseTMountProvider, WinFspMountProvider;

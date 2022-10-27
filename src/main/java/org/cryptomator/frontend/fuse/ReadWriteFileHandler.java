@@ -4,13 +4,11 @@ import org.cryptomator.jfuse.api.FileInfo;
 import org.cryptomator.jfuse.api.Stat;
 import org.cryptomator.jfuse.api.TimeSpec;
 
-import javax.inject.Inject;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
-import java.nio.file.FileStore;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
@@ -23,12 +21,10 @@ import java.nio.file.attribute.PosixFileAttributes;
 import java.util.EnumSet;
 import java.util.Set;
 
-@PerAdapter
 public class ReadWriteFileHandler extends ReadOnlyFileHandler implements Closeable {
 
-	@Inject
-	public ReadWriteFileHandler(OpenFileFactory openFiles, FileAttributesUtil attrUtil, FileStore fileStore) {
-		super(openFiles, attrUtil);
+	public ReadWriteFileHandler(OpenFileFactory openFiles) {
+		super(openFiles);
 	}
 
 	@Override

@@ -5,7 +5,6 @@ import org.cryptomator.jfuse.api.DirFiller;
 import org.cryptomator.jfuse.api.FileInfo;
 import org.cryptomator.jfuse.api.Stat;
 
-import javax.inject.Inject;
 import java.io.IOException;
 import java.nio.file.DirectoryIteratorException;
 import java.nio.file.DirectoryStream;
@@ -16,17 +15,13 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.PosixFileAttributes;
 import java.util.Iterator;
 
-@PerAdapter
 public class ReadOnlyDirectoryHandler {
 
 	private static final Path SAME_DIR = Paths.get(".");
 	private static final Path PARENT_DIR = Paths.get("..");
-	protected final FileAttributesUtil attrUtil;
 	private final FileNameTranscoder fileNameTranscoder;
 
-	@Inject
-	public ReadOnlyDirectoryHandler(FileAttributesUtil attrUtil, FileNameTranscoder fileNameTranscoder) {
-		this.attrUtil = attrUtil;
+	public ReadOnlyDirectoryHandler(FileNameTranscoder fileNameTranscoder) {
 		this.fileNameTranscoder = fileNameTranscoder;
 	}
 
@@ -37,7 +32,7 @@ public class ReadOnlyDirectoryHandler {
 		} else {
 			stat.setMode(0555);
 		}
-		attrUtil.copyBasicFileAttributesFromNioToFuse(attrs, stat);
+		FileAttributesUtil.copyBasicFileAttributesFromNioToFuse(attrs, stat);
 		return 0;
 	}
 

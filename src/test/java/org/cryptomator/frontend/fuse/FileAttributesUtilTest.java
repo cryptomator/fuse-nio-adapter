@@ -24,8 +24,7 @@ public class FileAttributesUtilTest {
 	@ParameterizedTest
 	@MethodSource("accessModeProvider")
 	public void testAccessModeMaskToSet(Set<AccessMode> expectedModes, int mask) {
-		FileAttributesUtil util = new FileAttributesUtil();
-		Set<AccessMode> accessModes = util.accessModeMaskToSet(mask);
+		Set<AccessMode> accessModes = FileAttributesUtil.accessModeMaskToSet(mask);
 		Assertions.assertEquals(expectedModes, accessModes);
 	}
 
@@ -43,8 +42,7 @@ public class FileAttributesUtilTest {
 	@ParameterizedTest
 	@MethodSource("filePermissionProvider")
 	public void testOctalModeToPosixPermissions(Set<PosixFilePermission> expectedPerms, long octalMode) {
-		FileAttributesUtil util = new FileAttributesUtil();
-		Set<PosixFilePermission> perms = util.octalModeToPosixPermissions(octalMode);
+		Set<PosixFilePermission> perms = FileAttributesUtil.octalModeToPosixPermissions(octalMode);
 		Assertions.assertEquals(expectedPerms, perms);
 	}
 
@@ -70,7 +68,6 @@ public class FileAttributesUtilTest {
 		Mockito.when(attr.lastAccessTime()).thenReturn(ftime);
 		Mockito.when(attr.size()).thenReturn(42l);
 
-		FileAttributesUtil util = new FileAttributesUtil();
 		var stat = Mockito.mock(Stat.class);
 		var mtime = Mockito.mock(TimeSpec.class);
 		var atime = Mockito.mock(TimeSpec.class);
@@ -78,7 +75,7 @@ public class FileAttributesUtilTest {
 		Mockito.doReturn(mtime).when(stat).mTime();
 		Mockito.doReturn(atime).when(stat).aTime();
 		Mockito.doReturn(btime).when(stat).birthTime();
-		util.copyBasicFileAttributesFromNioToFuse(attr, stat);
+		FileAttributesUtil.copyBasicFileAttributesFromNioToFuse(attr, stat);
 
 		Mockito.verify(stat).setModeBits(Stat.S_IFDIR);
 		Mockito.verify(mtime).set(Instant.ofEpochSecond(424242L, 42L));
@@ -90,8 +87,7 @@ public class FileAttributesUtilTest {
 	@ParameterizedTest
 	@MethodSource("filePermissionProvider")
 	public void testPosixPermissionsToOctalMode(Set<PosixFilePermission> permissions, long expectedMode) {
-		FileAttributesUtil util = new FileAttributesUtil();
-		long mode = util.posixPermissionsToOctalMode(permissions);
+		long mode = FileAttributesUtil.posixPermissionsToOctalMode(permissions);
 		Assertions.assertEquals(expectedMode, mode);
 	}
 

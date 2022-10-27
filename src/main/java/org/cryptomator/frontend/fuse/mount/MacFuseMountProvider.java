@@ -1,8 +1,9 @@
 package org.cryptomator.frontend.fuse.mount;
 
 import com.google.common.base.Preconditions;
-import org.cryptomator.frontend.fuse.AdapterFactory;
 import org.cryptomator.frontend.fuse.FileNameTranscoder;
+import org.cryptomator.frontend.fuse.FuseNioAdapter;
+import org.cryptomator.frontend.fuse.ReadWriteAdapter;
 import org.cryptomator.integrations.common.OperatingSystem;
 import org.cryptomator.integrations.common.Priority;
 import org.cryptomator.integrations.mount.Mount;
@@ -105,10 +106,8 @@ public class MacFuseMountProvider implements MountProvider {
 
 			var builder = Fuse.builder();
 			builder.setLibraryPath(DYLIB_PATH);
-			var fuseAdapter = AdapterFactory.createReadWriteAdapter(vfsRoot, //
-					builder.errno(), //
-					AdapterFactory.DEFAULT_MAX_FILENAMELENGTH, //
-					FileNameTranscoder.transcoder().withFuseNormalization(Normalizer.Form.NFD));
+			var filenameTranscoder = FileNameTranscoder.transcoder().withFuseNormalization(Normalizer.Form.NFD);
+			var fuseAdapter = ReadWriteAdapter.create(builder.errno(), vfsRoot, FuseNioAdapter.DEFAULT_MAX_FILENAMELENGTH, filenameTranscoder);
 			var fuse = builder.build(fuseAdapter);
 			try {
 				fuse.mount("fuse-nio-adapter", mountPoint, combinedMountFlags().toArray(String[]::new));
