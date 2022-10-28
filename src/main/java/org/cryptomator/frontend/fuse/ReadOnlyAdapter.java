@@ -71,8 +71,8 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 		try {
 			var fileStore = Files.getFileStore(root);
 			var openFiles = new OpenFileFactory();
-			var dirHandler = new ReadWriteDirectoryHandler(fileNameTranscoder);
-			var fileHandler = new ReadWriteFileHandler(openFiles);
+			var dirHandler = new ReadOnlyDirectoryHandler(fileNameTranscoder);
+			var fileHandler = new ReadOnlyFileHandler(openFiles);
 			return new ReadOnlyAdapter(errno, root, maxFileNameLength, fileNameTranscoder, fileStore, openFiles, dirHandler, fileHandler);
 		} catch (IOException e) {
 			throw new UncheckedIOException(e);
