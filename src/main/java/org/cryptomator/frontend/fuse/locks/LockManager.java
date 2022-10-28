@@ -19,23 +19,23 @@ import java.util.function.Supplier;
  *
  * <p>
  * Usage Example 1:
- * <pre>
- *     try (PathLock pathLock = lockManager.lockForReading("/foo/bar/baz"); // path is not manipulated, thus read-locking
- *          DataLock dataLock = pathLock.lockDataForWriting()) { // content is manipulated, thus write-locking
- *          // write to file
+ * {@snippet :
+ *     try (var pathLock = lockManager.lockForReading("/foo/bar/baz"); // path is not manipulated, thus read-locking
+ *          var dataLock = pathLock.lockDataForWriting()) { // content is manipulated, thus write-locking
+ *     		// write to file
  *     }
- * </pre>
+ *}
  *
  * <p>
  * Usage Example 2:
- * <pre>
- *     try (PathLock srcPathLock = lockManager.lockForReading("/foo/bar/original");
- *          DataLock srcDataLock = srcPathLock.lockDataForReading(); // content will only be read, thus read-locking
- *          PathLock dstPathLock = lockManager.lockForWriting("/foo/bar/copy"); // file will be created, thus write-locking
- *          DataLock dstDataLock = srcPathLock.lockDataForWriting()) {
+ * {@snippet :
+ *     try (var srcPathLock = lockManager.lockForReading("/foo/bar/original");
+ *          var srcDataLock = srcPathLock.lockDataForReading(); // content will only be read, thus read-locking
+ *          var dstPathLock = lockManager.lockForWriting("/foo/bar/copy"); // file will be created, thus write-locking
+ *          var dstDataLock = srcPathLock.lockDataForWriting()) {
  *          // copy from /foo/bar/original to /foo/bar/copy
  *     }
- * </pre>
+ *}
  */
 public class LockManager {
 
