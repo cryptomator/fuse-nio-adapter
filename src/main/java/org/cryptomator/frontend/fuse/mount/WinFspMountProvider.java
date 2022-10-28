@@ -1,8 +1,8 @@
 package org.cryptomator.frontend.fuse.mount;
 
-import org.cryptomator.frontend.fuse.AdapterFactory;
 import org.cryptomator.frontend.fuse.FileNameTranscoder;
 import org.cryptomator.frontend.fuse.FuseNioAdapter;
+import org.cryptomator.frontend.fuse.ReadWriteAdapter;
 import org.cryptomator.integrations.common.OperatingSystem;
 import org.cryptomator.integrations.common.Priority;
 import org.cryptomator.integrations.mount.Mount;
@@ -17,7 +17,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.function.Consumer;
 
 @Priority(100)
 @OperatingSystem(OperatingSystem.Value.WINDOWS)
@@ -105,11 +104,7 @@ public class WinFspMountProvider implements MountProvider {
 		public Mount mount() throws MountFailedException {
 			var builder = Fuse.builder();
 			builder.setLibraryPath(WinfspUtil.getWinFspInstallDir() + "bin\\winfsp-x64.dll");
-
-			var fuseAdapter = AdapterFactory.createReadWriteAdapter(vfsRoot, //
-					builder.errno(), //
-					AdapterFactory.DEFAULT_MAX_FILENAMELENGTH, //
-					FileNameTranscoder.transcoder());
+			var fuseAdapter = ReadWriteAdapter.create(builder.errno(), vfsRoot, FuseNioAdapter.DEFAULT_MAX_FILENAMELENGTH, FileNameTranscoder.transcoder());
 			try {
 				var fuse = builder.build(fuseAdapter);
 				fuse.mount("fuse-nio-adapter", mountPoint, combinedMountFlags().toArray(String[]::new));

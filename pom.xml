@@ -22,9 +22,8 @@
         <!-- dependencies -->
         <integrations-api.version>1.2.0-alpha1</integrations-api.version>
         <jfuse.version>0.3.1</jfuse.version>
-        <dagger.version>2.43.2</dagger.version>
-        <guava.version>30.1.1-jre</guava.version>
-        <slf4j.version>1.7.32</slf4j.version>
+        <guava.version>31.1-jre</guava.version>
+        <slf4j.version>2.0.3</slf4j.version>
 
         <!-- test dependencies -->
         <junit.jupiter.version>5.9.0</junit.jupiter.version>
@@ -63,13 +62,6 @@
             <groupId>org.cryptomator</groupId>
             <artifactId>integrations-api</artifactId>
             <version>${integrations-api.version}</version>
-        </dependency>
-
-        <!-- DI -->
-        <dependency>
-            <groupId>com.google.dagger</groupId>
-            <artifactId>dagger</artifactId>
-            <version>${dagger.version}</version>
         </dependency>
 
         <!-- Guava -->
@@ -146,13 +138,6 @@
                 <version>3.10.1</version>
                 <configuration>
                     <showWarnings>true</showWarnings>
-                    <annotationProcessorPaths>
-                        <path>
-                            <groupId>com.google.dagger</groupId>
-                            <artifactId>dagger-compiler</artifactId>
-                            <version>${dagger.version}</version>
-                        </path>
-                    </annotationProcessorPaths>
                     <compilerArgs>
                         <compilerArg>--enable-preview</compilerArg>
                     </compilerArgs>

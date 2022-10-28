@@ -15,9 +15,8 @@ import org.cryptomator.jfuse.api.Statvfs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
-import javax.inject.Named;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.file.AccessDeniedException;
@@ -38,8 +37,7 @@ import java.util.EnumSet;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
 
-@PerAdapter
-public class ReadOnlyAdapter implements FuseNioAdapter {
+public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteAdapter {
 
 	private static final Logger LOG = LoggerFactory.getLogger(ReadOnlyAdapter.class);
 	private static final int BLOCKSIZE = 4096;
@@ -48,26 +46,37 @@ public class ReadOnlyAdapter implements FuseNioAdapter {
 	private final int maxFileNameLength;
 	protected final FileStore fileStore;
 	protected final LockManager lockManager;
+	protected final OpenFileFactory openFiles;
 	protected final FileNameTranscoder fileNameTranscoder;
 	private final ReadOnlyDirectoryHandler dirHandler;
 	private final ReadOnlyFileHandler fileHandler;
 	private final ReadOnlyLinkHandler linkHandler;
-	private final FileAttributesUtil attrUtil;
 	private final BooleanSupplier hasOpenFiles;
 
-	@Inject
-	public ReadOnlyAdapter(Errno errno, @Named("root") Path root, @Named("maxFileNameLength") int maxFileNameLength, FileNameTranscoder fileNameTranscoder, FileStore fileStore, LockManager lockManager, ReadOnlyDirectoryHandler dirHandler, ReadOnlyFileHandler fileHandler, ReadOnlyLinkHandler linkHandler, FileAttributesUtil attrUtil, OpenFileFactory fileFactory) {
+	protected ReadOnlyAdapter(Errno errno, Path root, int maxFileNameLength, FileNameTranscoder fileNameTranscoder, FileStore fileStore, OpenFileFactory openFiles, ReadOnlyDirectoryHandler dirHandler, ReadOnlyFileHandler fileHandler) {
 		this.errno = errno;
 		this.root = root;
 		this.maxFileNameLength = maxFileNameLength;
 		this.fileNameTranscoder = fileNameTranscoder;
 		this.fileStore = fileStore;
-		this.lockManager = lockManager;
+		this.lockManager = new LockManager();
+		this.openFiles = openFiles;
 		this.dirHandler = dirHandler;
 		this.fileHandler = fileHandler;
-		this.linkHandler = linkHandler;
-		this.attrUtil = attrUtil;
-		this.hasOpenFiles = () -> fileFactory.getOpenFileCount() != 0;
+		this.linkHandler = new ReadOnlyLinkHandler(fileNameTranscoder);
+		this.hasOpenFiles = () -> openFiles.getOpenFileCount() != 0;
+	}
+
+	public static ReadOnlyAdapter create(Errno errno, Path root, int maxFileNameLength, FileNameTranscoder fileNameTranscoder) {
+		try {
+			var fileStore = Files.getFileStore(root);
+			var openFiles = new OpenFileFactory();
+			var dirHandler = new ReadOnlyDirectoryHandler(fileNameTranscoder);
+			var fileHandler = new ReadOnlyFileHandler(openFiles);
+			return new ReadOnlyAdapter(errno, root, maxFileNameLength, fileNameTranscoder, fileStore, openFiles, dirHandler, fileHandler);
+		} catch (IOException e) {
+			throw new UncheckedIOException(e);
+		}
 	}
 
 	@Override
@@ -123,7 +132,7 @@ public class ReadOnlyAdapter implements FuseNioAdapter {
 	public int access(String path, int mask) {
 		try {
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
-			Set<AccessMode> accessModes = attrUtil.accessModeMaskToSet(mask);
+			Set<AccessMode> accessModes = FileAttributesUtil.accessModeMaskToSet(mask);
 			return checkAccess(node, accessModes);
 		} catch (RuntimeException e) {
 			LOG.error("checkAccess failed.", e);

@@ -2,17 +2,14 @@ package org.cryptomator.frontend.fuse;
 
 import org.cryptomator.jfuse.api.Stat;
 
-import javax.inject.Inject;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.PosixFileAttributes;
 
-@PerAdapter
 public class ReadWriteDirectoryHandler extends ReadOnlyDirectoryHandler {
 
-	@Inject
-	public ReadWriteDirectoryHandler(FileAttributesUtil attrUtil, FileNameTranscoder fileNameTranscoder) {
-		super(attrUtil, fileNameTranscoder);
+	public ReadWriteDirectoryHandler(FileNameTranscoder fileNameTranscoder) {
+		super(fileNameTranscoder);
 	}
 
 	@Override

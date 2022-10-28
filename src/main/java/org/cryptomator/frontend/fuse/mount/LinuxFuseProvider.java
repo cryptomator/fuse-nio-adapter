@@ -1,8 +1,9 @@
 package org.cryptomator.frontend.fuse.mount;
 
 import com.google.common.base.Preconditions;
-import org.cryptomator.frontend.fuse.AdapterFactory;
 import org.cryptomator.frontend.fuse.FileNameTranscoder;
+import org.cryptomator.frontend.fuse.FuseNioAdapter;
+import org.cryptomator.frontend.fuse.ReadWriteAdapter;
 import org.cryptomator.integrations.common.OperatingSystem;
 import org.cryptomator.integrations.common.Priority;
 import org.cryptomator.integrations.mount.Mount;
@@ -23,7 +24,6 @@ import java.util.EnumSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.function.Consumer;
 
 import static org.cryptomator.integrations.mount.MountFeature.MOUNT_FLAGS;
 import static org.cryptomator.integrations.mount.MountFeature.MOUNT_TO_EXISTING_DIR;
@@ -99,10 +99,7 @@ public class LinuxFuseProvider implements MountProvider {
 			var libPath = Arrays.stream(LIB_PATHS).map(Path::of).filter(Files::exists).map(Path::toString).findAny().orElseThrow();
 			var builder = Fuse.builder();
 			builder.setLibraryPath(libPath);
-			var fuseAdapter = AdapterFactory.createReadWriteAdapter(vfsRoot, //
-					builder.errno(), //
-					AdapterFactory.DEFAULT_MAX_FILENAMELENGTH, //
-					FileNameTranscoder.transcoder());
+			var fuseAdapter = ReadWriteAdapter.create(builder.errno(), vfsRoot, FuseNioAdapter.DEFAULT_MAX_FILENAMELENGTH, FileNameTranscoder.transcoder());
 			var fuse = builder.build(fuseAdapter);
 			try {
 				fuse.mount("fuse-nio-adapter", mountPoint, mountFlags.toArray(String[]::new));
