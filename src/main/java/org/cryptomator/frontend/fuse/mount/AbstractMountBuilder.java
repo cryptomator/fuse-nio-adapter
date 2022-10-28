@@ -28,7 +28,7 @@ abstract class AbstractMountBuilder implements MountBuilder {
 	public MountBuilder setMountFlags(String mountFlagsString) {
 		// we assume that each flag starts with "-"
 		var notEmpty = Predicate.not(String::isBlank);
-		this.mountFlags = Pattern.compile("\\s?-").splitAsStream(mountFlagsString).filter(notEmpty).map("-"::concat).collect(Collectors.toUnmodifiableSet());
+		this.mountFlags = Pattern.compile("\\s+-").splitAsStream(" "+mountFlagsString).filter(notEmpty).map("-"::concat).collect(Collectors.toUnmodifiableSet());
 		return this;
 	}
 
