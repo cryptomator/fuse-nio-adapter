@@ -163,7 +163,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 
 	@Override
 	public int readlink(String path, ByteBuffer buf, long size) {
-		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
+		try (PathLock pathLock = lockManager.lockForReading(path);
 			 DataLock dataLock = pathLock.lockDataForReading()) {
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
 			return linkHandler.readlink(node, buf, size);
@@ -178,7 +178,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 
 	@Override
 	public int getattr(String path, Stat stat, FileInfo fi) {
-		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
+		try (PathLock pathLock = lockManager.lockForReading(path);
 			 DataLock dataLock = pathLock.lockDataForReading()) {
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
 			BasicFileAttributes attrs;
@@ -216,7 +216,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 
 	@Override
 	public int readdir(String path, DirFiller filler, long offset, FileInfo fi, int flags) {
-		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
+		try (PathLock pathLock = lockManager.lockForReading(path);
 			 DataLock dataLock = pathLock.lockDataForReading()) {
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
 			LOG.trace("readdir {}", path);
@@ -237,7 +237,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 
 	@Override
 	public int open(String path, FileInfo fi) {
-		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
+		try (PathLock pathLock = lockManager.lockForReading(path);
 			 DataLock dataLock = pathLock.lockDataForReading()) {
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
 			LOG.trace("open {} ({})", path, fi.getFh());
@@ -257,7 +257,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 
 	@Override
 	public int read(String path, ByteBuffer buf, long size, long offset, FileInfo fi) {
-		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
+		try (PathLock pathLock = lockManager.lockForReading(path);
 			 DataLock dataLock = pathLock.lockDataForReading()) {
 			LOG.trace("read {} bytes from file {} starting at {}...", size, path, offset);
 			int read = fileHandler.read(buf, size, offset, fi);
@@ -274,7 +274,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 
 	@Override
 	public int release(String path, FileInfo fi) {
-		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
+		try (PathLock pathLock = lockManager.lockForReading(path);
 			 DataLock dataLock = pathLock.lockDataForReading()) {
 			LOG.trace("release {} ({})", path, fi.getFh());
 			fileHandler.release(fi);
@@ -299,7 +299,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 
 	@Override
 	public boolean isInUse() {
-		try (PathLock pLock = lockManager.createPathLock("/").tryForWriting()) {
+		try (PathLock pLock = lockManager.tryLockForWriting("/")) {
 			return hasOpenFiles.getAsBoolean();
 		} catch (AlreadyLockedException e) {
 			return true;

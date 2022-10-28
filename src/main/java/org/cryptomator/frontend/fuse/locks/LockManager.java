@@ -1,16 +1,17 @@
 package org.cryptomator.frontend.fuse.locks;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
-import com.google.common.cache.RemovalNotification;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
+import com.github.benmanes.caffeine.cache.RemovalCause;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Supplier;
 
 /**
  * Provides a path-based locking mechanism as described by
@@ -18,23 +19,23 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  *
  * <p>
  * Usage Example 1:
- * <pre>
- *     try (PathLock pathLock = lockManager.createPathLock("/foo/bar/baz").forReading(); // path is not manipulated, thus read-locking
- *          DataLock dataLock = pathLock.lockDataForWriting()) { // content is manipulated, thus write-locking
- *          // write to file
+ * {@snippet :
+ *     try (var pathLock = lockManager.lockForReading("/foo/bar/baz"); // path is not manipulated, thus read-locking
+ *          var dataLock = pathLock.lockDataForWriting()) { // content is manipulated, thus write-locking
+ *     		// write to file
  *     }
- * </pre>
+ *}
  *
  * <p>
  * Usage Example 2:
- * <pre>
- *     try (PathLock srcPathLock = lockManager.createPathLock("/foo/bar/original").forReading();
- *          DataLock srcDataLock = srcPathLock.lockDataForReading(); // content will only be read, thus read-locking
- *          PathLock dstPathLock = lockManager.createPathLock("/foo/bar/copy").forWriting(); // file will be created, thus write-locking
- *          DataLock dstDataLock = srcPathLock.lockDataForWriting()) {
+ * {@snippet :
+ *     try (var srcPathLock = lockManager.lockForReading("/foo/bar/original");
+ *          var srcDataLock = srcPathLock.lockDataForReading(); // content will only be read, thus read-locking
+ *          var dstPathLock = lockManager.lockForWriting("/foo/bar/copy"); // file will be created, thus write-locking
+ *          var dstDataLock = srcPathLock.lockDataForWriting()) {
  *          // copy from /foo/bar/original to /foo/bar/copy
  *     }
- * </pre>
+ *}
  */
 public class LockManager {
 
@@ -44,29 +45,44 @@ public class LockManager {
 	private final LoadingCache<List<String>, ReadWriteLock> dataLocks;
 
 	public LockManager() {
-		CacheBuilder<Object, Object> cacheBuilder = CacheBuilder.newBuilder().weakValues();
+		Caffeine<Object, Object> cacheBuilder = Caffeine.newBuilder().weakValues();
 		if (LOG.isDebugEnabled()) {
 			cacheBuilder.removalListener(this::removedReadWriteLock);
 		}
-		this.pathLocks = cacheBuilder.build(CacheLoader.from(this::createReadWriteLock));
-		this.dataLocks = cacheBuilder.build(CacheLoader.from(this::createReadWriteLock));
+		this.pathLocks = cacheBuilder.build(this::createReadWriteLock);
+		this.dataLocks = cacheBuilder.build(this::createReadWriteLock);
 	}
 
-	public PathLockBuilder createPathLock(String path) {
-		List<String> pathComponents = FilePaths.toComponents(path);
-		assert !pathComponents.isEmpty();
-		return createPathLock(pathComponents);
+	public PathLock tryLockForWriting(String path) throws AlreadyLockedException {
+		var pathComponents = FilePaths.toComponents(path);
+		var lock = lock(pathComponents, PathLock::tryWriteLock);
+		if (lock != null) {
+			return lock;
+		} else {
+			throw new AlreadyLockedException();
+		}
 	}
 
-	private PathLockBuilder createPathLock(List<String> pathComponents) {
+	public PathLock lockForReading(String path) {
+		var pathComponents = FilePaths.toComponents(path);
+		return lock(pathComponents, PathLock::readLock);
+	}
+
+	public PathLock lockForWriting(String path) {
+		var pathComponents = FilePaths.toComponents(path);
+		return lock(pathComponents, PathLock::writeLock);
+	}
+
+	private @Nullable PathLock lock(List<String> pathComponents, PathLock.Factory factory) {
 		if (pathComponents.isEmpty()) {
 			return null;
 		}
 
 		List<String> parentPathComponents = FilePaths.parentPathComponents(pathComponents);
-		PathLockBuilder parentLockBuilder = createPathLock(parentPathComponents);
-		ReadWriteLock lock = pathLocks.getUnchecked(pathComponents);
-		return new PathLockBuilderImpl(pathComponents, Optional.ofNullable(parentLockBuilder), lock, dataLocks::getUnchecked);
+		PathLock parentLock = lock(parentPathComponents, PathLock::readLock);
+		ReadWriteLock rwLock = pathLocks.get(pathComponents);
+		Supplier<ReadWriteLock> dataLockSupplier = () -> dataLocks.get(pathComponents);
+		return factory.lock(pathComponents, parentLock, rwLock, dataLockSupplier);
 	}
 
 	private ReadWriteLock createReadWriteLock(List<String> key) {
@@ -74,15 +90,15 @@ public class LockManager {
 		return new ReentrantReadWriteLock();
 	}
 
-	private void removedReadWriteLock(RemovalNotification<List<String>, ReentrantReadWriteLock> notification) {
-		LOG.trace("Deleting ReadWriteLock for {}", notification.getKey());
+	private void removedReadWriteLock(List<String> key, ReentrantReadWriteLock value, RemovalCause removalCause) {
+		LOG.trace("Deleting ReadWriteLock for {}", key);
 	}
 
 	/*
 	 * Support functions:
 	 */
 
-	// visible for testing
+	@VisibleForTesting
 	boolean isPathLocked(String path) {
 		ReadWriteLock lock = pathLocks.getIfPresent(FilePaths.toComponents(path));
 		if (lock == null) {
