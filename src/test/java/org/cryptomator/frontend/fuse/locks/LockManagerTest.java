@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class LockManagerTest {
 
 	static {
-		System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "trace");
+		System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug");
 		System.setProperty("org.slf4j.simpleLogger.showDateTime", "true");
 		System.setProperty("org.slf4j.simpleLogger.dateTimeFormat", "HH:mm:ss.SSS");
 	}
