@@ -8,6 +8,13 @@ import java.util.List;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 
+/**
+ * A data lock, either for reading (shared) or writing (exclusive).
+ *
+ * @param pathComponents The path, split into path components
+ * @param rwLock         The read-write-lock. We need to store a strong reference while in use, because LockManager works with weeak references
+ * @param lock           Either the {@code rwLock}'s read or its write lock
+ */
 public record DataLock(@Unmodifiable List<String> pathComponents, ReadWriteLock rwLock, Lock lock) implements AutoCloseable {
 
 	private static final Logger LOG = LoggerFactory.getLogger(DataLock.class);

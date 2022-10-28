@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Supplier;
 
 /**
  * Provides a path-based locking mechanism as described by
@@ -80,7 +81,8 @@ public class LockManager {
 		List<String> parentPathComponents = FilePaths.parentPathComponents(pathComponents);
 		PathLock parentLock = lock(parentPathComponents, PathLock::readLock);
 		ReadWriteLock rwLock = pathLocks.get(pathComponents);
-		return factory.lock(pathComponents, parentLock, rwLock, dataLocks::get);
+		Supplier<ReadWriteLock> dataLockSupplier = () -> dataLocks.get(pathComponents);
+		return factory.lock(pathComponents, parentLock, rwLock, dataLockSupplier);
 	}
 
 	private ReadWriteLock createReadWriteLock(List<String> key) {
