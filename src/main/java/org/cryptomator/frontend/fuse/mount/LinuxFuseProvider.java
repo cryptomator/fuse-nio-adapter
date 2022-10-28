@@ -13,6 +13,7 @@ import org.cryptomator.integrations.mount.MountFeature;
 import org.cryptomator.integrations.mount.MountProvider;
 import org.cryptomator.integrations.mount.UnmountFailedException;
 import org.cryptomator.jfuse.api.Fuse;
+import org.cryptomator.jfuse.api.FuseMountFailedException;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -104,7 +105,7 @@ public class LinuxFuseProvider implements MountProvider {
 			try {
 				fuse.mount("fuse-nio-adapter", mountPoint, mountFlags.toArray(String[]::new));
 				return new LinuxFuseMountedVolume(fuse, mountPoint);
-			} catch (org.cryptomator.jfuse.api.MountFailedException e) {
+			} catch (FuseMountFailedException e) {
 				throw new MountFailedException(e);
 			}
 		}

@@ -12,6 +12,7 @@ import org.cryptomator.integrations.mount.MountFeature;
 import org.cryptomator.integrations.mount.MountProvider;
 import org.cryptomator.integrations.mount.UnmountFailedException;
 import org.cryptomator.jfuse.api.Fuse;
+import org.cryptomator.jfuse.api.FuseMountFailedException;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -109,7 +110,7 @@ public class WinFspMountProvider implements MountProvider {
 				var fuse = builder.build(fuseAdapter);
 				fuse.mount("fuse-nio-adapter", mountPoint, combinedMountFlags().toArray(String[]::new));
 				return new WinfspMount(fuse, fuseAdapter, mountPoint);
-			} catch (org.cryptomator.jfuse.api.MountFailedException e) {
+			} catch (FuseMountFailedException e) {
 				throw new MountFailedException(e);
 			}
 		}

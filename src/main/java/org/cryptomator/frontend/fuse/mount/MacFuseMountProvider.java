@@ -12,6 +12,7 @@ import org.cryptomator.integrations.mount.MountFailedException;
 import org.cryptomator.integrations.mount.MountFeature;
 import org.cryptomator.integrations.mount.MountProvider;
 import org.cryptomator.jfuse.api.Fuse;
+import org.cryptomator.jfuse.api.FuseMountFailedException;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -112,7 +113,7 @@ public class MacFuseMountProvider implements MountProvider {
 			try {
 				fuse.mount("fuse-nio-adapter", mountPoint, combinedMountFlags().toArray(String[]::new));
 				return new MacMountedVolume(fuse, mountPoint);
-			} catch (org.cryptomator.jfuse.api.MountFailedException e) {
+			} catch (FuseMountFailedException e) {
 				throw new MountFailedException(e);
 			}
 		}
