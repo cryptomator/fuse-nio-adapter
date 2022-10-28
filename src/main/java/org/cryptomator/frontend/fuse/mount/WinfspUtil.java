@@ -31,7 +31,8 @@ public class WinfspUtil {
 
 	static String readWinFspInstallDirFromRegistry() {
 		try {
-			Process p = Runtime.getRuntime().exec("reg query " + REG_WINFSP_KEY + " /v " + REG_WINFSP_VALUE);
+			ProcessBuilder command = new ProcessBuilder("reg", "query", REG_WINFSP_KEY, "/v", REG_WINFSP_VALUE);
+			Process p = command.start();
 			BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
 			p.waitFor(3000, TimeUnit.MILLISECONDS);
 			if (p.exitValue() != 0) {
@@ -52,13 +53,11 @@ public class WinfspUtil {
 		}
 	}
 
-
 	static class WinFspNotFoundException extends RuntimeException {
 
 		public WinFspNotFoundException(Exception e) {
 			super(e);
 		}
 	}
-
 
 }
