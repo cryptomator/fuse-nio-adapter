@@ -30,8 +30,7 @@ public class ReadWriteFileHandler extends ReadOnlyFileHandler implements Closeab
 	@Override
 	public int getattr(Path node, BasicFileAttributes attrs, Stat stat) {
 		int result = super.getattr(node, attrs, stat);
-		if (result == 0 && attrs instanceof PosixFileAttributes) {
-			PosixFileAttributes posixAttrs = (PosixFileAttributes) attrs;
+		if (result == 0 && attrs instanceof PosixFileAttributes posixAttrs) {
 			stat.setPermissions(posixAttrs.permissions());
 		} else if (result == 0) {
 			stat.setModeBits(0777);

@@ -26,8 +26,7 @@ public class ReadOnlyDirectoryHandler {
 	}
 
 	public int getattr(Path path, BasicFileAttributes attrs, Stat stat) {
-		if (attrs instanceof PosixFileAttributes) {
-			PosixFileAttributes posixAttrs = (PosixFileAttributes) attrs;
+		if (attrs instanceof PosixFileAttributes posixAttrs) {
 			stat.setPermissions(posixAttrs.permissions());
 		} else {
 			stat.setMode(0555);

@@ -74,8 +74,7 @@ public class ReadOnlyFileHandler implements Closeable {
 	}
 
 	public int getattr(Path node, BasicFileAttributes attrs, Stat stat) {
-		if (attrs instanceof PosixFileAttributes) {
-			PosixFileAttributes posixAttrs = (PosixFileAttributes) attrs;
+		if (attrs instanceof PosixFileAttributes posixAttrs) {
 			stat.setPermissions(posixAttrs.permissions());
 		} else {
 			stat.setMode(0555);
