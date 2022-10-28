@@ -1,7 +1,6 @@
 package org.cryptomator.frontend.fuse;
 
 import org.cryptomator.frontend.fuse.locks.DataLock;
-import org.cryptomator.frontend.fuse.locks.LockManager;
 import org.cryptomator.frontend.fuse.locks.PathLock;
 import org.cryptomator.jfuse.api.Errno;
 import org.cryptomator.jfuse.api.FileInfo;
@@ -81,7 +80,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 
 	@Override
 	public int mkdir(String path, int mode) {
-		try (PathLock pathLock = lockManager.createPathLock(path).forWriting();
+		try (PathLock pathLock = lockManager.lockForWriting(path);
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
 			LOG.trace("mkdir {} ({})", path, mode);
@@ -100,7 +99,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 
 	@Override
 	public int symlink(String targetPath, String linkPath) {
-		try (PathLock pathLock = lockManager.createPathLock(linkPath).forWriting();
+		try (PathLock pathLock = lockManager.lockForWriting(linkPath);
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
 			Path link = resolvePath(fileNameTranscoder.fuseToNio(linkPath));
 			Path target = link.getFileSystem().getPath(fileNameTranscoder.fuseToNio(targetPath));
@@ -120,7 +119,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 
 	@Override
 	public int create(String path, int mode, FileInfo fi) {
-		try (PathLock pathLock = lockManager.createPathLock(path).forWriting();
+		try (PathLock pathLock = lockManager.lockForWriting(path);
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
 			var flags = fi.getOpenFlags();
@@ -151,7 +150,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 
 	@Override
 	public int chmod(String path, int mode, FileInfo fi) {
-		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
+		try (PathLock pathLock = lockManager.lockForReading(path);
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
 			LOG.trace("chmod {} ({})", path, mode);
@@ -171,7 +170,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 
 	@Override
 	public int unlink(String path) {
-		try (PathLock pathLock = lockManager.createPathLock(path).forWriting();
+		try (PathLock pathLock = lockManager.lockForWriting(path);
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
 			if (Files.isDirectory(node, LinkOption.NOFOLLOW_LINKS)) {
@@ -192,7 +191,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 
 	@Override
 	public int rmdir(String path) {
-		try (PathLock pathLock = lockManager.createPathLock(path).forWriting();
+		try (PathLock pathLock = lockManager.lockForWriting(path);
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
 			if (!Files.isDirectory(node, LinkOption.NOFOLLOW_LINKS)) {
@@ -235,9 +234,9 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 
 	@Override
 	public int rename(String oldPath, String newPath, int flags) {
-		try (PathLock oldPathLock = lockManager.createPathLock(oldPath).forWriting();
+		try (PathLock oldPathLock = lockManager.lockForWriting(oldPath);
 			 DataLock oldDataLock = oldPathLock.lockDataForWriting();
-			 PathLock newPathLock = lockManager.createPathLock(newPath).forWriting();
+			 PathLock newPathLock = lockManager.lockForWriting(newPath);
 			 DataLock newDataLock = newPathLock.lockDataForWriting()) {
 			// TODO: recursively check for open file handles
 			Path nodeOld = resolvePath(fileNameTranscoder.fuseToNio(oldPath));
@@ -261,7 +260,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 
 	@Override
 	public int utimens(String path, TimeSpec atime, TimeSpec mtime, FileInfo fi) {
-		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
+		try (PathLock pathLock = lockManager.lockForReading(path);
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
 			LOG.trace("utimens {} (last modification {}, last access {})", path, mtime, atime);
@@ -278,7 +277,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 
 	@Override
 	public int write(String path, ByteBuffer buf, long size, long offset, FileInfo fi) {
-		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
+		try (PathLock pathLock = lockManager.lockForReading(path);
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
 			LOG.trace("write {} bytes to file {} starting at {}...", size, path, offset);
 			int written = fileHandler.write(buf, size, offset, fi);
@@ -295,7 +294,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 
 	@Override
 	public int truncate(String path, long size, FileInfo fi) {
-		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
+		try (PathLock pathLock = lockManager.lockForReading(path);
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
 			LOG.trace("truncate {} {}", path, size);

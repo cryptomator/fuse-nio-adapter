@@ -11,7 +11,6 @@ import java.time.Duration;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -20,7 +19,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class LockManagerTest {
 
 	static {
-		System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug");
+		System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "trace");
 		System.setProperty("org.slf4j.simpleLogger.showDateTime", "true");
 		System.setProperty("org.slf4j.simpleLogger.dateTimeFormat", "HH:mm:ss.SSS");
 	}
@@ -37,11 +36,11 @@ public class LockManagerTest {
 			Assertions.assertFalse(lockManager.isPathLocked("/foo"));
 			Assertions.assertFalse(lockManager.isPathLocked("/foo/bar"));
 			Assertions.assertFalse(lockManager.isPathLocked("/foo/bar/baz"));
-			try (PathLock lock1 = lockManager.createPathLock("/foo/bar/baz").forReading()) {
+			try (PathLock lock1 = lockManager.lockForReading("/foo/bar/baz")) {
 				Assertions.assertTrue(lockManager.isPathLocked("/foo"));
 				Assertions.assertTrue(lockManager.isPathLocked("/foo/bar"));
 				Assertions.assertTrue(lockManager.isPathLocked("/foo/bar/baz"));
-				try (PathLock lock2 = lockManager.createPathLock("/foo/bar/baz").forReading()) {
+				try (PathLock lock2 = lockManager.lockForReading("/foo/bar/baz")) {
 					Assertions.assertNotSame(lock1, lock2);
 					Assertions.assertTrue(lockManager.isPathLocked("/foo"));
 					Assertions.assertTrue(lockManager.isPathLocked("/foo/bar"));
@@ -50,7 +49,7 @@ public class LockManagerTest {
 				Assertions.assertTrue(lockManager.isPathLocked("/foo"));
 				Assertions.assertTrue(lockManager.isPathLocked("/foo/bar"));
 				Assertions.assertTrue(lockManager.isPathLocked("/foo/bar/baz"));
-				try (PathLock lock3 = lockManager.createPathLock("/foo/bar/baz").forReading()) {
+				try (PathLock lock3 = lockManager.lockForReading("/foo/bar/baz")) {
 					Assertions.assertNotSame(lock1, lock3);
 					Assertions.assertTrue(lockManager.isPathLocked("/foo"));
 					Assertions.assertTrue(lockManager.isPathLocked("/foo/bar"));
@@ -70,26 +69,23 @@ public class LockManagerTest {
 		public void testMultipleReadLocks() {
 			LockManager lockManager = new LockManager();
 			int numThreads = 8;
-			ExecutorService threadPool = Executors.newFixedThreadPool(numThreads);
-			CyclicBarrier ready = new CyclicBarrier(8);
-			CountDownLatch done = new CountDownLatch(numThreads);
+			CyclicBarrier ready = new CyclicBarrier(numThreads);
 
-			for (int i = 0; i < numThreads; i++) {
-				int threadnum = i;
-				threadPool.submit(() -> {
-					try (PathLock lock = lockManager.createPathLock("/foo/bar/baz").forReading()) {
-						LOG.trace("ENTER thread {}", threadnum);
-						ready.await();
-						done.countDown();
-						LOG.trace("LEAVE thread {}", threadnum);
-					} catch (InterruptedException | BrokenBarrierException e) {
-						LOG.error("thread interrupted", e);
+			Assertions.assertTimeoutPreemptively(Duration.ofSeconds(2), () -> { // deadlock protection
+				try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+					for (int i = 0; i < numThreads; i++) {
+						int threadnum = i;
+						executor.submit(() -> {
+							try (PathLock lock = lockManager.lockForReading("/foo/bar/baz")) {
+								LOG.trace("ENTER thread {}", threadnum);
+								ready.await();
+								LOG.trace("LEAVE thread {}", threadnum);
+							} catch (InterruptedException | BrokenBarrierException e) {
+								LOG.error("thread interrupted", e);
+							}
+						});
 					}
-				});
-			}
-
-			Assertions.assertTimeoutPreemptively(Duration.ofSeconds(10), () -> { // deadlock protection
-				done.await();
+				}
 			});
 		}
 
@@ -98,99 +94,88 @@ public class LockManagerTest {
 		public void testMultipleWriteLocks() {
 			LockManager lockManager = new LockManager();
 			int numThreads = 8;
-			ExecutorService threadPool = Executors.newFixedThreadPool(numThreads);
-			CountDownLatch done = new CountDownLatch(numThreads);
 			AtomicBoolean occupied = new AtomicBoolean(false);
 			AtomicBoolean success = new AtomicBoolean(true);
 
-			for (int i = 0; i < numThreads; i++) {
-				int threadnum = i;
-				threadPool.submit(() -> {
-					try (PathLock lock = lockManager.createPathLock("/foo/bar/baz").forWriting()) {
-						LOG.trace("ENTER thread {}", threadnum);
-						boolean wasFree = occupied.compareAndSet(false, true);
-						Thread.sleep(50); // give other threads the chance to reach this point
-						if (!wasFree) {
-							success.set(false);
-						}
-						occupied.set(false);
-						LOG.trace("LEAVE thread {}", threadnum);
-					} catch (InterruptedException e) {
-						LOG.error("thread interrupted", e);
+			Assertions.assertTimeoutPreemptively(Duration.ofSeconds(2), () -> { // deadlock protection
+				try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+					for (int i = 0; i < numThreads; i++) {
+						int threadnum = i;
+						executor.submit(() -> {
+							try (PathLock lock = lockManager.lockForWriting("/foo/bar/baz")) {
+								LOG.trace("ENTER thread {}", threadnum);
+								boolean wasFree = occupied.compareAndSet(false, true);
+								Thread.sleep(10); // give other threads the chance to reach this point
+								if (!wasFree) {
+									success.set(false);
+								}
+								occupied.set(false);
+								LOG.trace("LEAVE thread {}", threadnum);
+							} catch (InterruptedException e) {
+								LOG.error("thread interrupted", e);
+							}
+						});
 					}
-					done.countDown();
-				});
-			}
-
-			Assertions.assertTimeoutPreemptively(Duration.ofSeconds(10), () -> { // deadlock protection
-				done.await();
+				}
 			});
 			Assertions.assertTrue(success.get());
 		}
 
 		@Test
-		@DisplayName("try-Methods fail with exception if path already locked for writing")
-		public void testTryForMethodsOnWriteLock() {
+		@DisplayName("tryLockForWriting() succeeds for unlocked resource")
+		public void testTryLockForWriting() {
 			LockManager lockManager = new LockManager();
-			ExecutorService threadPool = Executors.newFixedThreadPool(1);
-			CountDownLatch done = new CountDownLatch(1);
-			AtomicInteger exceptionCounter = new AtomicInteger();
 
-			try (PathLock lock = lockManager.createPathLock("/foo/bar/baz").forWriting()) {
-				threadPool.submit(() -> {
-					try (PathLock lockThread = lockManager.createPathLock("/foo/bar/baz").tryForWriting()) {
-						//do nuthin'
-					} catch (AlreadyLockedException e) {
-						exceptionCounter.incrementAndGet();
-					}
+			Assertions.assertDoesNotThrow(() -> {
+				try (PathLock lock = lockManager.tryLockForWriting("/foo/bar/baz")) {
+					// no-op
+				}
+			});
+		}
 
-					try (PathLock lockThread = lockManager.createPathLock("/foo/bar/baz").tryForReading()) {
-						//do nuthin'
-					} catch (AlreadyLockedException e) {
-						exceptionCounter.incrementAndGet();
-					}
-					done.countDown();
-				});
+		@Test
+		@DisplayName("tryLockForWriting() fails with exception if path already locked for writing")
+		public void testTryLockForWritingWhenAlreadyWriteLocked() {
+			LockManager lockManager = new LockManager();
+			AtomicBoolean exceptionThrown = new AtomicBoolean();
 
-				Assertions.assertTimeoutPreemptively(Duration.ofSeconds(3), () -> { // deadlock protection
-					done.await();
-				});
-			}
+			Assertions.assertTimeoutPreemptively(Duration.ofSeconds(2), () -> { // deadlock protection
+				try (PathLock existingLock = lockManager.lockForWriting("/foo/bar/baz");
+					 var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+					executor.submit(() -> {
+						try (PathLock lock = lockManager.tryLockForWriting("/foo/bar/baz")) {
+							exceptionThrown.set(false);
+						} catch (AlreadyLockedException e) {
+							exceptionThrown.set(true);
+						}
+					});
+				}
+			});
 
-			Assertions.assertEquals(2, exceptionCounter.get());
+			Assertions.assertTrue(exceptionThrown.get());
 		}
 
 
 		@Test
-		@DisplayName("try-Methods partially fail with exception if path already locked for reading")
-		public void testTryForMethodsOnReadLock() {
+		@DisplayName("tryLockForWriting() fails with exception if path already locked for reading")
+		public void testTryLockForWritingWhenAlreadyReadLocked() {
 			LockManager lockManager = new LockManager();
-			ExecutorService threadPool = Executors.newFixedThreadPool(1);
-			CountDownLatch done = new CountDownLatch(1);
-			AtomicInteger exceptionCounter = new AtomicInteger();
+			AtomicBoolean exceptionThrown = new AtomicBoolean();
 
-			try (PathLock lock = lockManager.createPathLock("/foo/bar/baz").forReading()) {
-				threadPool.submit(() -> {
-					try (PathLock lockThread = lockManager.createPathLock("/foo/bar/baz").tryForWriting()) {
-						//do nuthin'
-					} catch (AlreadyLockedException e) {
-						exceptionCounter.incrementAndGet();
-					}
+			Assertions.assertTimeoutPreemptively(Duration.ofSeconds(2), () -> { // deadlock protection
+				try (PathLock existingLock = lockManager.lockForReading("/foo/bar/baz");
+					 var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+					executor.submit(() -> {
+						try (PathLock lock = lockManager.tryLockForWriting("/foo/bar/baz")) {
+							exceptionThrown.set(false);
+						} catch (AlreadyLockedException e) {
+							exceptionThrown.set(true);
+						}
+					});
+				}
+			});
 
-					try (PathLock lockThread = lockManager.createPathLock("/foo/bar/baz").tryForReading()) {
-						//do nuthin'
-					} catch (AlreadyLockedException e) {
-						exceptionCounter.incrementAndGet();
-					}
-					done.countDown();
-				});
-
-				Assertions.assertTimeoutPreemptively(Duration.ofSeconds(3), () -> { // deadlock protection
-					done.await();
-				});
-			}
-
-			Assertions.assertEquals(1, exceptionCounter.get());
+			Assertions.assertTrue(exceptionThrown.get());
 		}
 
 	}
@@ -204,27 +189,24 @@ public class LockManagerTest {
 		public void testMultipleReadLocks() {
 			LockManager lockManager = new LockManager();
 			int numThreads = 8;
-			ExecutorService threadPool = Executors.newFixedThreadPool(numThreads);
-			CyclicBarrier ready = new CyclicBarrier(8);
-			CountDownLatch done = new CountDownLatch(numThreads);
+			CyclicBarrier ready = new CyclicBarrier(numThreads);
 
-			for (int i = 0; i < numThreads; i++) {
-				int threadnum = i;
-				threadPool.submit(() -> {
-					try (PathLock pathLock = lockManager.createPathLock("/foo/bar/baz").forReading(); //
-						 DataLock dataLock = pathLock.lockDataForReading()) {
-						LOG.trace("ENTER thread {}", threadnum);
-						ready.await();
-						done.countDown();
-						LOG.trace("LEAVE thread {}", threadnum);
-					} catch (InterruptedException | BrokenBarrierException e) {
-						LOG.error("thread interrupted", e);
+			Assertions.assertTimeoutPreemptively(Duration.ofSeconds(2), () -> { // deadlock protection
+				try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+					for (int i = 0; i < numThreads; i++) {
+						int threadnum = i;
+						executor.submit(() -> {
+							try (PathLock pathLock = lockManager.lockForReading("/foo/bar/baz"); //
+								 DataLock dataLock = pathLock.lockDataForReading()) {
+								LOG.trace("ENTER thread {}", threadnum);
+								ready.await();
+								LOG.trace("LEAVE thread {}", threadnum);
+							} catch (InterruptedException | BrokenBarrierException e) {
+								LOG.error("thread interrupted", e);
+							}
+						});
 					}
-				});
-			}
-
-			Assertions.assertTimeoutPreemptively(Duration.ofSeconds(10), () -> { // deadlock protection
-				done.await();
+				}
 			});
 		}
 
@@ -233,33 +215,30 @@ public class LockManagerTest {
 		public void testMultipleWriteLocks() {
 			LockManager lockManager = new LockManager();
 			int numThreads = 8;
-			ExecutorService threadPool = Executors.newFixedThreadPool(numThreads);
-			CountDownLatch done = new CountDownLatch(numThreads);
 			AtomicBoolean occupied = new AtomicBoolean(false);
 			AtomicBoolean success = new AtomicBoolean(true);
 
-			for (int i = 0; i < numThreads; i++) {
-				int threadnum = i;
-				threadPool.submit(() -> {
-					try (PathLock pathLock = lockManager.createPathLock("/foo/bar/baz").forReading(); //
-						 DataLock dataLock = pathLock.lockDataForWriting()) {
-						LOG.trace("ENTER thread {}", threadnum);
-						boolean wasFree = occupied.compareAndSet(false, true);
-						Thread.sleep(50); // give other threads the chance to reach this point
-						if (!wasFree) {
-							success.set(false);
-						}
-						occupied.set(false);
-						LOG.trace("LEAVE thread {}", threadnum);
-					} catch (InterruptedException e) {
-						LOG.error("thread interrupted", e);
+			Assertions.assertTimeoutPreemptively(Duration.ofSeconds(2), () -> { // deadlock protection
+				try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+					for (int i = 0; i < numThreads; i++) {
+						int threadnum = i;
+						executor.submit(() -> {
+							try (PathLock pathLock = lockManager.lockForReading("/foo/bar/baz"); //
+								 DataLock dataLock = pathLock.lockDataForWriting()) {
+								LOG.trace("ENTER thread {}", threadnum);
+								boolean wasFree = occupied.compareAndSet(false, true);
+								Thread.sleep(10); // give other threads the chance to reach this point
+								if (!wasFree) {
+									success.set(false);
+								}
+								occupied.set(false);
+								LOG.trace("LEAVE thread {}", threadnum);
+							} catch (InterruptedException e) {
+								LOG.error("thread interrupted", e);
+							}
+						});
 					}
-					done.countDown();
-				});
-			}
-
-			Assertions.assertTimeoutPreemptively(Duration.ofSeconds(10), () -> { // deadlock protection
-				done.await();
+				}
 			});
 			Assertions.assertTrue(success.get());
 		}
