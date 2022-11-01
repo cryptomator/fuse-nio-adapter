@@ -82,10 +82,10 @@ public class MirroringFuseMountTest {
 		var mountProvider = MountProvider.get().findAny().orElseThrow(() -> new MountFailedException("Did not find a mount provider"));
 		LOG.info("Using mount provider: {}", mountProvider.displayName());
 		var mountBuilder = mountProvider.forFileSystem(pathToMirror);
-		if (mountProvider.supportedFeatures().contains(MountFeature.MOUNT_FLAGS)) {
+		if (mountProvider.supportsFeature(MountFeature.MOUNT_FLAGS)) {
 			mountBuilder.setMountFlags(mountProvider.getDefaultMountFlags("mirror"));
 		}
-		if (mountProvider.supportedFeatures().contains(MountFeature.MOUNT_TO_SYSTEM_CHOSEN_PATH)) {
+		if (mountProvider.supportsFeature(MountFeature.MOUNT_TO_SYSTEM_CHOSEN_PATH)) {
 			// don't set a mount point
 		} else {
 			System.out.println("Enter mount point: ");
@@ -101,7 +101,7 @@ public class MirroringFuseMountTest {
 			try {
 				mount.unmount();
 			} catch (UnmountFailedException e) {
-				if (mountProvider.supportedFeatures().contains(MountFeature.UNMOUNT_FORCED)) {
+				if (mountProvider.supportsFeature(MountFeature.UNMOUNT_FORCED)) {
 					LOG.warn("Graceful unmount failed. Attempting force-unmount...");
 					mount.unmountForced();
 				}
