@@ -126,7 +126,7 @@ public class LinuxFuseProvider implements MountProvider {
 			}
 
 			@Override
-			public void unmout() throws UnmountFailedException {
+			public void unmount() throws UnmountFailedException {
 				ProcessBuilder command = new ProcessBuilder("fusermount", "-u", "--", mountPoint.getFileName().toString());
 				command.directory(mountPoint.getParent().toFile());
 				try {
@@ -146,7 +146,7 @@ public class LinuxFuseProvider implements MountProvider {
 			@Override
 			public void close() throws UnmountFailedException {
 				if (!unmounted) {
-					unmout();
+					unmount();
 				}
 			}
 		}

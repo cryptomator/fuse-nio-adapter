@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.function.Consumer;
 
 class MacMountedVolume implements Mount {
 
@@ -31,7 +30,7 @@ class MacMountedVolume implements Mount {
 	}
 
 	@Override
-	public void unmout() throws UnmountFailedException {
+	public void unmount() throws UnmountFailedException {
 		ProcessBuilder command = new ProcessBuilder("umount", "--", mountPoint.getFileSystem().toString());
 		command.directory(mountPoint.getParent().toFile());
 		try {

@@ -83,8 +83,8 @@ public class OpenFileFactory implements AutoCloseable {
 	@Override
 	public synchronized void close() throws IOException {
 		IOException exception = new IOException("At least one open file could not be closed.");
-		for (Iterator<Map.Entry<Long, OpenFile>> it = openFiles.entrySet().iterator(); it.hasNext();) {
-			Map.Entry<Long, OpenFile> entry = it.next();
+		for (var it = openFiles.entrySet().iterator(); it.hasNext();) {
+			var entry = it.next();
 			OpenFile openFile = entry.getValue();
 			LOG.warn("Closing unclosed file {}", openFile);
 			try {

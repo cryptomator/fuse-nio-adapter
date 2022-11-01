@@ -85,8 +85,8 @@ public class MirroringFuseMountTest {
 		if (mountProvider.supportedFeatures().contains(MountFeature.MOUNT_FLAGS)) {
 			mountBuilder.setMountFlags(mountProvider.getDefaultMountFlags("mirror"));
 		}
-		if (mountProvider.supportedFeatures().contains(MountFeature.DEFAULT_MOUNT_POINT)) {
-			mountBuilder.setMountpoint(mountProvider.getDefaultMountPoint("mirror"));
+		if (mountProvider.supportedFeatures().contains(MountFeature.MOUNT_TO_SYSTEM_CHOSEN_PATH)) {
+			// don't set a mount point
 		} else {
 			System.out.println("Enter mount point: ");
 			Path m = Paths.get(scanner.nextLine());
@@ -99,7 +99,7 @@ public class MirroringFuseMountTest {
 			System.in.read();
 
 			try {
-				mount.unmout();
+				mount.unmount();
 			} catch (UnmountFailedException e) {
 				if (mountProvider.supportedFeatures().contains(MountFeature.UNMOUNT_FORCED)) {
 					LOG.warn("Graceful unmount failed. Attempting force-unmount...");

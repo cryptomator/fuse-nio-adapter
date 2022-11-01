@@ -125,7 +125,7 @@ public class WinFspMountProvider implements MountProvider {
 		}
 
 		@Override
-		public void unmout() throws UnmountFailedException {
+		public void unmount() throws UnmountFailedException {
 			if (fuseNioAdapter.isInUse()) {
 				throw new UnmountFailedException("Filesystem in use");
 			}

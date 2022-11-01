@@ -23,11 +23,12 @@ import java.text.Normalizer;
 import java.util.EnumSet;
 import java.util.Set;
 
-import static org.cryptomator.integrations.mount.MountFeature.DEFAULT_MOUNT_POINT;
 import static org.cryptomator.integrations.mount.MountFeature.MOUNT_FLAGS;
 import static org.cryptomator.integrations.mount.MountFeature.MOUNT_TO_EXISTING_DIR;
+import static org.cryptomator.integrations.mount.MountFeature.MOUNT_TO_SYSTEM_CHOSEN_PATH;
 import static org.cryptomator.integrations.mount.MountFeature.READ_ONLY;
 import static org.cryptomator.integrations.mount.MountFeature.UNMOUNT_FORCED;
+import static org.cryptomator.integrations.mount.MountFeature.VOLUME_ID;
 
 /**
  * Mounts a file system on macOS using macFUSE.
@@ -58,12 +59,7 @@ public class MacFuseMountProvider implements MountProvider {
 
 	@Override
 	public Set<MountFeature> supportedFeatures() {
-		return EnumSet.of(DEFAULT_MOUNT_POINT, MOUNT_FLAGS, UNMOUNT_FORCED, READ_ONLY, MOUNT_TO_EXISTING_DIR);
-	}
-
-	@Override
-	public Path getDefaultMountPoint(String volumeName) {
-		return Path.of("/Volumes", volumeName);
+		return EnumSet.of(MOUNT_FLAGS, UNMOUNT_FORCED, READ_ONLY, MOUNT_TO_EXISTING_DIR, MOUNT_TO_SYSTEM_CHOSEN_PATH, VOLUME_ID);
 	}
 
 	@Override
@@ -85,6 +81,8 @@ public class MacFuseMountProvider implements MountProvider {
 
 	private static class MacFuseMountBuilder extends AbstractMacMountBuilder {
 
+		private String volumeId;
+
 		public MacFuseMountBuilder(Path vfsRoot) {
 			super(vfsRoot);
 		}
@@ -101,9 +99,18 @@ public class MacFuseMountProvider implements MountProvider {
 		}
 
 		@Override
+		public MountBuilder setVolumeId(String volumeId) {
+			this.volumeId = volumeId;
+			return this;
+		}
+
+		@Override
 		public Mount mount() throws MountFailedException {
-			Preconditions.checkNotNull(mountPoint);
 			Preconditions.checkNotNull(mountFlags);
+			if (mountPoint == null) {
+				Preconditions.checkNotNull(volumeId);
+				mountPoint = Path.of("/Volumes/", volumeId);
+			}
 
 			var builder = Fuse.builder();
 			builder.setLibraryPath(DYLIB_PATH);
