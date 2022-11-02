@@ -31,7 +31,7 @@ class MacMountedVolume implements Mount {
 
 	@Override
 	public void unmount() throws UnmountFailedException {
-		ProcessBuilder command = new ProcessBuilder("umount", "--", mountPoint.getFileSystem().toString());
+		ProcessBuilder command = new ProcessBuilder("diskutil", "unmount", mountPoint.getFileName().toString());
 		command.directory(mountPoint.getParent().toFile());
 		try {
 			Process p = command.start();
@@ -49,7 +49,7 @@ class MacMountedVolume implements Mount {
 
 	@Override
 	public void unmountForced() throws UnmountFailedException {
-		ProcessBuilder command = new ProcessBuilder("umount", "--", "-f", mountPoint.getFileSystem().toString());
+		ProcessBuilder command = new ProcessBuilder("diskutil", "unmount", "force", mountPoint.getFileName().toString());
 		command.directory(mountPoint.getParent().toFile());
 		try {
 			Process p = command.start();
