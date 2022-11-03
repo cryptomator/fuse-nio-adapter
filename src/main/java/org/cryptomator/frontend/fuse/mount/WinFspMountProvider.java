@@ -30,6 +30,8 @@ public class WinFspMountProvider implements MountProvider {
 			MountFeature.UNMOUNT_FORCED, //
 			MountFeature.READ_ONLY); //TODO:evaluate this feature
 
+	private static final String OS_ARCH = System.getProperty("os.arch").toLowerCase();
+
 	public WinFspMountProvider() {
 	}
 
@@ -56,8 +58,7 @@ public class WinFspMountProvider implements MountProvider {
 	//For all options, see https://github.com/winfsp/winfsp/blob/84b3f98d383b265ebdb33891fc911eaafb878497/src/dll/fuse/fuse.c#L628
 	@Override
 	public String getDefaultMountFlags(String mountName) {
-		return String.join(" ",//
-				"-ouid=-1", "-ogid=-1", "-oVolumePrefix=/localhost/" + mountName); //TODO: research and use correct ones
+		return "-ouid=-1 -ogid=-1"; // TODO: research and use correct ones // FIXME: `-oVolumePrefix=/localhost/" + mountName` only supported for MOUNT_AS_DRIVE_LETTER
 	}
 
 	static class WinFspMountBuilder extends AbstractMountBuilder {
@@ -104,7 +105,8 @@ public class WinFspMountProvider implements MountProvider {
 		@Override
 		public Mount mount() throws MountFailedException {
 			var builder = Fuse.builder();
-			builder.setLibraryPath(WinfspUtil.getWinFspInstallDir() + "bin\\winfsp-x64.dll");
+			var libPath = WinfspUtil.getWinFspInstallDir() + "bin\\" + (OS_ARCH.contains("aarch64") ? "winfsp-a64.dll" : "winfsp-x64.dll");
+			builder.setLibraryPath(libPath);
 			var fuseAdapter = ReadWriteAdapter.create(builder.errno(), vfsRoot, FuseNioAdapter.DEFAULT_MAX_FILENAMELENGTH, FileNameTranscoder.transcoder());
 			try {
 				var fuse = builder.build(fuseAdapter);
