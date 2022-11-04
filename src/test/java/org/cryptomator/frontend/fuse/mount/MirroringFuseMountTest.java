@@ -5,9 +5,9 @@ import org.cryptomator.cryptofs.CryptoFileSystemProperties;
 import org.cryptomator.cryptofs.CryptoFileSystemProvider;
 import org.cryptomator.cryptofs.DirStructure;
 import org.cryptomator.cryptolib.common.MasterkeyFileAccess;
+import org.cryptomator.integrations.mount.MountCapability;
 import org.cryptomator.integrations.mount.MountFailedException;
-import org.cryptomator.integrations.mount.MountFeature;
-import org.cryptomator.integrations.mount.MountProvider;
+import org.cryptomator.integrations.mount.MountService;
 import org.cryptomator.integrations.mount.UnmountFailedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,12 +42,12 @@ public class MirroringFuseMountTest {
 	public static class Mirror {
 
 		public static void main(String[] args) throws MountFailedException {
-			var mountProvider = MountProvider.get().findAny().orElseThrow(() -> new MountFailedException("Did not find a mount provider"));
-			LOG.info("Using mount provider: {}", mountProvider.displayName());
+			var mountService = MountService.get().findAny().orElseThrow(() -> new MountFailedException("Did not find a mount provider"));
+			LOG.info("Using mount provider: {}", mountService.displayName());
 			try (Scanner scanner = new Scanner(System.in)) {
 				System.out.println("Enter path to the directory you want to mirror:");
 				Path p = Paths.get(scanner.nextLine());
-				mount(mountProvider, p, scanner);
+				mount(mountService, p, scanner);
 			}
 		}
 
@@ -59,8 +59,8 @@ public class MirroringFuseMountTest {
 	public static class CryptoFsMirror {
 
 		public static void main(String[] args) throws IOException, NoSuchAlgorithmException, MountFailedException {
-			var mountProvider = MountProvider.get().findAny().orElseThrow(() -> new MountFailedException("Did not find a mount provider"));
-			LOG.info("Using mount provider: {}", mountProvider.displayName());
+			var mountService = MountService.get().findAny().orElseThrow(() -> new MountFailedException("Did not find a mount provider"));
+			LOG.info("Using mount provider: {}", mountService.displayName());
 			try (Scanner scanner = new Scanner(System.in)) {
 				LOG.info("Enter path to the vault you want to mirror:");
 				Path vaultPath = Paths.get(scanner.nextLine());
@@ -75,20 +75,23 @@ public class MirroringFuseMountTest {
 						.build();
 				try (FileSystem cryptoFs = CryptoFileSystemProvider.newFileSystem(vaultPath, props)) {
 					Path p = cryptoFs.getPath("/");
-					mount(mountProvider, p, scanner);
+					mount(mountService, p, scanner);
 				}
 			}
 		}
 
 	}
 
-	private static void mount(MountProvider mountProvider, Path pathToMirror, Scanner scanner) throws MountFailedException {
+	private static void mount(MountService mountProvider, Path pathToMirror, Scanner scanner) throws MountFailedException {
 
 		var mountBuilder = mountProvider.forFileSystem(pathToMirror);
-		if (mountProvider.supportsFeature(MountFeature.MOUNT_FLAGS)) {
+		if (mountProvider.supportsCapability(MountCapability.MOUNT_FLAGS)) {
 			mountBuilder.setMountFlags(mountProvider.getDefaultMountFlags("mirror"));
 		}
-		if (mountProvider.supportsFeature(MountFeature.MOUNT_TO_SYSTEM_CHOSEN_PATH)) {
+		if (mountProvider.supportsCapability(MountCapability.VOLUME_ID)) {
+			mountBuilder.setVolumeId("mirror");
+		}
+		if (mountProvider.supportsCapability(MountCapability.MOUNT_TO_SYSTEM_CHOSEN_PATH)) {
 			// don't set a mount point
 		} else {
 			LOG.info("Enter mount point: ");
@@ -104,7 +107,7 @@ public class MirroringFuseMountTest {
 			try {
 				mount.unmount();
 			} catch (UnmountFailedException e) {
-				if (mountProvider.supportsFeature(MountFeature.UNMOUNT_FORCED)) {
+				if (mountProvider.supportsCapability(MountCapability.UNMOUNT_FORCED)) {
 					LOG.warn("Graceful unmount failed. Attempting force-unmount...");
 					mount.unmountForced();
 				}

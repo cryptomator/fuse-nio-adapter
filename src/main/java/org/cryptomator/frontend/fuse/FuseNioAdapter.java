@@ -2,6 +2,8 @@ package org.cryptomator.frontend.fuse;
 
 import org.cryptomator.jfuse.api.FuseOperations;
 
+import java.io.IOException;
+
 public interface FuseNioAdapter extends FuseOperations, AutoCloseable {
 
 	/**
@@ -20,4 +22,7 @@ public interface FuseNioAdapter extends FuseOperations, AutoCloseable {
 	 * @return true if the filesystem is in use
 	 */
 	boolean isInUse();
+
+	@Override
+	void close() throws IOException;
 }

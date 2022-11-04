@@ -7,9 +7,9 @@ import org.cryptomator.integrations.common.OperatingSystem;
 import org.cryptomator.integrations.common.Priority;
 import org.cryptomator.integrations.mount.Mount;
 import org.cryptomator.integrations.mount.MountBuilder;
+import org.cryptomator.integrations.mount.MountCapability;
 import org.cryptomator.integrations.mount.MountFailedException;
-import org.cryptomator.integrations.mount.MountFeature;
-import org.cryptomator.integrations.mount.MountProvider;
+import org.cryptomator.integrations.mount.MountService;
 import org.cryptomator.integrations.mount.UnmountFailedException;
 import org.cryptomator.jfuse.api.Fuse;
 import org.cryptomator.jfuse.api.FuseMountFailedException;
@@ -18,17 +18,18 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.TimeoutException;
 
 @Priority(100)
 @OperatingSystem(OperatingSystem.Value.WINDOWS)
-public class WinFspMountProvider implements MountProvider {
+public class WinFspMountProvider implements MountService {
 
-	private static final Set<MountFeature> FEATURES = Set.of(//
-			MountFeature.MOUNT_FLAGS, //
-			MountFeature.MOUNT_AS_DRIVE_LETTER, //
-			MountFeature.MOUNT_WITHIN_EXISTING_PARENT, //
-			MountFeature.UNMOUNT_FORCED, //
-			MountFeature.READ_ONLY); //TODO:evaluate this feature
+	private static final Set<MountCapability> FEATURES = Set.of(//
+			MountCapability.MOUNT_FLAGS, //
+			MountCapability.MOUNT_AS_DRIVE_LETTER, //
+			MountCapability.MOUNT_WITHIN_EXISTING_PARENT, //
+			MountCapability.UNMOUNT_FORCED, //
+			MountCapability.READ_ONLY); //TODO:evaluate this feature
 
 	private static final String OS_ARCH = System.getProperty("os.arch").toLowerCase();
 
@@ -51,7 +52,7 @@ public class WinFspMountProvider implements MountProvider {
 	}
 
 	@Override
-	public Set<MountFeature> supportedFeatures() {
+	public Set<MountCapability> capabilities() {
 		return FEATURES;
 	}
 
@@ -119,11 +120,10 @@ public class WinFspMountProvider implements MountProvider {
 
 	}
 
-	private record WinfspMount(Fuse fuseBinding, FuseNioAdapter fuseNioAdapter, Path mountpoint) implements Mount {
+	private static class WinfspMount extends AbstractMount {
 
-		@Override
-		public Path getMountpoint() {
-			return mountpoint;
+		public WinfspMount(Fuse fuseBinding, FuseNioAdapter fuseNioAdapter, Path mountpoint) {
+			super(fuseBinding, fuseNioAdapter, mountpoint);
 		}
 
 		@Override
@@ -131,15 +131,14 @@ public class WinFspMountProvider implements MountProvider {
 			if (fuseNioAdapter.isInUse()) {
 				throw new UnmountFailedException("Filesystem in use");
 			}
-			close();
+			unmountForced();
 		}
 
 		@Override
-		public void close() throws UnmountFailedException {
+		public void unmountForced() throws UnmountFailedException {
 			try {
-				this.fuseBinding.close();
-				this.fuseNioAdapter.close();
-			} catch (Exception e) {
+				fuse.close();
+			} catch (TimeoutException e) {
 				throw new UnmountFailedException(e);
 			}
 		}

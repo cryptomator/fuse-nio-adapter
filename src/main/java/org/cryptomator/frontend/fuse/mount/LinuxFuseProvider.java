@@ -8,9 +8,9 @@ import org.cryptomator.integrations.common.OperatingSystem;
 import org.cryptomator.integrations.common.Priority;
 import org.cryptomator.integrations.mount.Mount;
 import org.cryptomator.integrations.mount.MountBuilder;
+import org.cryptomator.integrations.mount.MountCapability;
 import org.cryptomator.integrations.mount.MountFailedException;
-import org.cryptomator.integrations.mount.MountFeature;
-import org.cryptomator.integrations.mount.MountProvider;
+import org.cryptomator.integrations.mount.MountService;
 import org.cryptomator.integrations.mount.UnmountFailedException;
 import org.cryptomator.jfuse.api.Fuse;
 import org.cryptomator.jfuse.api.FuseMountFailedException;
@@ -23,18 +23,17 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static org.cryptomator.integrations.mount.MountFeature.MOUNT_FLAGS;
-import static org.cryptomator.integrations.mount.MountFeature.MOUNT_TO_EXISTING_DIR;
+import static org.cryptomator.integrations.mount.MountCapability.MOUNT_FLAGS;
+import static org.cryptomator.integrations.mount.MountCapability.MOUNT_TO_EXISTING_DIR;
 
 /**
  * Mounts a file system on Linux using libfuse3.
  */
 @Priority(100)
 @OperatingSystem(OperatingSystem.Value.LINUX)
-public class LinuxFuseProvider implements MountProvider {
+public class LinuxFuseProvider implements MountService {
 
 	private static final Path USER_HOME = Paths.get(System.getProperty("user.home"));
 	private static final String[] LIB_PATHS = {
@@ -54,7 +53,7 @@ public class LinuxFuseProvider implements MountProvider {
 	}
 
 	@Override
-	public Set<MountFeature> supportedFeatures() {
+	public Set<MountCapability> capabilities() {
 		return EnumSet.of(MOUNT_FLAGS, MOUNT_TO_EXISTING_DIR);
 	}
 
@@ -104,37 +103,28 @@ public class LinuxFuseProvider implements MountProvider {
 			var fuse = builder.build(fuseAdapter);
 			try {
 				fuse.mount("fuse-nio-adapter", mountPoint, mountFlags.toArray(String[]::new));
-				return new LinuxFuseMountedVolume(fuse, mountPoint);
+				return new LinuxFuseMountedVolume(fuse, fuseAdapter, mountPoint);
 			} catch (FuseMountFailedException e) {
 				throw new MountFailedException(e);
 			}
 		}
 
-		private class LinuxFuseMountedVolume implements Mount {
-			private final Fuse fuse;
-			private final Path mountPoint;
+		private static class LinuxFuseMountedVolume extends AbstractMount {
 			private boolean unmounted;
 
-			public LinuxFuseMountedVolume(Fuse fuse, Path mountPoint) {
-				this.fuse = fuse;
-				this.mountPoint = mountPoint;
-			}
-
-			@Override
-			public Path getMountpoint() {
-				return mountPoint;
+			public LinuxFuseMountedVolume(Fuse fuse, FuseNioAdapter fuseNioAdapter, Path mountpoint) {
+				super(fuse, fuseNioAdapter, mountpoint);
 			}
 
 			@Override
 			public void unmount() throws UnmountFailedException {
-				ProcessBuilder command = new ProcessBuilder("fusermount", "-u", "--", mountPoint.getFileName().toString());
-				command.directory(mountPoint.getParent().toFile());
+				ProcessBuilder command = new ProcessBuilder("fusermount", "-u", "--", mountpoint.getFileName().toString());
+				command.directory(mountpoint.getParent().toFile());
 				try {
 					Process p = command.start();
-					p.waitFor(10, TimeUnit.SECONDS);
+					ProcessHelper.waitForSuccess(p, 10, "`fusermount -u`", UnmountFailedException::new);
 					fuse.close();
 					unmounted = true;
-					// TODO: dedup:
 				} catch (InterruptedException e) {
 					Thread.currentThread().interrupt();
 					throw new UnmountFailedException(e);
@@ -148,6 +138,7 @@ public class LinuxFuseProvider implements MountProvider {
 				if (!unmounted) {
 					unmount();
 				}
+				super.close();
 			}
 		}
 	}

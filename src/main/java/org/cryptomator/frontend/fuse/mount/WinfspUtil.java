@@ -1,17 +1,27 @@
 package org.cryptomator.frontend.fuse.mount;
 
+import org.cryptomator.integrations.mount.UnmountFailedException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 /**
  * Utility class to determine location of the Winfsp binary.
  * It reads <a href="https://github.com/winfsp/winfsp/wiki/WinFsp-Registry-Settings">WinFsp registry keys</a> and caches the result.
  */
 public class WinfspUtil {
+
+	private static final Logger LOG = LoggerFactory.getLogger(WinfspUtil.class);
 
 	private WinfspUtil() {
 	}
@@ -33,14 +43,13 @@ public class WinfspUtil {
 		try {
 			ProcessBuilder command = new ProcessBuilder("reg", "query", REG_WINFSP_KEY, "/v", REG_WINFSP_VALUE);
 			Process p = command.start();
-			BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-			p.waitFor(3000, TimeUnit.MILLISECONDS);
-			if (p.exitValue() != 0) {
-				throw new RuntimeException("Reading registry failed with exit code " + p.exitValue());
-			}
-			String result = reader.lines().filter(l -> l.contains(REG_WINFSP_VALUE)).findFirst().orElseThrow();
+			ProcessHelper.waitForSuccess(p, 3, "`reg query`", IOException::new);
+			String result = p.inputReader(StandardCharsets.UTF_8).lines().filter(l -> l.contains(REG_WINFSP_VALUE)).findFirst().orElseThrow();
 			return result.substring(result.indexOf(REGSTR_TOKEN) + REGSTR_TOKEN.length()).trim();
-		} catch (Exception e) {
+		} catch (TimeoutException | IOException e) {
+			throw new WinFspNotFoundException(e);
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
 			throw new WinFspNotFoundException(e);
 		}
 	}

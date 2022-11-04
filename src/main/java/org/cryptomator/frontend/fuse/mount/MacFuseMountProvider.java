@@ -8,9 +8,9 @@ import org.cryptomator.integrations.common.OperatingSystem;
 import org.cryptomator.integrations.common.Priority;
 import org.cryptomator.integrations.mount.Mount;
 import org.cryptomator.integrations.mount.MountBuilder;
+import org.cryptomator.integrations.mount.MountCapability;
 import org.cryptomator.integrations.mount.MountFailedException;
-import org.cryptomator.integrations.mount.MountFeature;
-import org.cryptomator.integrations.mount.MountProvider;
+import org.cryptomator.integrations.mount.MountService;
 import org.cryptomator.jfuse.api.Fuse;
 import org.cryptomator.jfuse.api.FuseMountFailedException;
 
@@ -23,12 +23,12 @@ import java.text.Normalizer;
 import java.util.EnumSet;
 import java.util.Set;
 
-import static org.cryptomator.integrations.mount.MountFeature.MOUNT_FLAGS;
-import static org.cryptomator.integrations.mount.MountFeature.MOUNT_TO_EXISTING_DIR;
-import static org.cryptomator.integrations.mount.MountFeature.MOUNT_TO_SYSTEM_CHOSEN_PATH;
-import static org.cryptomator.integrations.mount.MountFeature.READ_ONLY;
-import static org.cryptomator.integrations.mount.MountFeature.UNMOUNT_FORCED;
-import static org.cryptomator.integrations.mount.MountFeature.VOLUME_ID;
+import static org.cryptomator.integrations.mount.MountCapability.MOUNT_FLAGS;
+import static org.cryptomator.integrations.mount.MountCapability.MOUNT_TO_EXISTING_DIR;
+import static org.cryptomator.integrations.mount.MountCapability.MOUNT_TO_SYSTEM_CHOSEN_PATH;
+import static org.cryptomator.integrations.mount.MountCapability.READ_ONLY;
+import static org.cryptomator.integrations.mount.MountCapability.UNMOUNT_FORCED;
+import static org.cryptomator.integrations.mount.MountCapability.VOLUME_ID;
 
 /**
  * Mounts a file system on macOS using macFUSE.
@@ -37,7 +37,7 @@ import static org.cryptomator.integrations.mount.MountFeature.VOLUME_ID;
  */
 @Priority(100)
 @OperatingSystem(OperatingSystem.Value.MAC)
-public class MacFuseMountProvider implements MountProvider {
+public class MacFuseMountProvider implements MountService {
 
 	private static final String DYLIB_PATH = "/usr/local/lib/libosxfuse.2.dylib";
 	private static final Path USER_HOME = Paths.get(System.getProperty("user.home"));
@@ -58,7 +58,7 @@ public class MacFuseMountProvider implements MountProvider {
 	}
 
 	@Override
-	public Set<MountFeature> supportedFeatures() {
+	public Set<MountCapability> capabilities() {
 		return EnumSet.of(MOUNT_FLAGS, UNMOUNT_FORCED, READ_ONLY, MOUNT_TO_EXISTING_DIR, MOUNT_TO_SYSTEM_CHOSEN_PATH, VOLUME_ID);
 	}
 
@@ -119,7 +119,7 @@ public class MacFuseMountProvider implements MountProvider {
 			var fuse = builder.build(fuseAdapter);
 			try {
 				fuse.mount("fuse-nio-adapter", mountPoint, combinedMountFlags().toArray(String[]::new));
-				return new MacMountedVolume(fuse, mountPoint);
+				return new MacMountedVolume(fuse, fuseAdapter, mountPoint);
 			} catch (FuseMountFailedException e) {
 				throw new MountFailedException(e);
 			}

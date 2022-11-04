@@ -8,9 +8,9 @@ import org.cryptomator.integrations.common.OperatingSystem;
 import org.cryptomator.integrations.common.Priority;
 import org.cryptomator.integrations.mount.Mount;
 import org.cryptomator.integrations.mount.MountBuilder;
+import org.cryptomator.integrations.mount.MountCapability;
 import org.cryptomator.integrations.mount.MountFailedException;
-import org.cryptomator.integrations.mount.MountFeature;
-import org.cryptomator.integrations.mount.MountProvider;
+import org.cryptomator.integrations.mount.MountService;
 import org.cryptomator.jfuse.api.Fuse;
 import org.cryptomator.jfuse.api.FuseMountFailedException;
 
@@ -21,11 +21,11 @@ import java.text.Normalizer;
 import java.util.EnumSet;
 import java.util.Set;
 
-import static org.cryptomator.integrations.mount.MountFeature.MOUNT_FLAGS;
-import static org.cryptomator.integrations.mount.MountFeature.MOUNT_TO_EXISTING_DIR;
-import static org.cryptomator.integrations.mount.MountFeature.PORT;
-import static org.cryptomator.integrations.mount.MountFeature.READ_ONLY;
-import static org.cryptomator.integrations.mount.MountFeature.UNMOUNT_FORCED;
+import static org.cryptomator.integrations.mount.MountCapability.LOOPBACK_PORT;
+import static org.cryptomator.integrations.mount.MountCapability.MOUNT_FLAGS;
+import static org.cryptomator.integrations.mount.MountCapability.MOUNT_TO_EXISTING_DIR;
+import static org.cryptomator.integrations.mount.MountCapability.READ_ONLY;
+import static org.cryptomator.integrations.mount.MountCapability.UNMOUNT_FORCED;
 
 /**
  * Mounts a file system on macOS using fuse-t.
@@ -34,7 +34,7 @@ import static org.cryptomator.integrations.mount.MountFeature.UNMOUNT_FORCED;
  */
 @Priority(90)
 @OperatingSystem(OperatingSystem.Value.MAC)
-public class FuseTMountProvider implements MountProvider {
+public class FuseTMountProvider implements MountService {
 
 	private static final String DYLIB_PATH = "/usr/local/lib/libfuse-t.dylib";
 
@@ -54,12 +54,12 @@ public class FuseTMountProvider implements MountProvider {
 	}
 
 	@Override
-	public Set<MountFeature> supportedFeatures() {
-		return EnumSet.of(MOUNT_FLAGS, PORT, UNMOUNT_FORCED, READ_ONLY, MOUNT_TO_EXISTING_DIR);
+	public Set<MountCapability> capabilities() {
+		return EnumSet.of(MOUNT_FLAGS, LOOPBACK_PORT, UNMOUNT_FORCED, READ_ONLY, MOUNT_TO_EXISTING_DIR);
 	}
 
 	@Override
-	public int getDefaultPort() {
+	public int getDefaultLoopbackPort() {
 		return 2049;
 	}
 
@@ -89,7 +89,7 @@ public class FuseTMountProvider implements MountProvider {
 		}
 
 		@Override
-		public MountBuilder setPort(int port) {
+		public MountBuilder setLoopbackPort(int port) {
 			this.port = port;
 			return this;
 		}
@@ -115,7 +115,7 @@ public class FuseTMountProvider implements MountProvider {
 			var fuse = builder.build(fuseAdapter);
 			try {
 				fuse.mount("fuse-nio-adapter", mountPoint, combinedMountFlags().toArray(String[]::new));
-				return new MacMountedVolume(fuse, mountPoint);
+				return new MacMountedVolume(fuse, fuseAdapter, mountPoint);
 			} catch (FuseMountFailedException e) {
 				throw new MountFailedException(e);
 			}
