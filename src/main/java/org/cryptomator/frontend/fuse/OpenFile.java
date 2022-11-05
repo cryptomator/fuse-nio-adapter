@@ -48,10 +48,9 @@ public class OpenFile implements Closeable {
 			throw new IOException("Requested too many bytes");
 		} else {
 			int read = 0;
-			var dst = buf.duplicate();
-			dst.limit((int) Math.min(num, dst.limit()));
-			while (dst.hasRemaining()) {
-				int r = channel.read(dst, offset + read);
+			int toRead = (int) Math.min(num, buf.limit());
+			while (read < toRead) {
+				int r = channel.read(buf, offset + read);
 				if (r == -1) {
 					LOG.trace("Reached EOF");
 					break;
@@ -76,10 +75,9 @@ public class OpenFile implements Closeable {
 			throw new IOException("Requested too many bytes");
 		}
 		int written = 0;
-		var src = buf.asReadOnlyBuffer();
-		src.limit((int) Math.min(num, src.limit()));
-		while (src.hasRemaining()) {
-			written += channel.write(src, offset + written);
+		int toWrite = (int) Math.min(num, buf.limit());
+		while (written < toWrite) {
+			written += channel.write(buf, offset + written);
 		}
 		return written;
 	}
