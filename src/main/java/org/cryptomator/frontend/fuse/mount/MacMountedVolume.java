@@ -45,7 +45,7 @@ class MacMountedVolume extends AbstractMount {
 	}
 
 	@Override
-	public void close() throws UnmountFailedException {
+	public void close() throws UnmountFailedException, IOException {
 		if (!unmounted) {
 			unmountForced();
 		}

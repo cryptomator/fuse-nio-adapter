@@ -85,13 +85,13 @@ public class MirroringFuseMountTest {
 	private static void mount(MountService mountProvider, Path pathToMirror, Scanner scanner) throws MountFailedException {
 
 		var mountBuilder = mountProvider.forFileSystem(pathToMirror);
-		if (mountProvider.supportsCapability(MountCapability.MOUNT_FLAGS)) {
+		if (mountProvider.hasCapability(MountCapability.MOUNT_FLAGS)) {
 			mountBuilder.setMountFlags(mountProvider.getDefaultMountFlags("mirror"));
 		}
-		if (mountProvider.supportsCapability(MountCapability.VOLUME_ID)) {
+		if (mountProvider.hasCapability(MountCapability.VOLUME_ID)) {
 			mountBuilder.setVolumeId("mirror");
 		}
-		if (mountProvider.supportsCapability(MountCapability.MOUNT_TO_SYSTEM_CHOSEN_PATH)) {
+		if (mountProvider.hasCapability(MountCapability.MOUNT_TO_SYSTEM_CHOSEN_PATH)) {
 			// don't set a mount point
 		} else {
 			LOG.info("Enter mount point: ");
@@ -100,14 +100,14 @@ public class MirroringFuseMountTest {
 		}
 
 		try (var mount = mountBuilder.mount()) {
-			LOG.info("Mounted successfully to: {}", mount.getMountpoint());
+			LOG.info("Mounted successfully to: {}", mount.getMountpoint().uri());
 			LOG.info("Enter anything to unmount...");
 			System.in.read();
 
 			try {
 				mount.unmount();
 			} catch (UnmountFailedException e) {
-				if (mountProvider.supportsCapability(MountCapability.UNMOUNT_FORCED)) {
+				if (mountProvider.hasCapability(MountCapability.UNMOUNT_FORCED)) {
 					LOG.warn("Graceful unmount failed. Attempting force-unmount...");
 					mount.unmountForced();
 				}

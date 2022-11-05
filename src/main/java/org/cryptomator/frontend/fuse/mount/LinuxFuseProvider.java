@@ -134,7 +134,7 @@ public class LinuxFuseProvider implements MountService {
 			}
 
 			@Override
-			public void close() throws UnmountFailedException {
+			public void close() throws UnmountFailedException, IOException {
 				if (!unmounted) {
 					unmount();
 				}

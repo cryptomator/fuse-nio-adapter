@@ -2,6 +2,7 @@ package org.cryptomator.frontend.fuse.mount;
 
 import org.cryptomator.frontend.fuse.FuseNioAdapter;
 import org.cryptomator.integrations.mount.Mount;
+import org.cryptomator.integrations.mount.Mountpoint;
 import org.cryptomator.integrations.mount.UnmountFailedException;
 import org.cryptomator.jfuse.api.Fuse;
 import org.jetbrains.annotations.MustBeInvokedByOverriders;
@@ -23,20 +24,18 @@ abstract class AbstractMount implements Mount {
 	}
 
 	@Override
-	public Path getMountpoint() {
-		return mountpoint;
+	public Mountpoint getMountpoint() {
+		return Mountpoint.forPath(mountpoint);
 	}
 
 	@Override
 	@MustBeInvokedByOverriders
-	public void close() throws UnmountFailedException {
+	public void close() throws UnmountFailedException, IOException {
 		try {
 			fuse.close();
 			fuseNioAdapter.close();
 		} catch (TimeoutException e) {
 			throw new UnmountFailedException("Fuse loop shutdown timed out.", e);
-		} catch (IOException e) {
-			throw new UnmountFailedException("Unmount succeeded, but I/O cleanup is stuck.", e); // TODO use a different kind of exception? (would require API change)
 		}
 	}
 }
