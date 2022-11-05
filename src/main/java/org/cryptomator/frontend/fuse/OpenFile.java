@@ -40,7 +40,7 @@ public class OpenFile implements Closeable {
 	 * @return Actual number of bytes read (can be less than {@code size} if reached EOF).
 	 * @throws IOException If an exception occurs during read.
 	 */
-	public synchronized int read(ByteBuffer buf, long num, long offset) throws IOException {
+	public int read(ByteBuffer buf, long num, long offset) throws IOException {
 		long size = channel.size();
 		if (offset >= size) {
 			return 0;
@@ -70,7 +70,7 @@ public class OpenFile implements Closeable {
 	 * @return Actual number of bytes written
 	 * @throws IOException If an exception occurs during write.
 	 */
-	public synchronized int write(ByteBuffer buf, long num, long offset) throws IOException {
+	public int write(ByteBuffer buf, long num, long offset) throws IOException {
 		if (num > Integer.MAX_VALUE) {
 			throw new IOException("Requested too many bytes");
 		}
