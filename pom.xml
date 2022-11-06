@@ -20,7 +20,7 @@
         <maven.compiler.release>19</maven.compiler.release>
 
         <!-- dependencies -->
-        <integrations-api.version>1.2.0-alpha5</integrations-api.version>
+        <integrations-api.version>1.2.0-beta1</integrations-api.version>
         <jfuse.version>0.3.3</jfuse.version>
         <guava.version>31.1-jre</guava.version>
         <slf4j.version>2.0.3</slf4j.version>
