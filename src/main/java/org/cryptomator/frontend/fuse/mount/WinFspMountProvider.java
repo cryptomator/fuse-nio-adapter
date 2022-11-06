@@ -16,20 +16,21 @@ import org.cryptomator.jfuse.api.FuseMountFailedException;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
 
+import static org.cryptomator.integrations.mount.MountCapability.MOUNT_AS_DRIVE_LETTER;
+import static org.cryptomator.integrations.mount.MountCapability.MOUNT_FLAGS;
+import static org.cryptomator.integrations.mount.MountCapability.MOUNT_TO_EXISTING_DIR;
+import static org.cryptomator.integrations.mount.MountCapability.MOUNT_WITHIN_EXISTING_PARENT;
+import static org.cryptomator.integrations.mount.MountCapability.READ_ONLY;
+import static org.cryptomator.integrations.mount.MountCapability.UNMOUNT_FORCED;
+
 @Priority(100)
 @OperatingSystem(OperatingSystem.Value.WINDOWS)
 public class WinFspMountProvider implements MountService {
-
-	private static final Set<MountCapability> FEATURES = Set.of(//
-			MountCapability.MOUNT_FLAGS, //
-			MountCapability.MOUNT_AS_DRIVE_LETTER, //
-			MountCapability.MOUNT_WITHIN_EXISTING_PARENT, //
-			MountCapability.UNMOUNT_FORCED, //
-			MountCapability.READ_ONLY); //TODO:evaluate this feature
 
 	private static final String OS_ARCH = System.getProperty("os.arch").toLowerCase();
 
@@ -53,16 +54,16 @@ public class WinFspMountProvider implements MountService {
 
 	@Override
 	public Set<MountCapability> capabilities() {
-		return FEATURES;
+		return EnumSet.of(MOUNT_FLAGS, MOUNT_AS_DRIVE_LETTER, MOUNT_WITHIN_EXISTING_PARENT, UNMOUNT_FORCED, READ_ONLY);
 	}
 
 	//For all options, see https://github.com/winfsp/winfsp/blob/84b3f98d383b265ebdb33891fc911eaafb878497/src/dll/fuse/fuse.c#L628
 	@Override
 	public String getDefaultMountFlags(String mountName) {
-		return "-ouid=-1 -ogid=-1"; // TODO: research and use correct ones // FIXME: `-oVolumePrefix=/localhost/" + mountName` only supported for MOUNT_AS_DRIVE_LETTER
+		return "-ouid=-1 -ogid=-1"; // TODO: research and use correct ones
 	}
 
-	static class WinFspMountBuilder extends AbstractMountBuilder {
+	protected static class WinFspMountBuilder extends AbstractMountBuilder {
 
 		boolean isReadOnly = false;
 
@@ -87,7 +88,6 @@ public class WinFspMountProvider implements MountService {
 			return this;
 		}
 
-		//TODO: tests!
 		/**
 		 * Combines the {@link #setMountFlags(String) mount flags} with any additional option that might have
 		 * been set separately.
