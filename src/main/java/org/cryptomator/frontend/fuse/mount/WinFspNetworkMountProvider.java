@@ -14,18 +14,24 @@ import static org.cryptomator.integrations.mount.MountCapability.MOUNT_FLAGS;
 import static org.cryptomator.integrations.mount.MountCapability.READ_ONLY;
 import static org.cryptomator.integrations.mount.MountCapability.UNMOUNT_FORCED;
 
-@Priority(90)
+@Priority(100)
 @OperatingSystem(OperatingSystem.Value.WINDOWS)
 public class WinFspNetworkMountProvider extends WinFspMountProvider {
 
 	@Override
+	public String displayName() {
+		return "WinFSP (Network Drive)";
+	}
+
+	@Override
 	public Set<MountCapability> capabilities() {
+		// no MOUNT_WITHIN_EXISTING_PARENT support here
 		return EnumSet.of(MOUNT_FLAGS, MOUNT_AS_DRIVE_LETTER, UNMOUNT_FORCED, READ_ONLY);
 	}
 
 	@Override
 	public String getDefaultMountFlags(String mountName) {
-		return "-ouid=-1 -ogid=-1 -oVolumePrefix=/localhost/" + mountName; // TODO: instead of /localhost/ we can use any made-up hostname
+		return super.getDefaultMountFlags(mountName) + " -oVolumePrefix=/localhost/" + mountName; // TODO: instead of /localhost/ we can use any made-up hostname
 	}
 
 	@Override
@@ -42,9 +48,10 @@ public class WinFspNetworkMountProvider extends WinFspMountProvider {
 		@Override
 		public MountBuilder setMountpoint(Path mountPoint) {
 			if (mountPoint.getRoot().equals(mountPoint)) { // MOUNT_AS_DRIVE_LETTER
-				return super.setMountpoint(mountPoint);
+				this.mountPoint = mountPoint;
+				return this;
 			} else {
-				throw new IllegalArgumentException("mount point must either be a drive letter or a non-existing node within an existing parent");
+				throw new IllegalArgumentException("mount point must be a drive letter");
 			}
 		}
 	}

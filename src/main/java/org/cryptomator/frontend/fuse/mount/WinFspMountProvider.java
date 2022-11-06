@@ -28,28 +28,20 @@ import static org.cryptomator.integrations.mount.MountCapability.MOUNT_WITHIN_EX
 import static org.cryptomator.integrations.mount.MountCapability.READ_ONLY;
 import static org.cryptomator.integrations.mount.MountCapability.UNMOUNT_FORCED;
 
-@Priority(100)
+@Priority(90)
 @OperatingSystem(OperatingSystem.Value.WINDOWS)
 public class WinFspMountProvider implements MountService {
 
 	private static final String OS_ARCH = System.getProperty("os.arch").toLowerCase();
 
-	public WinFspMountProvider() {
-	}
-
 	@Override
 	public String displayName() {
-		return "FUSE (WinFsp)";
+		return "WinFSP";
 	}
 
 	@Override
 	public boolean isSupported() {
 		return WinfspUtil.isWinFspInstalled();
-	}
-
-	@Override
-	public MountBuilder forFileSystem(Path vfsRoot) {
-		return new WinFspMountBuilder(vfsRoot);
 	}
 
 	@Override
@@ -61,6 +53,11 @@ public class WinFspMountProvider implements MountService {
 	@Override
 	public String getDefaultMountFlags(String mountName) {
 		return "-ouid=-1 -ogid=-1"; // TODO: research and use correct ones
+	}
+
+	@Override
+	public MountBuilder forFileSystem(Path vfsRoot) {
+		return new WinFspMountBuilder(vfsRoot);
 	}
 
 	protected static class WinFspMountBuilder extends AbstractMountBuilder {
