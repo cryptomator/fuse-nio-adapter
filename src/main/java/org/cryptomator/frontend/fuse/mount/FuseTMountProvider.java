@@ -56,7 +56,7 @@ public class FuseTMountProvider implements MountService {
 
 	@Override
 	public Set<MountCapability> capabilities() {
-		return EnumSet.of(MOUNT_FLAGS, LOOPBACK_PORT, UNMOUNT_FORCED, READ_ONLY, MOUNT_TO_EXISTING_DIR, VOLUME_NAME);
+		return EnumSet.of(MOUNT_FLAGS, UNMOUNT_FORCED, READ_ONLY, MOUNT_TO_EXISTING_DIR, VOLUME_NAME); // adjusting LOOPBACK_PORT is currently broken
 	}
 
 	@Override
@@ -97,9 +97,10 @@ public class FuseTMountProvider implements MountService {
 		@Override
 		protected Set<String> combinedMountFlags() {
 			Set<String> combined = super.combinedMountFlags();
-			if (port != 0) {
-				combined.add("-l" + port);
-			}
+			// TODO: this is currently broken in fuse-t. we need to stick with the standard port
+//			if (port != 0) {
+//				combined.add("-l 0:" + port);
+//			}
 			return combined;
 		}
 
