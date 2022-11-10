@@ -27,7 +27,7 @@ abstract class AbstractMacMountBuilder extends AbstractMountBuilder {
 	 * @return Mutable set of all currently set mount options
 	 */
 	protected Set<String> combinedMountFlags() {
-		var combined = new HashSet<>(mountFlags);
+		var combined = super.combinedMountFlags();
 		if (readOnly) {
 			combined.add("-r");
 		}

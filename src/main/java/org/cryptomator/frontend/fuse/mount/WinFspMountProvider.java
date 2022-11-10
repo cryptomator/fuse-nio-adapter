@@ -27,6 +27,7 @@ import static org.cryptomator.integrations.mount.MountCapability.MOUNT_TO_EXISTI
 import static org.cryptomator.integrations.mount.MountCapability.MOUNT_WITHIN_EXISTING_PARENT;
 import static org.cryptomator.integrations.mount.MountCapability.READ_ONLY;
 import static org.cryptomator.integrations.mount.MountCapability.UNMOUNT_FORCED;
+import static org.cryptomator.integrations.mount.MountCapability.VOLUME_NAME;
 
 @Priority(90)
 @OperatingSystem(OperatingSystem.Value.WINDOWS)
@@ -46,12 +47,12 @@ public class WinFspMountProvider implements MountService {
 
 	@Override
 	public Set<MountCapability> capabilities() {
-		return EnumSet.of(MOUNT_FLAGS, MOUNT_AS_DRIVE_LETTER, MOUNT_WITHIN_EXISTING_PARENT, UNMOUNT_FORCED, READ_ONLY);
+		return EnumSet.of(MOUNT_FLAGS, MOUNT_AS_DRIVE_LETTER, MOUNT_WITHIN_EXISTING_PARENT, UNMOUNT_FORCED, READ_ONLY, VOLUME_NAME);
 	}
 
-	//For all options, see https://github.com/winfsp/winfsp/blob/84b3f98d383b265ebdb33891fc911eaafb878497/src/dll/fuse/fuse.c#L628
 	@Override
-	public String getDefaultMountFlags(String mountName) {
+	public String getDefaultMountFlags() {
+		// see: https://github.com/winfsp/winfsp/blob/84b3f98d383b265ebdb33891fc911eaafb878497/src/dll/fuse/fuse.c#L628
 		return "-ouid=-1 -ogid=-1"; // TODO: research and use correct ones
 	}
 

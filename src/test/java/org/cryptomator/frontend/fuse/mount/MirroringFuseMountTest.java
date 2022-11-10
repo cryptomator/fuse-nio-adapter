@@ -86,10 +86,13 @@ public class MirroringFuseMountTest {
 
 		var mountBuilder = mountProvider.forFileSystem(pathToMirror);
 		if (mountProvider.hasCapability(MountCapability.MOUNT_FLAGS)) {
-			mountBuilder.setMountFlags(mountProvider.getDefaultMountFlags("mirror"));
+			mountBuilder.setMountFlags(mountProvider.getDefaultMountFlags());
 		}
 		if (mountProvider.hasCapability(MountCapability.VOLUME_ID)) {
 			mountBuilder.setVolumeId("mirror");
+		}
+		if (mountProvider.hasCapability(MountCapability.VOLUME_NAME)) {
+			mountBuilder.setVolumeName("Mirror");
 		}
 		if (mountProvider.hasCapability(MountCapability.MOUNT_TO_SYSTEM_CHOSEN_PATH)) {
 			// don't set a mount point

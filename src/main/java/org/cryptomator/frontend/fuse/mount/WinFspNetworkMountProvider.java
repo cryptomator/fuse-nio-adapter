@@ -8,15 +8,20 @@ import org.cryptomator.integrations.mount.MountCapability;
 import java.nio.file.Path;
 import java.util.EnumSet;
 import java.util.Set;
+import java.util.UUID;
+import java.util.regex.Pattern;
 
 import static org.cryptomator.integrations.mount.MountCapability.MOUNT_AS_DRIVE_LETTER;
 import static org.cryptomator.integrations.mount.MountCapability.MOUNT_FLAGS;
 import static org.cryptomator.integrations.mount.MountCapability.READ_ONLY;
 import static org.cryptomator.integrations.mount.MountCapability.UNMOUNT_FORCED;
+import static org.cryptomator.integrations.mount.MountCapability.VOLUME_NAME;
 
 @Priority(100)
 @OperatingSystem(OperatingSystem.Value.WINDOWS)
 public class WinFspNetworkMountProvider extends WinFspMountProvider {
+
+	private static final Pattern RESERVED_CHARS = Pattern.compile("[^a-zA-Z0-9-._~]+"); // all but unreserved chars according to https://www.rfc-editor.org/rfc/rfc3986#section-2.3
 
 	@Override
 	public String displayName() {
@@ -26,12 +31,7 @@ public class WinFspNetworkMountProvider extends WinFspMountProvider {
 	@Override
 	public Set<MountCapability> capabilities() {
 		// no MOUNT_WITHIN_EXISTING_PARENT support here
-		return EnumSet.of(MOUNT_FLAGS, MOUNT_AS_DRIVE_LETTER, UNMOUNT_FORCED, READ_ONLY);
-	}
-
-	@Override
-	public String getDefaultMountFlags(String mountName) {
-		return super.getDefaultMountFlags(mountName) + " -oVolumePrefix=/localhost/" + mountName; // TODO: instead of /localhost/ we can use any made-up hostname
+		return EnumSet.of(MOUNT_FLAGS, MOUNT_AS_DRIVE_LETTER, UNMOUNT_FORCED, READ_ONLY, VOLUME_NAME);
 	}
 
 	@Override
@@ -41,8 +41,17 @@ public class WinFspNetworkMountProvider extends WinFspMountProvider {
 
 
 	private static class WinFspNetworkMountBuilder extends WinFspMountBuilder {
+
+		private String volumeName;
+
 		public WinFspNetworkMountBuilder(Path vfsRoot) {
 			super(vfsRoot);
+		}
+
+		@Override
+		public MountBuilder setVolumeName(String volumeName) {
+			this.volumeName = volumeName;
+			return this;
 		}
 
 		@Override
@@ -53,6 +62,17 @@ public class WinFspNetworkMountProvider extends WinFspMountProvider {
 			} else {
 				throw new IllegalArgumentException("mount point must be a drive letter");
 			}
+		}
+
+		@Override
+		protected Set<String> combinedMountFlags() {
+			var combined = super.combinedMountFlags();
+			if (volumeName != null && !volumeName.isBlank()) {
+				combined.add("-oVolumePrefix=/localhost/" + RESERVED_CHARS.matcher(volumeName).replaceAll("_"));
+			} else {
+				combined.add("-oVolumePrefix=/localhost/" + UUID.randomUUID());
+			}
+			return combined;
 		}
 	}
 }

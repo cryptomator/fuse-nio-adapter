@@ -29,6 +29,7 @@ import static org.cryptomator.integrations.mount.MountCapability.MOUNT_TO_SYSTEM
 import static org.cryptomator.integrations.mount.MountCapability.READ_ONLY;
 import static org.cryptomator.integrations.mount.MountCapability.UNMOUNT_FORCED;
 import static org.cryptomator.integrations.mount.MountCapability.VOLUME_ID;
+import static org.cryptomator.integrations.mount.MountCapability.VOLUME_NAME;
 
 /**
  * Mounts a file system on macOS using macFUSE.
@@ -59,15 +60,14 @@ public class MacFuseMountProvider implements MountService {
 
 	@Override
 	public Set<MountCapability> capabilities() {
-		return EnumSet.of(MOUNT_FLAGS, UNMOUNT_FORCED, READ_ONLY, MOUNT_TO_EXISTING_DIR, MOUNT_TO_SYSTEM_CHOSEN_PATH, VOLUME_ID);
+		return EnumSet.of(MOUNT_FLAGS, UNMOUNT_FORCED, READ_ONLY, MOUNT_TO_EXISTING_DIR, MOUNT_TO_SYSTEM_CHOSEN_PATH, VOLUME_ID, VOLUME_NAME);
 	}
 
 	@Override
-	public String getDefaultMountFlags(String volumeName) {
+	public String getDefaultMountFlags() {
 		// see: https://github.com/osxfuse/osxfuse/wiki/Mount-options
 		try {
-			return "-ovolname=" + volumeName //
-					+ " -ouid=" + Files.getAttribute(USER_HOME, "unix:uid") //
+			return " -ouid=" + Files.getAttribute(USER_HOME, "unix:uid") //
 					+ " -ogid=" + Files.getAttribute(USER_HOME, "unix:gid") //
 					+ " -oatomic_o_trunc" //
 					+ " -oauto_xattr" //

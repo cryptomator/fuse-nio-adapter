@@ -63,7 +63,7 @@ public class LinuxFuseProvider implements MountService {
 	}
 
 	@Override
-	public String getDefaultMountFlags(String mountName) {
+	public String getDefaultMountFlags() {
 		// see: https://man7.org/linux/man-pages/man8/mount.fuse3.8.html
 		try {
 			return "-oauto_unmount" //
