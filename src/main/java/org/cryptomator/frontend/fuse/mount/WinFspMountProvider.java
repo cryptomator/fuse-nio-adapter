@@ -93,7 +93,7 @@ public class WinFspMountProvider implements MountService {
 		 * @return Mutable set of all currently set mount options
 		 */
 		protected Set<String> combinedMountFlags() {
-			var combined = new HashSet<>(mountFlags);
+			var combined = super.combinedMountFlags();
 			if (isReadOnly) {
 				combined.removeIf(flag -> flag.startsWith("-oumask="));
 				combined.add("-oumask=0333");

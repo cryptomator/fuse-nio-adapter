@@ -1,6 +1,7 @@
 package org.cryptomator.frontend.fuse.mount;
 
 import org.cryptomator.integrations.mount.MountBuilder;
+import org.jetbrains.annotations.MustBeInvokedByOverriders;
 
 import java.nio.file.Path;
 import java.util.HashSet;
@@ -42,10 +43,11 @@ abstract class AbstractMountBuilder implements MountBuilder {
 
 	/**
 	 * Combines the {@link #setMountFlags(String) mount flags} with any additional option that might have
-	 * been set separately.
+	 * been set separately via {@link #setVolumeName(String)}, {@link #setReadOnly(boolean)} and the like.
 	 *
 	 * @return Mutable set of all currently set mount options
 	 */
+	@MustBeInvokedByOverriders
 	protected Set<String> combinedMountFlags() {
 		var combined = new HashSet<>(mountFlags);
 		if (volumeName != null && !volumeName.isBlank()) {
