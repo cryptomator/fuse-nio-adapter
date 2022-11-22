@@ -14,6 +14,8 @@ import org.cryptomator.integrations.mount.MountService;
 import org.cryptomator.integrations.mount.UnmountFailedException;
 import org.cryptomator.jfuse.api.Fuse;
 import org.cryptomator.jfuse.api.FuseMountFailedException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -35,6 +37,7 @@ import static org.cryptomator.integrations.mount.MountCapability.MOUNT_TO_EXISTI
 @OperatingSystem(OperatingSystem.Value.LINUX)
 public class LinuxFuseProvider implements MountService {
 
+	private static final Logger LOG = LoggerFactory.getLogger(LinuxFuseProvider.class);
 	private static final Path USER_HOME = Paths.get(System.getProperty("user.home"));
 	private static final String[] LIB_PATHS = {
 			"/usr/lib/libfuse3.so", // default
@@ -99,6 +102,9 @@ public class LinuxFuseProvider implements MountService {
 			var libPath = Arrays.stream(LIB_PATHS).map(Path::of).filter(Files::exists).map(Path::toString).findAny().orElseThrow();
 			var builder = Fuse.builder();
 			builder.setLibraryPath(libPath);
+			if (mountFlags.contains("-oallow_other") || mountFlags.contains("-oallow_root")) {
+				LOG.warn("Mounting with flag -oallow_other or -oallow_root. Ensure that in /etc/fuse.conf option user_allow_other is enabled.");
+			}
 			var fuseAdapter = ReadWriteAdapter.create(builder.errno(), vfsRoot, FuseNioAdapter.DEFAULT_MAX_FILENAMELENGTH, FileNameTranscoder.transcoder());
 			var fuse = builder.build(fuseAdapter);
 			try {
