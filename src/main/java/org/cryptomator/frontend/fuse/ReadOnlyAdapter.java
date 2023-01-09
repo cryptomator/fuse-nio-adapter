@@ -17,8 +17,10 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.AccessMode;
 import java.nio.file.FileStore;
@@ -32,6 +34,7 @@ import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.PosixFileAttributes;
+import java.nio.file.attribute.UserDefinedFileAttributeView;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
@@ -91,7 +94,9 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 				Operation.CREATE,
 				Operation.DESTROY,
 				Operation.GET_ATTR,
+				Operation.GET_XATTR,
 				Operation.INIT,
+				Operation.LIST_XATTR,
 				Operation.OPEN,
 				Operation.OPEN_DIR,
 				Operation.READ,
@@ -210,6 +215,62 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 	}
 
 	@Override
+	public int getxattr(String path, String name, ByteBuffer value) {
+		try (PathLock pathLock = lockManager.lockForReading(path);
+			 DataLock dataLock = pathLock.lockDataForReading()) {
+			Path node = resolvePath(path);
+			LOG.trace("getxattr {} {}", path, name);
+			var xattr = Files.getFileAttributeView(node, UserDefinedFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
+			if (xattr == null) {
+				return -errno.enosys(); // TODO: return ENOTSUP
+			}
+			int size = xattr.size(name);
+			if (value.capacity() == 0) {
+				return size;
+			} else if (value.remaining() < size) {
+				return -errno.erange();
+			} else {
+				return xattr.read(name, value);
+			}
+		} catch (NoSuchFileException e) {
+			return -errno.enoent();
+		} catch (IOException e) {
+			return -errno.eio();
+		}
+	}
+
+	@Override
+	public int listxattr(String path, ByteBuffer list) {
+		try (PathLock pathLock = lockManager.lockForReading(path);
+			 DataLock dataLock = pathLock.lockDataForReading()) {
+			Path node = resolvePath(path);
+			LOG.trace("listxattr {}", path);
+			var xattr = Files.getFileAttributeView(node, UserDefinedFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
+			if (xattr == null) {
+				return -errno.enosys(); // TODO: return ENOTSUP
+			}
+			var names = xattr.list();
+			if (list.capacity() == 0) {
+				var contentBytes = xattr.list().stream().map(StandardCharsets.UTF_8::encode).mapToInt(ByteBuffer::remaining).sum();
+				var nulBytes = names.size();
+				return contentBytes + nulBytes; // attr1\0aattr2\0attr3\0
+			} else {
+				int startpos = list.position();
+				for (var name : names) {
+					list.put(StandardCharsets.UTF_8.encode(name)).put((byte) 0x00);
+				}
+				return list.position() - startpos;
+			}
+		} catch (BufferOverflowException e) {
+			return -errno.erange();
+		} catch (NoSuchFileException e) {
+			return -errno.enoent();
+		} catch (IOException e) {
+			return -errno.eio();
+		}
+	}
+
+	@Override
 	public int opendir(String path, FileInfo fi) {
 		return 0; // TODO
 	}
@@ -315,7 +376,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 	 * Attempts to get a specific error code that best describes the given exception.
 	 * As a side effect this logs the error.
 	 *
-	 * @param e An exception
+	 * @param e      An exception
 	 * @param opDesc A human-friendly string describing what operation was attempted (for logging purposes)
 	 * @return A specific error code or -EIO.
 	 */
@@ -325,8 +386,8 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 //			LOG.warn("{} {} failed, name too long.", opDesc);
 //			return -ErrorCodes.ENAMETOOLONG();
 //		} else {
-			LOG.error(opDesc + " failed.", e);
-			return -errno.eio();
+		LOG.error(opDesc + " failed.", e);
+		return -errno.eio();
 //		}
 	}
 }

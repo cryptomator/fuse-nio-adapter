@@ -27,6 +27,7 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.nio.file.attribute.UserDefinedFileAttributeView;
 import java.util.EnumSet;
 import java.util.Set;
 
@@ -63,8 +64,10 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 		ops.add(Operation.CREATE);
 		//ops.add(Operation.FSYNC);
 		ops.add(Operation.MKDIR);
+		ops.add(Operation.REMOVE_XATTR);
 		ops.add(Operation.RENAME);
 		ops.add(Operation.RMDIR);
+		ops.add(Operation.SET_XATTR);
 		ops.add(Operation.SYMLINK);
 		ops.add(Operation.TRUNCATE);
 		ops.add(Operation.UNLINK);
@@ -93,6 +96,44 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			return getErrorCodeForGenericFileSystemException(e, "mkdir " + path);
 		} catch (IOException | RuntimeException e) {
 			LOG.error("mkdir " + path + " failed.", e);
+			return -errno.eio();
+		}
+	}
+
+	@Override
+	public int removexattr(String path, String name) {
+		try (PathLock pathLock = lockManager.lockForReading(path);
+			 DataLock dataLock = pathLock.lockDataForWriting()) {
+			Path node = resolvePath(path);
+			LOG.trace("removexattr {} {}", path, name);
+			var xattr = Files.getFileAttributeView(node, UserDefinedFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
+			if (xattr == null) {
+				return -errno.enosys(); // TODO: return ENOTSUP
+			}
+			xattr.delete(name);
+			return 0;
+		} catch (NoSuchFileException e) {
+			return -errno.enoent();
+		} catch (IOException e) {
+			return -errno.eio();
+		}
+	}
+
+	@Override
+	public int setxattr(String path, String name, ByteBuffer value, int flags) {
+		try (PathLock pathLock = lockManager.lockForReading(path);
+			 DataLock dataLock = pathLock.lockDataForWriting()) {
+			Path node = resolvePath(path);
+			LOG.trace("setxattr {} {}", path, name);
+			var xattr = Files.getFileAttributeView(node, UserDefinedFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
+			if (xattr == null) {
+				return -errno.enosys(); // TODO: return ENOTSUP
+			}
+			xattr.write(name, value);
+			return 0;
+		} catch (NoSuchFileException e) {
+			return -errno.enoent();
+		} catch (IOException e) {
 			return -errno.eio();
 		}
 	}

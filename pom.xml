@@ -21,14 +21,14 @@
 
         <!-- dependencies -->
         <integrations-api.version>1.2.0-beta2</integrations-api.version>
-        <jfuse.version>0.3.3</jfuse.version>
+        <jfuse.version>0.4.0-SNAPSHOT</jfuse.version>
         <guava.version>31.1-jre</guava.version>
         <slf4j.version>2.0.3</slf4j.version>
 
         <!-- test dependencies -->
         <junit.jupiter.version>5.9.0</junit.jupiter.version>
         <mockito.version>4.7.0</mockito.version>
-        <cryptofs.version>2.4.3</cryptofs.version>
+        <cryptofs.version>2.7.0-SNAPSHOT</cryptofs.version>
     </properties>
 
     <licenses>
