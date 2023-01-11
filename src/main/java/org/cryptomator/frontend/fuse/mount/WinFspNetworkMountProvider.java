@@ -25,7 +25,7 @@ public class WinFspNetworkMountProvider extends WinFspMountProvider {
 
 	@Override
 	public String displayName() {
-		return "WinFSP (Network Drive)";
+		return "WinFsp (Network Drive)";
 	}
 
 	@Override

@@ -37,7 +37,7 @@ public class WinFspMountProvider implements MountService {
 
 	@Override
 	public String displayName() {
-		return "WinFSP";
+		return "WinFsp";
 	}
 
 	@Override
