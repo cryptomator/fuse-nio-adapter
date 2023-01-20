@@ -35,9 +35,9 @@ import static org.cryptomator.integrations.mount.MountCapability.MOUNT_TO_EXISTI
  */
 @Priority(100)
 @OperatingSystem(OperatingSystem.Value.LINUX)
-public class LinuxFuseProvider implements MountService {
+public class LinuxFuseMountProvider implements MountService {
 
-	private static final Logger LOG = LoggerFactory.getLogger(LinuxFuseProvider.class);
+	private static final Logger LOG = LoggerFactory.getLogger(LinuxFuseMountProvider.class);
 	private static final Path USER_HOME = Paths.get(System.getProperty("user.home"));
 	private static final String[] LIB_PATHS = {
 			"/usr/lib/libfuse3.so", // default
