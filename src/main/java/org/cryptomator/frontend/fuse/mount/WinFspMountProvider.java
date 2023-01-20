@@ -53,7 +53,7 @@ public class WinFspMountProvider implements MountService {
 	@Override
 	public String getDefaultMountFlags() {
 		// see: https://github.com/winfsp/winfsp/blob/84b3f98d383b265ebdb33891fc911eaafb878497/src/dll/fuse/fuse.c#L628
-		return "-ouid=-1 -ogid=-1"; // TODO: research and use correct ones
+		return "-ouid=-1 -ogid=-1";
 	}
 
 	@Override
