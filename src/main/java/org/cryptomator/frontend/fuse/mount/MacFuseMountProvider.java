@@ -89,7 +89,7 @@ public class MacFuseMountProvider implements MountService {
 
 		@Override
 		public MountBuilder setMountpoint(Path mountPoint) {
-			if (mountPoint.startsWith("/Volumes/") && Files.notExists(mountPoint) // DEFAULT_MOUNT_POINT
+			if (mountPoint.startsWith("/Volumes/") && Files.notExists(mountPoint) // MOUNT_TO_SYSTEM_CHOSEN_PATH
 					|| Files.isDirectory(mountPoint)) { // MOUNT_TO_EXISTING_DIR
 				this.mountPoint = mountPoint;
 			} else {
