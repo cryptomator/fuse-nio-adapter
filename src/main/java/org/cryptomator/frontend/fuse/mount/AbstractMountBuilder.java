@@ -50,9 +50,6 @@ abstract class AbstractMountBuilder implements MountBuilder {
 	@MustBeInvokedByOverriders
 	protected Set<String> combinedMountFlags() {
 		var combined = new HashSet<>(mountFlags);
-		if (volumeName != null && !volumeName.isBlank()) {
-			combined.add("-ovolname=" + volumeName);
-		}
 		return combined;
 	}
 
