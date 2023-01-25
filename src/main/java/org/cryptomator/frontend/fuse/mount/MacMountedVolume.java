@@ -18,16 +18,16 @@ class MacMountedVolume extends AbstractMount {
 
 	@Override
 	public void unmount() throws UnmountFailedException {
-		ProcessBuilder command = new ProcessBuilder("diskutil", "unmount", mountpoint.getFileName().toString());
+		ProcessBuilder command = new ProcessBuilder("umount", "--", mountpoint.getFileName().toString());
 		command.directory(mountpoint.getParent().toFile());
-		unmount(command, "`diskutil unmount`");
+		unmount(command, "`umount`");
 	}
 
 	@Override
 	public void unmountForced() throws UnmountFailedException {
-		ProcessBuilder command = new ProcessBuilder("diskutil", "unmount", "force", mountpoint.getFileName().toString());
+		ProcessBuilder command = new ProcessBuilder("umount", "-f", "--", mountpoint.getFileName().toString());
 		command.directory(mountpoint.getParent().toFile());
-		unmount(command, "`diskutil unmount force`");
+		unmount(command, "`umount -f`");
 	}
 
 	private void unmount(ProcessBuilder command, String cmdDescription) throws UnmountFailedException {
