@@ -128,7 +128,7 @@ public class LinuxFuseMountProvider implements MountService {
 				command.directory(mountpoint.getParent().toFile());
 				try {
 					Process p = command.start();
-					ProcessHelper.waitForSuccess(p, 10, "`fusermount -u`", UnmountFailedException::new);
+					ProcessHelper.waitForSuccess(p, 10, "`fusermount -u`");
 					fuse.close();
 					unmounted = true;
 				} catch (InterruptedException e) {
@@ -136,6 +136,13 @@ public class LinuxFuseMountProvider implements MountService {
 					throw new UnmountFailedException(e);
 				} catch (TimeoutException | IOException e) {
 					throw new UnmountFailedException(e);
+				} catch (ProcessHelper.CommandFailedException e) {
+					if (e.stderr.contains(String.format("not mounted", mountpoint)) || e.stderr.contains(String.format("entry for %s not found in", mountpoint))) {
+						LOG.info("{} already unmounted. Nothing to do.", mountpoint);
+					} else {
+						LOG.warn("{} failed with exit code {}:\nSTDOUT: {}\nSTDERR: {}\n", "`fusermount -u`", e.exitCode, e.stdout, e.stderr);
+						throw new UnmountFailedException(e);
+					}
 				}
 			}
 

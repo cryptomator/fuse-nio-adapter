@@ -1,19 +1,14 @@
 package org.cryptomator.frontend.fuse.mount;
 
-import org.cryptomator.integrations.mount.UnmountFailedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
 /**
  * Utility class to determine location of the Winfsp binary.
@@ -43,10 +38,10 @@ public class WinfspUtil {
 		try {
 			ProcessBuilder command = new ProcessBuilder("reg", "query", REG_WINFSP_KEY, "/v", REG_WINFSP_VALUE);
 			Process p = command.start();
-			ProcessHelper.waitForSuccess(p, 3, "`reg query`", IOException::new);
+			ProcessHelper.waitForSuccess(p, 3, "`reg query`");
 			String result = p.inputReader(StandardCharsets.UTF_8).lines().filter(l -> l.contains(REG_WINFSP_VALUE)).findFirst().orElseThrow();
 			return result.substring(result.indexOf(REGSTR_TOKEN) + REGSTR_TOKEN.length()).trim();
-		} catch (TimeoutException | IOException e) {
+		} catch (TimeoutException | IOException | ProcessHelper.CommandFailedException e) {
 			throw new WinFspNotFoundException(e);
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
