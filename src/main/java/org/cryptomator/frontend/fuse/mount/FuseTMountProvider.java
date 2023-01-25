@@ -25,6 +25,7 @@ import static org.cryptomator.integrations.mount.MountCapability.MOUNT_FLAGS;
 import static org.cryptomator.integrations.mount.MountCapability.MOUNT_TO_EXISTING_DIR;
 import static org.cryptomator.integrations.mount.MountCapability.READ_ONLY;
 import static org.cryptomator.integrations.mount.MountCapability.UNMOUNT_FORCED;
+import static org.cryptomator.integrations.mount.MountCapability.VOLUME_NAME;
 
 /**
  * Mounts a file system on macOS using fuse-t.
@@ -54,7 +55,7 @@ public class FuseTMountProvider implements MountService {
 
 	@Override
 	public Set<MountCapability> capabilities() {
-		return EnumSet.of(MOUNT_FLAGS, UNMOUNT_FORCED, READ_ONLY, MOUNT_TO_EXISTING_DIR); // LOOPBACK_PORT and VOLUME_NAME are currently broken
+		return EnumSet.of(MOUNT_FLAGS, UNMOUNT_FORCED, READ_ONLY, MOUNT_TO_EXISTING_DIR, VOLUME_NAME); // LOOPBACK_PORT is currently broken
 	}
 
 	@Override
