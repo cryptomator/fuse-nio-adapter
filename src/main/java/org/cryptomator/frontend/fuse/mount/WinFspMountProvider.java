@@ -17,14 +17,12 @@ import org.cryptomator.jfuse.api.FuseMountFailedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.EnumSet;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
 
 import static org.cryptomator.integrations.mount.MountCapability.FILE_SYSTEM_NAME;
 import static org.cryptomator.integrations.mount.MountCapability.MOUNT_AS_DRIVE_LETTER;
 import static org.cryptomator.integrations.mount.MountCapability.MOUNT_FLAGS;
-import static org.cryptomator.integrations.mount.MountCapability.MOUNT_TO_EXISTING_DIR;
 import static org.cryptomator.integrations.mount.MountCapability.MOUNT_WITHIN_EXISTING_PARENT;
 import static org.cryptomator.integrations.mount.MountCapability.READ_ONLY;
 import static org.cryptomator.integrations.mount.MountCapability.UNMOUNT_FORCED;
@@ -38,7 +36,7 @@ public class WinFspMountProvider implements MountService {
 
 	@Override
 	public String displayName() {
-		return "WinFsp";
+		return "WinFsp (Local Drive)";
 	}
 
 	@Override
@@ -108,7 +106,7 @@ public class WinFspMountProvider implements MountService {
 				combined.add("-oumask=0333");
 			}
 			combined.removeIf(flag -> flag.startsWith("-oExactFileSystemName="));
-			combined.add("-oExactFileSystemName="+fsName);
+			combined.add("-oExactFileSystemName=" + fsName);
 			return combined;
 		}
 
