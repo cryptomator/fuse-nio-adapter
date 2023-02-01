@@ -50,7 +50,11 @@ public class WinFspNetworkMountProvider extends WinFspMountProvider {
 
 		@Override
 		public MountBuilder setVolumeName(String volumeName) {
+			if(RESERVED_CHARS.matcher(volumeName).find()) {
+				throw new IllegalArgumentException("Volume name must satisfy the regular expression "+RESERVED_CHARS.pattern());
+			}
 			this.volumeName = volumeName;
+
 			return this;
 		}
 
@@ -68,7 +72,7 @@ public class WinFspNetworkMountProvider extends WinFspMountProvider {
 		protected Set<String> combinedMountFlags() {
 			var combined = super.combinedMountFlags();
 			if (volumeName != null && !volumeName.isBlank()) {
-				combined.add("-oVolumePrefix=/localhost/" + RESERVED_CHARS.matcher(volumeName).replaceAll("_"));
+				combined.add("-oVolumePrefix=/localhost/" + volumeName);
 			} else {
 				combined.add("-oVolumePrefix=/localhost/" + UUID.randomUUID());
 			}
