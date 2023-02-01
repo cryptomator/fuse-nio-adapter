@@ -125,11 +125,11 @@ public class LinuxFuseMountProvider implements MountService {
 
 			@Override
 			public void unmount() throws UnmountFailedException {
-				ProcessBuilder command = new ProcessBuilder("fusermount", "-u", "--", mountpoint.getFileName().toString());
+				ProcessBuilder command = new ProcessBuilder("fusermount3", "-u", "--", mountpoint.getFileName().toString());
 				command.directory(mountpoint.getParent().toFile());
 				try {
 					Process p = command.start();
-					ProcessHelper.waitForSuccess(p, 10, "`fusermount -u`");
+					ProcessHelper.waitForSuccess(p, 10, "`fusermount3 -u`");
 					fuse.close();
 					unmounted = true;
 				} catch (InterruptedException e) {
@@ -141,7 +141,7 @@ public class LinuxFuseMountProvider implements MountService {
 					if (e.stderr.contains(String.format("not mounted", mountpoint)) || e.stderr.contains(String.format("entry for %s not found in", mountpoint))) {
 						LOG.info("{} already unmounted. Nothing to do.", mountpoint);
 					} else {
-						LOG.warn("{} failed with exit code {}:\nSTDOUT: {}\nSTDERR: {}\n", "`fusermount -u`", e.exitCode, e.stdout, e.stderr);
+						LOG.warn("{} failed with exit code {}:\nSTDOUT: {}\nSTDERR: {}\n", "`fusermount3 -u`", e.exitCode, e.stdout, e.stderr);
 						throw new UnmountFailedException(e);
 					}
 				}
