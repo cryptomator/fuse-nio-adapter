@@ -42,7 +42,8 @@ public class LinuxFuseMountProvider implements MountService {
 	private static final String[] LIB_PATHS = {
 			"/usr/lib/libfuse3.so", // default
 			"/lib/x86_64-linux-gnu/libfuse3.so.3", // debian amd64
-			"/lib/aarch64-linux-gnu/libfuse3.so.3" // debiant aarch64
+			"/lib/aarch64-linux-gnu/libfuse3.so.3", // debiant aarch64
+			"/app/lib/libfuse3.so" // flatpak
 	};
 
 	@Override
