@@ -107,6 +107,10 @@ public class WinFspMountProvider implements MountService {
 			}
 			combined.removeIf(flag -> flag.startsWith("-oExactFileSystemName="));
 			combined.add("-oExactFileSystemName=" + fsName);
+			if(volumeName != null && !volumeName.isBlank()) {
+				combined.removeIf(flag -> flag.startsWith("-ovolname="));
+				combined.add("-ovolname=" + volumeName);
+			}
 			return combined;
 		}
 
