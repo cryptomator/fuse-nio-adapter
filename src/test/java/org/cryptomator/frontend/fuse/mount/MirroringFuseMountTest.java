@@ -42,7 +42,7 @@ public class MirroringFuseMountTest {
 	public static class Mirror {
 
 		public static void main(String[] args) throws MountFailedException {
-			var mountService = MountService.get().findAny().orElseThrow(() -> new MountFailedException("Did not find a mount provider"));
+			var mountService = MountService.get().filter(s -> s.getClass().getName().contains("WinFspMountProvider")).findFirst().orElseThrow(() -> new MountFailedException("Did not find a mount provider"));
 			LOG.info("Using mount provider: {}", mountService.displayName());
 			try (Scanner scanner = new Scanner(System.in)) {
 				System.out.println("Enter path to the directory you want to mirror:");
