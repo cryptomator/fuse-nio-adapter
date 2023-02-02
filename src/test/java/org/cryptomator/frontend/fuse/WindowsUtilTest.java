@@ -7,6 +7,8 @@ public class WindowsUtilTest {
 
 	@Test
 	public void testGetLocalizedErrorMessage() {
-		Assertions.assertNotEquals("NUTHIN'",WindowsUtil.windowsWorkaround());
+		var errorMsg = WindowsUtil.getLocalizedMessageForSharingViolation();
+		Assertions.assertTrue(errorMsg.isPresent());
+		Assertions.assertFalse(errorMsg.get().isBlank());
 	}
 }
