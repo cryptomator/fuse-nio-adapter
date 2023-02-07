@@ -22,7 +22,7 @@ import static org.cryptomator.integrations.mount.MountCapability.VOLUME_NAME;
 @OperatingSystem(OperatingSystem.Value.WINDOWS)
 public class WinFspNetworkMountProvider extends WinFspMountProvider {
 
-	private static final Pattern RESERVED_CHARS = Pattern.compile("[^a-zA-Z0-9-._~]+"); // all but unreserved chars according to https://www.rfc-editor.org/rfc/rfc3986#section-2.3
+	private static final Pattern HOST_NAME_PATTERN_NEGATED = Pattern.compile("[a-zA-Z0-9-._~]+"); // all but unreserved chars according to https://www.rfc-editor.org/rfc/rfc3986#section-2.3
 
 	@Override
 	public String displayName() {
@@ -51,16 +51,6 @@ public class WinFspNetworkMountProvider extends WinFspMountProvider {
 		}
 
 		@Override
-		public MountBuilder setVolumeName(String volumeName) {
-			if (RESERVED_CHARS.matcher(volumeName).find()) {
-				throw new IllegalArgumentException("Volume name must satisfy the regular expression " + RESERVED_CHARS.pattern());
-			}
-			this.volumeName = volumeName;
-
-			return this;
-		}
-
-		@Override
 		public MountBuilder setMountpoint(Path mountPoint) {
 			if (mountPoint.getRoot().equals(mountPoint)) { // MOUNT_AS_DRIVE_LETTER
 				this.mountPoint = mountPoint;
@@ -72,8 +62,8 @@ public class WinFspNetworkMountProvider extends WinFspMountProvider {
 
 		@Override
 		public MountBuilder setLoopbackHostName(String hostName) {
-			if (RESERVED_CHARS.matcher(hostName).find()) {
-				throw new IllegalArgumentException("Loopback host name must satisfy the regular expression " + RESERVED_CHARS.pattern());
+			if (HOST_NAME_PATTERN_NEGATED.matcher(hostName).find()) {
+				throw new IllegalArgumentException("Loopback host may only contain the characters a-z, A-Z, 0-9 and -._~");
 			}
 			this.loopbackHostName = hostName;
 			return this;
