@@ -33,6 +33,9 @@ public class WindowsUtil {
 	private static final int ERROR_SHARING_VIOLATION = 0x20;
 	private static final int FORMAT_MESSAGE_FROM_SYSTEM = 0x1000;
 
+	static boolean runningOSIsWindows() {
+		return System.getProperty("os.name").toLowerCase().contains("windows");
+	}
 
 	static Optional<String> getLocalizedMessageForSharingViolation() {
 		try (MemorySession session = MemorySession.openConfined()) {

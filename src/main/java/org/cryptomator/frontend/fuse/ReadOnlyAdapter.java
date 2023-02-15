@@ -34,6 +34,7 @@ import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.PosixFileAttributes;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
 
@@ -52,6 +53,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 	private final ReadOnlyFileHandler fileHandler;
 	private final ReadOnlyLinkHandler linkHandler;
 	private final BooleanSupplier hasOpenFiles;
+	private final Optional<String> windowsSharingViolationText;
 
 	protected ReadOnlyAdapter(Errno errno, Path root, int maxFileNameLength, FileNameTranscoder fileNameTranscoder, FileStore fileStore, OpenFileFactory openFiles, ReadOnlyDirectoryHandler dirHandler, ReadOnlyFileHandler fileHandler) {
 		this.errno = errno;
@@ -65,6 +67,12 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 		this.fileHandler = fileHandler;
 		this.linkHandler = new ReadOnlyLinkHandler(fileNameTranscoder);
 		this.hasOpenFiles = () -> openFiles.getOpenFileCount() != 0;
+		if (WindowsUtil.runningOSIsWindows()) {
+			//the Windows exception text returned by the native call ends with a period and CRLF, the JDK exception reason not.
+			this.windowsSharingViolationText = WindowsUtil.getLocalizedMessageForSharingViolation().map(String::trim).map(s -> s.substring(0, s.length() - 1));
+		} else {
+			this.windowsSharingViolationText = Optional.empty();
+		}
 	}
 
 	public static ReadOnlyAdapter create(Errno errno, Path root, int maxFileNameLength, FileNameTranscoder fileNameTranscoder) {
@@ -250,9 +258,25 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 			LOG.warn("Attempted to open file with unsupported flags.", e);
 			return -errno.erofs();
 		} catch (IOException | RuntimeException e) {
+			if (e instanceof FileSystemException fse && isWrappedWindowsSharingViolationError(fse)) {
+				LOG.warn("open {} failed because the file is used by another process", path);
+				return -errno.enolck();
+			}
+
 			LOG.error("open " + path + " failed.", e);
 			return -errno.eio();
 		}
+	}
+
+	/**
+	 * Specialised Method for Windows to check if a generic {@link FileSystemException} contains the localized Windows ERROR_SHARING_VIOLATION text.
+	 *
+	 * @param fse the occured {@link FileSystemException}
+	 * @return {@code true}, if fse contains the ERROR_SHARING_VIOLATION text as reason.
+	 */
+	private boolean isWrappedWindowsSharingViolationError(FileSystemException fse) {
+		LOG.debug("Windows workaround: Check for localised ERROR_SHARING_VIOLATION cause.");
+		return windowsSharingViolationText.map(msg -> msg.equals(fse.getReason().trim())).orElse(false);
 	}
 
 	@Override
