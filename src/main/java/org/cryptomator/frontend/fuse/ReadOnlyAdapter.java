@@ -67,7 +67,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 		this.fileHandler = fileHandler;
 		this.linkHandler = new ReadOnlyLinkHandler(fileNameTranscoder);
 		this.hasOpenFiles = () -> openFiles.getOpenFileCount() != 0;
-		if (WindowsUtil.runningOSIsWindows()) {
+		if (WindowsUtil.isWindowsSystem()) {
 			//the Windows exception text returned by the native call ends with a period and CRLF, the JDK exception reason not.
 			this.windowsSharingViolationText = WindowsUtil.getLocalizedMessageForSharingViolation().map(String::trim).map(s -> s.substring(0, s.length() - 1));
 		} else {
@@ -259,7 +259,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 			return -errno.erofs();
 		} catch (IOException | RuntimeException e) {
 			if (e instanceof FileSystemException fse && isWrappedWindowsSharingViolationError(fse)) {
-				LOG.warn("open {} failed because the file is used by another process", path);
+				LOG.debug("Applying Windows workaround for ERROR_SHARING_VIOLATION cause.");
 				return -errno.enolck();
 			}
 
@@ -275,7 +275,6 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 	 * @return {@code true}, if fse contains the ERROR_SHARING_VIOLATION text as reason.
 	 */
 	private boolean isWrappedWindowsSharingViolationError(FileSystemException fse) {
-		LOG.debug("Windows workaround: Check for localised ERROR_SHARING_VIOLATION cause.");
 		return windowsSharingViolationText.map(msg -> msg.equals(fse.getReason().trim())).orElse(false);
 	}
 
