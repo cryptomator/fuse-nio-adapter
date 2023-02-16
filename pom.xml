@@ -21,7 +21,7 @@
 
         <!-- dependencies -->
         <integrations-api.version>1.2.0-beta2</integrations-api.version>
-        <jfuse.version>0.3.3</jfuse.version>
+        <jfuse.version>0.4.0</jfuse.version>
         <guava.version>31.1-jre</guava.version>
         <slf4j.version>2.0.3</slf4j.version>
 
