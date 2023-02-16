@@ -8,6 +8,9 @@ Provides directory contents specified by a `java.nio.file.Path` via a FUSE files
 
 Uses [jfuse](https://github.com/cryptomator/jfuse), i.e. you need to install the specified fuse drivers for your OS.
 
+This project uses [JDK 19 preview features](https://docs.oracle.com/en/java/javase/19/language/preview-language-and-vm-features.html).
+If you are using it in your project , during runtime, you will need to add `--enable-preview` and allow native access via `--enable-native-access=...` option.
+
 ## Configuration Parameters
 The following system properties are used:
 * `org.cryptomator.frontend.fuse.mountTimeOut` - The mount timeout threshold in milliseonds. If the mounting operation exceeds it, the mounting is aborted.
