@@ -38,6 +38,10 @@ public class WindowsUtil {
 	}
 
 	static Optional<String> getLocalizedMessageForSharingViolation() {
+		if(!isWindowsSystem()) {
+			return Optional.empty();
+		}
+
 		try (MemorySession session = MemorySession.openConfined()) {
 			var linker = Linker.nativeLinker();
 			var kernel32Lib = SymbolLookup.libraryLookup("kernel32", session);
