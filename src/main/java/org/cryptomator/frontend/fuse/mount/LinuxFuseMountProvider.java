@@ -43,6 +43,7 @@ public class LinuxFuseMountProvider implements MountService {
 			"/usr/lib/libfuse3.so", // default
 			"/lib/x86_64-linux-gnu/libfuse3.so.3", // debian amd64
 			"/lib/aarch64-linux-gnu/libfuse3.so.3", // debiant aarch64
+			"/usr/lib64/libfuse3.so.3", // fedora
 			"/app/lib/libfuse3.so" // flatpak
 	};
 
