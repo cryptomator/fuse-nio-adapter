@@ -2,10 +2,10 @@ package org.cryptomator.frontend.fuse.locks;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
+import org.jetbrains.annotations.Unmodifiable;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.stream.Stream;
 
 class FilePaths {
 
@@ -14,10 +14,9 @@ class FilePaths {
 	private static final Splitter PATH_SPLITTER = Splitter.on(PATH_SEP).omitEmptyStrings();
 	private static final Joiner PATH_JOINER = Joiner.on(PATH_SEP);
 
+	@Unmodifiable
 	public static List<String> toComponents(String pathRelativeToRoot) {
-		List<String> pathComponents = new ArrayList<>(PATH_SPLITTER.splitToList(pathRelativeToRoot));
-		pathComponents.add(0, ROOT);
-		return Collections.unmodifiableList(pathComponents);
+		return Stream.concat(Stream.of(ROOT), PATH_SPLITTER.splitToStream(pathRelativeToRoot)).toList();
 	}
 
 	public static String toPath(List<String> pathComponents) {

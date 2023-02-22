@@ -1,24 +1,16 @@
 package org.cryptomator.frontend.fuse;
 
-import jnr.constants.platform.OpenFlags;
-import jnr.ffi.Pointer;
-import jnr.ffi.types.gid_t;
-import jnr.ffi.types.mode_t;
-import jnr.ffi.types.off_t;
-import jnr.ffi.types.size_t;
-import jnr.ffi.types.uid_t;
 import org.cryptomator.frontend.fuse.locks.DataLock;
-import org.cryptomator.frontend.fuse.locks.LockManager;
 import org.cryptomator.frontend.fuse.locks.PathLock;
+import org.cryptomator.jfuse.api.Errno;
+import org.cryptomator.jfuse.api.FileInfo;
+import org.cryptomator.jfuse.api.TimeSpec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.serce.jnrfuse.ErrorCodes;
-import ru.serce.jnrfuse.struct.FuseFileInfo;
-import ru.serce.jnrfuse.struct.Timespec;
 
-import javax.inject.Inject;
-import javax.inject.Named;
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.file.AccessMode;
 import java.nio.file.DirectoryNotEmptyException;
@@ -35,27 +27,50 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.PosixFilePermissions;
-import java.time.DateTimeException;
 import java.util.EnumSet;
 import java.util.Set;
 
 /**
  *
  */
-@PerAdapter
-public class ReadWriteAdapter extends ReadOnlyAdapter {
+public final class ReadWriteAdapter extends ReadOnlyAdapter {
 
 	private static final Logger LOG = LoggerFactory.getLogger(ReadWriteAdapter.class);
 	private final ReadWriteFileHandler fileHandler;
-	private final FileAttributesUtil attrUtil;
-	private final BitMaskEnumUtil bitMaskUtil;
 
-	@Inject
-	public ReadWriteAdapter(@Named("root") Path root, @Named("maxFileNameLength") int maxFileNameLength, FileNameTranscoder fileNameTranscoder, FileStore fileStore, LockManager lockManager, ReadWriteDirectoryHandler dirHandler, ReadWriteFileHandler fileHandler, ReadOnlyLinkHandler linkHandler, FileAttributesUtil attrUtil, BitMaskEnumUtil bitMaskUtil, OpenFileFactory fileFactory) {
-		super(root, maxFileNameLength, fileNameTranscoder, fileStore, lockManager, dirHandler, fileHandler, linkHandler, attrUtil, fileFactory);
+	private ReadWriteAdapter(Errno errno, Path root, int maxFileNameLength, FileNameTranscoder fileNameTranscoder, FileStore fileStore, OpenFileFactory openFiles, ReadWriteDirectoryHandler dirHandler, ReadWriteFileHandler fileHandler) {
+		super(errno, root, maxFileNameLength, fileNameTranscoder, fileStore, openFiles, dirHandler, fileHandler);
 		this.fileHandler = fileHandler;
-		this.attrUtil = attrUtil;
-		this.bitMaskUtil = bitMaskUtil;
+	}
+
+	public static ReadWriteAdapter create(Errno errno, Path root, int maxFileNameLength, FileNameTranscoder fileNameTranscoder) {
+		try {
+			var fileStore = Files.getFileStore(root);
+			var openFiles = new OpenFileFactory();
+			var dirHandler = new ReadWriteDirectoryHandler(fileNameTranscoder);
+			var fileHandler = new ReadWriteFileHandler(openFiles);
+			return new ReadWriteAdapter(errno, root, maxFileNameLength, fileNameTranscoder, fileStore, openFiles, dirHandler, fileHandler);
+		} catch (IOException e) {
+			throw new UncheckedIOException(e);
+		}
+	}
+
+	@Override
+	public Set<Operation> supportedOperations() {
+		var ops = EnumSet.copyOf(super.supportedOperations());
+		ops.add(Operation.CHMOD);
+		//ops.add(Operation.CHOWN);
+		ops.add(Operation.CREATE);
+		//ops.add(Operation.FSYNC);
+		ops.add(Operation.MKDIR);
+		ops.add(Operation.RENAME);
+		ops.add(Operation.RMDIR);
+		ops.add(Operation.SYMLINK);
+		ops.add(Operation.TRUNCATE);
+		ops.add(Operation.UNLINK);
+		ops.add(Operation.UTIMENS);
+		ops.add(Operation.WRITE);
+		return ops;
 	}
 
 	@Override
@@ -64,8 +79,8 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 	}
 
 	@Override
-	public int mkdir(String path, @mode_t long mode) {
-		try (PathLock pathLock = lockManager.createPathLock(path).forWriting();
+	public int mkdir(String path, int mode) {
+		try (PathLock pathLock = lockManager.lockForWriting(path);
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
 			LOG.trace("mkdir {} ({})", path, mode);
@@ -73,18 +88,18 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 			return 0;
 		} catch (FileAlreadyExistsException e) {
 			LOG.warn("mkdir {} failed, file already exists.", path);
-			return -ErrorCodes.EEXIST();
+			return -errno.eexist();
 		} catch (FileSystemException e) {
 			return getErrorCodeForGenericFileSystemException(e, "mkdir " + path);
 		} catch (IOException | RuntimeException e) {
 			LOG.error("mkdir " + path + " failed.", e);
-			return -ErrorCodes.EIO();
+			return -errno.eio();
 		}
 	}
 
 	@Override
 	public int symlink(String targetPath, String linkPath) {
-		try (PathLock pathLock = lockManager.createPathLock(linkPath).forWriting();
+		try (PathLock pathLock = lockManager.lockForWriting(linkPath);
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
 			Path link = resolvePath(fileNameTranscoder.fuseToNio(linkPath));
 			Path target = link.getFileSystem().getPath(fileNameTranscoder.fuseToNio(targetPath));
@@ -93,24 +108,24 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 			return 0;
 		} catch (FileAlreadyExistsException e) {
 			LOG.warn("symlink {} -> {} failed, file already exists.", linkPath, targetPath);
-			return -ErrorCodes.EEXIST();
+			return -errno.eexist();
 		} catch (FileSystemException e) {
 			return getErrorCodeForGenericFileSystemException(e, "symlink " + targetPath + " -> " + linkPath);
 		} catch (IOException | RuntimeException e) {
 			LOG.error("symlink failed.", e);
-			return -ErrorCodes.EIO();
+			return -errno.eio();
 		}
 	}
 
 	@Override
-	public int create(String path, @mode_t long mode, FuseFileInfo fi) {
-		try (PathLock pathLock = lockManager.createPathLock(path).forWriting();
+	public int create(String path, int mode, FileInfo fi) {
+		try (PathLock pathLock = lockManager.lockForWriting(path);
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
-			Set<OpenFlags> flags = bitMaskUtil.bitMaskToSet(OpenFlags.class, fi.flags.longValue());
+			var flags = fi.getOpenFlags();
 			LOG.trace("create {} with flags {}", path, flags);
 			if (fileStore.supportsFileAttributeView(PosixFileAttributeView.class)) {
-				FileAttribute<?> attrs = PosixFilePermissions.asFileAttribute(attrUtil.octalModeToPosixPermissions(mode));
+				FileAttribute<?> attrs = PosixFilePermissions.asFileAttribute(FileAttributesUtil.octalModeToPosixPermissions(mode));
 				fileHandler.createAndOpen(node, fi, attrs);
 			} else {
 				fileHandler.createAndOpen(node, fi);
@@ -118,65 +133,65 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 			return 0;
 		} catch (FileAlreadyExistsException e) {
 			LOG.warn("create {} failed, file already exists.", path);
-			return -ErrorCodes.EEXIST();
+			return -errno.eexist();
 		} catch (FileSystemException e) {
 			return getErrorCodeForGenericFileSystemException(e, "create " + path);
 		} catch (IOException | RuntimeException e) {
 			LOG.error("create " + path + " failed.", e);
-			return -ErrorCodes.EIO();
+			return -errno.eio();
 		}
 	}
 
 	@Override
-	public int chown(String path, @uid_t long uid, @gid_t long gid) {
+	public int chown(String path, int uid, int gid, FileInfo fi) {
 		LOG.trace("Ignoring chown(uid={}, gid={}) call. Files will be served with static uid/gid.", uid, gid);
 		return 0;
 	}
 
 	@Override
-	public int chmod(String path, @mode_t long mode) {
-		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
+	public int chmod(String path, int mode, FileInfo fi) {
+		try (PathLock pathLock = lockManager.lockForReading(path);
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
 			LOG.trace("chmod {} ({})", path, mode);
-			Files.setPosixFilePermissions(node, attrUtil.octalModeToPosixPermissions(mode));
+			Files.setPosixFilePermissions(node, FileAttributesUtil.octalModeToPosixPermissions(mode));
 			return 0;
 		} catch (NoSuchFileException e) {
 			LOG.warn("chmod {} failed, file not found.", path);
-			return -ErrorCodes.ENOENT();
+			return -errno.enoent();
 		} catch (UnsupportedOperationException e) {
 			LOG.warn("Setting posix permissions not supported by underlying file system.");
-			return -ErrorCodes.ENOSYS();
+			return -errno.enosys();
 		} catch (IOException | RuntimeException e) {
 			LOG.error("chmod " + path + " failed.", e);
-			return -ErrorCodes.EIO();
+			return -errno.eio();
 		}
 	}
 
 	@Override
 	public int unlink(String path) {
-		try (PathLock pathLock = lockManager.createPathLock(path).forWriting();
+		try (PathLock pathLock = lockManager.lockForWriting(path);
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
 			if (Files.isDirectory(node, LinkOption.NOFOLLOW_LINKS)) {
 				LOG.warn("unlink {} failed, node is a directory.", path);
-				return -ErrorCodes.EISDIR();
+				return -errno.eisdir();
 			}
 			LOG.trace("unlink {}", path);
 			Files.delete(node);
 			return 0;
 		} catch (NoSuchFileException e) {
 			LOG.warn("unlink {} failed, file not found.", path);
-			return -ErrorCodes.ENOENT();
+			return -errno.enoent();
 		} catch (IOException | RuntimeException e) {
 			LOG.error("unlink " + path + " failed.", e);
-			return -ErrorCodes.EIO();
+			return -errno.eio();
 		}
 	}
 
 	@Override
 	public int rmdir(String path) {
-		try (PathLock pathLock = lockManager.createPathLock(path).forWriting();
+		try (PathLock pathLock = lockManager.lockForWriting(path);
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
 			if (!Files.isDirectory(node, LinkOption.NOFOLLOW_LINKS)) {
@@ -189,21 +204,21 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 			return 0;
 		} catch (NotDirectoryException e) {
 			LOG.warn("rmdir {} failed, node is not a directory.", path);
-			return -ErrorCodes.ENOTDIR();
+			return -errno.enotdir();
 		} catch (NoSuchFileException e) {
 			LOG.warn("rmdir {} failed, file not found.", path);
-			return -ErrorCodes.ENOENT();
+			return -errno.enoent();
 		} catch (DirectoryNotEmptyException e) {
 			LOG.warn("rmdir {} failed, directory not empty.", path);
-			return -ErrorCodes.ENOTEMPTY();
+			return -errno.enotempty();
 		} catch (IOException | RuntimeException e) {
 			LOG.error("rmdir " + path + " failed.", e);
-			return -ErrorCodes.EIO();
+			return -errno.eio();
 		}
 	}
 
 	/**
-	 * Specialised method on MacOS due to the usage of the <em>-noappledouble</em> option in the {@link org.cryptomator.frontend.fuse.mount.MacMounter} and the possible existence of AppleDouble or DSStore-Files.
+	 * Specialised method on MacOS due to the usage of the <em>-noappledouble</em> option in the {@link org.cryptomator.frontend.fuse.mount.MacFuseMountProvider} and the possible existence of AppleDouble or DSStore-Files.
 	 *
 	 * @param node the directory path for which is checked for such files
 	 * @throws IOException if an AppleDouble file cannot be deleted or opening of a directory stream fails
@@ -218,10 +233,10 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 	}
 
 	@Override
-	public int rename(String oldPath, String newPath) {
-		try (PathLock oldPathLock = lockManager.createPathLock(oldPath).forWriting();
+	public int rename(String oldPath, String newPath, int flags) {
+		try (PathLock oldPathLock = lockManager.lockForWriting(oldPath);
 			 DataLock oldDataLock = oldPathLock.lockDataForWriting();
-			 PathLock newPathLock = lockManager.createPathLock(newPath).forWriting();
+			 PathLock newPathLock = lockManager.lockForWriting(newPath);
 			 DataLock newDataLock = newPathLock.lockDataForWriting()) {
 			// TODO: recursively check for open file handles
 			Path nodeOld = resolvePath(fileNameTranscoder.fuseToNio(oldPath));
@@ -231,107 +246,86 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 			return 0;
 		} catch (NoSuchFileException e) {
 			LOG.warn("rename {} to {} failed, file not found.", oldPath, newPath);
-			return -ErrorCodes.ENOENT();
+			return -errno.enoent();
 		} catch (DirectoryNotEmptyException e) {
 			LOG.warn("rename {} to {} failed, directory not empty.", oldPath, newPath);
-			return -ErrorCodes.ENOTEMPTY();
+			return -errno.enotempty();
 		} catch (FileSystemException e) {
 			return getErrorCodeForGenericFileSystemException(e, "rename " + oldPath + " -> " + newPath);
 		} catch (IOException | RuntimeException e) {
 			LOG.error("rename " + oldPath + " to " + newPath + " failed.", e);
-			return -ErrorCodes.EIO();
+			return -errno.eio();
 		}
 	}
 
 	@Override
-	public int utimens(String path, Timespec[] timespec) {
-		/*
-		 * From utimensat(2) man page:
-		 * the array times: times[0] specifies the new "last access time" (atime);
-		 * times[1] specifies the new "last modification time" (mtime).
-		 */
-		assert timespec.length == 2;
-		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
+	public int utimens(String path, TimeSpec atime, TimeSpec mtime, FileInfo fi) {
+		try (PathLock pathLock = lockManager.lockForReading(path);
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
-			LOG.trace("utimens {} (last modification {} sec {} nsec, last access {} sec {} nsec)", path, timespec[1].tv_sec.get(), timespec[1].tv_nsec.longValue(), timespec[0].tv_sec.get(), timespec[0].tv_nsec.longValue());
-			fileHandler.utimens(node, timespec[1], timespec[0]);
+			LOG.trace("utimens {} (last modification {}, last access {})", path, mtime, atime);
+			fileHandler.utimens(node, mtime, atime);
 			return 0;
-		} catch (DateTimeException | ArithmeticException e) {
-			LOG.warn("utimens {} failed, invalid argument.", e);
-			return -ErrorCodes.EINVAL();
 		} catch (NoSuchFileException e) {
 			LOG.warn("utimens {} failed, file not found.", path);
-			return -ErrorCodes.ENOENT();
+			return -errno.enoent();
 		} catch (IOException | RuntimeException e) {
 			LOG.error("utimens " + path + " failed.", e);
-			return -ErrorCodes.EIO();
+			return -errno.eio();
 		}
 	}
 
 	@Override
-	public int write(String path, Pointer buf, @size_t long size, @off_t long offset, FuseFileInfo fi) {
-		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
+	public int write(String path, ByteBuffer buf, long size, long offset, FileInfo fi) {
+		try (PathLock pathLock = lockManager.lockForReading(path);
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
 			LOG.trace("write {} bytes to file {} starting at {}...", size, path, offset);
 			int written = fileHandler.write(buf, size, offset, fi);
 			LOG.trace("wrote {} bytes to file {}.", written, path);
 			return written;
 		} catch (ClosedChannelException e) {
-			LOG.warn("write {} failed, invalid file handle {}", path, fi.fh.get());
-			return -ErrorCodes.EBADF();
+			LOG.warn("write {} failed, invalid file handle {}", path, fi.getFh());
+			return -errno.ebadf();
 		} catch (IOException | RuntimeException e) {
 			LOG.error("write " + path + " failed.", e);
-			return -ErrorCodes.EIO();
+			return -errno.eio();
 		}
 	}
 
 	@Override
-	public int truncate(String path, @off_t long size) {
-		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
+	public int truncate(String path, long size, FileInfo fi) {
+		try (PathLock pathLock = lockManager.lockForReading(path);
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
 			LOG.trace("truncate {} {}", path, size);
-			fileHandler.truncate(node, size);
+			if (fi != null) {
+				fileHandler.ftruncate(size, fi);
+			} else {
+				fileHandler.truncate(node, size);
+			}
 			return 0;
 		} catch (NoSuchFileException e) {
 			LOG.warn("utimens {} failed, file not found.", path);
-			return -ErrorCodes.ENOENT();
+			return -errno.enoent();
 		} catch (IOException | RuntimeException e) {
 			LOG.error("truncate " + path + " failed.", e);
-			return -ErrorCodes.EIO();
+			return -errno.eio();
 		}
 	}
 
 	@Override
-	public int ftruncate(String path, long size, FuseFileInfo fi) {
-		try (PathLock pathLock = lockManager.createPathLock(path).forReading();
-			 DataLock dataLock = pathLock.lockDataForWriting()) {
-			LOG.trace("ftruncate {} to size: {}", path, size);
-			fileHandler.ftruncate(size, fi);
-			return 0;
-		} catch (ClosedChannelException e) {
-			LOG.warn("ftruncate {} failed, invalid file handle {}", path, fi.fh.get());
-			return -ErrorCodes.EBADF();
-		} catch (IOException | RuntimeException e) {
-			LOG.error("ftruncate " + path + " failed.", e);
-			return -ErrorCodes.EIO();
-		}
-	}
-
-	@Override
-	public int fsync(String path, int isdatasync, FuseFileInfo fi) {
+	public int fsync(String path, int isdatasync, FileInfo fi) {
 		try {
 			boolean metaData = isdatasync == 0;
 			LOG.trace("fsync {}", path);
 			fileHandler.fsync(fi, metaData);
 			return 0;
 		} catch (ClosedChannelException e) {
-			LOG.warn("fsync {} failed, invalid file handle {}", path, fi.fh.get());
-			return -ErrorCodes.EBADF();
+			LOG.warn("fsync {} failed, invalid file handle {}", path, fi.getFh());
+			return -errno.ebadf();
 		} catch (IOException | RuntimeException e) {
 			LOG.error("fsync " + path + " failed.", e);
-			return -ErrorCodes.EIO();
+			return -errno.eio();
 		}
 	}
 

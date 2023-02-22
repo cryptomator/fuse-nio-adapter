@@ -1,5 +1,14 @@
 package org.cryptomator.frontend.fuse;
 
+import org.cryptomator.jfuse.api.Stat;
+import org.cryptomator.jfuse.api.TimeSpec;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.Mockito;
+
 import java.nio.file.AccessMode;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
@@ -10,43 +19,30 @@ import java.util.EnumSet;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import jnr.posix.util.Platform;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Assumptions;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.Mockito;
-import ru.serce.jnrfuse.flags.AccessConstants;
-import ru.serce.jnrfuse.struct.FileStat;
-
 public class FileAttributesUtilTest {
 
 	@ParameterizedTest
 	@MethodSource("accessModeProvider")
 	public void testAccessModeMaskToSet(Set<AccessMode> expectedModes, int mask) {
-		FileAttributesUtil util = new FileAttributesUtil();
-		Set<AccessMode> accessModes = util.accessModeMaskToSet(mask);
+		Set<AccessMode> accessModes = FileAttributesUtil.accessModeMaskToSet(mask);
 		Assertions.assertEquals(expectedModes, accessModes);
 	}
 
 	static Stream<Arguments> accessModeProvider() {
 		return Stream.of( //
 				Arguments.of(EnumSet.noneOf(AccessMode.class), 0), //
-				Arguments.of(EnumSet.of(AccessMode.READ), AccessConstants.R_OK), //
-				Arguments.of(EnumSet.of(AccessMode.WRITE), AccessConstants.W_OK), //
-				Arguments.of(EnumSet.of(AccessMode.EXECUTE), AccessConstants.X_OK), //
-				Arguments.of(EnumSet.of(AccessMode.READ, AccessMode.WRITE), AccessConstants.R_OK | AccessConstants.W_OK), //
-				Arguments.of(EnumSet.allOf(AccessMode.class), AccessConstants.R_OK | AccessConstants.W_OK | AccessConstants.X_OK | AccessConstants.F_OK) //
+				Arguments.of(EnumSet.of(AccessMode.READ), 4), //
+				Arguments.of(EnumSet.of(AccessMode.WRITE), 2), //
+				Arguments.of(EnumSet.of(AccessMode.EXECUTE), 1), //
+				Arguments.of(EnumSet.of(AccessMode.READ, AccessMode.WRITE), 4 | 2), //
+				Arguments.of(EnumSet.allOf(AccessMode.class), 4 | 2 | 1) //
 		);
 	}
 
 	@ParameterizedTest
 	@MethodSource("filePermissionProvider")
 	public void testOctalModeToPosixPermissions(Set<PosixFilePermission> expectedPerms, long octalMode) {
-		FileAttributesUtil util = new FileAttributesUtil();
-		Set<PosixFilePermission> perms = util.octalModeToPosixPermissions(octalMode);
+		Set<PosixFilePermission> perms = FileAttributesUtil.octalModeToPosixPermissions(octalMode);
 		Assertions.assertEquals(expectedPerms, perms);
 	}
 
@@ -72,29 +68,26 @@ public class FileAttributesUtilTest {
 		Mockito.when(attr.lastAccessTime()).thenReturn(ftime);
 		Mockito.when(attr.size()).thenReturn(42l);
 
-		FileAttributesUtil util = new FileAttributesUtil();
-		FileStat stat = new FileStat(jnr.ffi.Runtime.getSystemRuntime());
-		util.copyBasicFileAttributesFromNioToFuse(attr, stat);
+		var stat = Mockito.mock(Stat.class);
+		var mtime = Mockito.mock(TimeSpec.class);
+		var atime = Mockito.mock(TimeSpec.class);
+		var btime = Mockito.mock(TimeSpec.class);
+		Mockito.doReturn(mtime).when(stat).mTime();
+		Mockito.doReturn(atime).when(stat).aTime();
+		Mockito.doReturn(btime).when(stat).birthTime();
+		FileAttributesUtil.copyBasicFileAttributesFromNioToFuse(attr, stat);
 
-		Assertions.assertTrue((FileStat.S_IFDIR & stat.st_mode.intValue()) == FileStat.S_IFDIR);
-		Assertions.assertEquals(424242l, stat.st_mtim.tv_sec.get());
-		Assertions.assertEquals(42, stat.st_mtim.tv_nsec.intValue());
-		Assertions.assertEquals(424242l, stat.st_ctim.tv_sec.get());
-		Assertions.assertEquals(42, stat.st_ctim.tv_nsec.intValue());
-		Assumptions.assumingThat(Platform.IS_MAC || Platform.IS_WINDOWS, () -> {
-			Assertions.assertEquals(424242l, stat.st_birthtime.tv_sec.get());
-			Assertions.assertEquals(42, stat.st_birthtime.tv_nsec.intValue());
-		});
-		Assertions.assertEquals(424242l, stat.st_atim.tv_sec.get());
-		Assertions.assertEquals(42, stat.st_atim.tv_nsec.intValue());
-		Assertions.assertEquals(42l, stat.st_size.longValue());
+		Mockito.verify(stat).setModeBits(Stat.S_IFDIR);
+		Mockito.verify(mtime).set(Instant.ofEpochSecond(424242L, 42L));
+		Mockito.verify(atime).set(Instant.ofEpochSecond(424242L, 42L));
+		Mockito.verify(btime).set(Instant.ofEpochSecond(424242L, 42L));
+		Mockito.verify(stat).setSize(42L);
 	}
 
 	@ParameterizedTest
 	@MethodSource("filePermissionProvider")
 	public void testPosixPermissionsToOctalMode(Set<PosixFilePermission> permissions, long expectedMode) {
-		FileAttributesUtil util = new FileAttributesUtil();
-		long mode = util.posixPermissionsToOctalMode(permissions);
+		long mode = FileAttributesUtil.posixPermissionsToOctalMode(permissions);
 		Assertions.assertEquals(expectedMode, mode);
 	}
 

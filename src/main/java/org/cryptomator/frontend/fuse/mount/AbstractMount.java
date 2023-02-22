@@ -1,59 +1,41 @@
 package org.cryptomator.frontend.fuse.mount;
 
-import com.google.common.base.Preconditions;
 import org.cryptomator.frontend.fuse.FuseNioAdapter;
+import org.cryptomator.integrations.mount.Mount;
+import org.cryptomator.integrations.mount.Mountpoint;
+import org.cryptomator.integrations.mount.UnmountFailedException;
+import org.cryptomator.jfuse.api.Fuse;
+import org.jetbrains.annotations.MustBeInvokedByOverriders;
 
+import java.io.IOException;
 import java.nio.file.Path;
+import java.util.concurrent.TimeoutException;
 
 abstract class AbstractMount implements Mount {
 
-	protected final FuseNioAdapter fuseAdapter;
-	protected final Path mountPoint;
+	protected final Fuse fuse;
+	protected final FuseNioAdapter fuseNioAdapter;
+	protected final Path mountpoint;
 
-	public AbstractMount(FuseNioAdapter fuseAdapter, Path mountPoint) {
-		Preconditions.checkArgument(fuseAdapter.isMounted());
-		this.fuseAdapter = fuseAdapter;
-		this.mountPoint = mountPoint;
+	public AbstractMount(Fuse fuse, FuseNioAdapter fuseNioAdapter, Path mountpoint) {
+		this.fuse = fuse;
+		this.fuseNioAdapter = fuseNioAdapter;
+		this.mountpoint = mountpoint;
 	}
 
 	@Override
-	public Path getMountPoint() {
-		Preconditions.checkState(fuseAdapter.isMounted(), "Not currently mounted.");
-		return mountPoint;
+	public Mountpoint getMountpoint() {
+		return Mountpoint.forPath(mountpoint);
 	}
 
 	@Override
-	public void reveal(Revealer revealer) throws Exception {
-		revealer.reveal(mountPoint);
-	}
-
-	@Override
-	public void unmount() throws FuseMountException {
-		if (fuseAdapter.isInUse()) {
-			throw new FuseMountException("Unmount refused: There are open files or pending operations.");
-		}
-
-		unmountInternal();
-	}
-
-	@Override
-	public void unmountForced() throws FuseMountException {
-		unmountForcedInternal();
-	}
-
-	protected abstract void unmountInternal() throws FuseMountException;
-
-	protected abstract void unmountForcedInternal() throws FuseMountException;
-
-	@Override
-	public void close() throws FuseMountException {
-		if (this.fuseAdapter.isMounted()) {
-			throw new IllegalStateException("Can not close file system adapter while still mounted.");
-		}
+	@MustBeInvokedByOverriders
+	public void close() throws UnmountFailedException, IOException {
 		try {
-			this.fuseAdapter.close();
-		} catch (Exception e) {
-			throw new FuseMountException(e);
+			fuse.close();
+			fuseNioAdapter.close();
+		} catch (TimeoutException e) {
+			throw new UnmountFailedException("Fuse loop shutdown timed out.", e);
 		}
 	}
 }
