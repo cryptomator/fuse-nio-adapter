@@ -17,18 +17,23 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.release>19</maven.compiler.release>
+        <project.build.jdk>19</project.build.jdk>
 
         <!-- dependencies -->
         <integrations-api.version>1.2.0</integrations-api.version>
         <jfuse.version>0.3.3</jfuse.version>
         <guava.version>31.1-jre</guava.version>
         <slf4j.version>2.0.3</slf4j.version>
+        <caffeine.version>3.1.4</caffeine.version>
 
         <!-- test dependencies -->
         <junit.jupiter.version>5.9.0</junit.jupiter.version>
         <mockito.version>4.7.0</mockito.version>
         <cryptofs.version>2.4.3</cryptofs.version>
+
+        <!-- build dependencies -->
+        <dependency-check.version>8.1.0</dependency-check.version>
+        <maven.deploy.version>3.1.0</maven.deploy.version>
     </properties>
 
     <licenses>
@@ -73,7 +78,7 @@
         <dependency>
             <groupId>com.github.ben-manes.caffeine</groupId>
             <artifactId>caffeine</artifactId>
-            <version>3.1.1</version>
+            <version>${caffeine.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.checkerframework</groupId>
@@ -161,6 +166,7 @@
                 <version>3.10.1</version>
                 <configuration>
                     <showWarnings>true</showWarnings>
+                    <release>${project.build.jdk}</release>
                     <compilerArgs>
                         <compilerArg>--enable-preview</compilerArg>
                     </compilerArgs>
@@ -216,7 +222,7 @@
                             <goal>jar</goal>
                         </goals>
                         <configuration>
-                            <release>19</release>
+                            <release>${project.build.jdk}</release>
                             <additionalOptions>--enable-preview</additionalOptions>
                         </configuration>
                     </execution>
@@ -239,7 +245,7 @@
                     <plugin>
                         <groupId>org.owasp</groupId>
                         <artifactId>dependency-check-maven</artifactId>
-                        <version>7.2.0</version>
+                        <version>${dependency-check.version}</version>
                         <configuration>
                             <cveValidForHours>24</cveValidForHours>
                             <failBuildOnCVSS>0</failBuildOnCVSS>
@@ -343,6 +349,15 @@
                     <url>https://maven.pkg.github.com/cryptomator/fuse-nio-adapter</url>
                 </repository>
             </distributionManagement>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-deploy-plugin</artifactId>
+                        <version>${maven.deploy.version}</version>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
     </profiles>
 </project>
