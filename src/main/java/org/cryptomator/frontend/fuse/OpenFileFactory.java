@@ -1,14 +1,14 @@
 package org.cryptomator.frontend.fuse;
 
+import com.google.common.collect.Sets;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
-import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.FileAttribute;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -16,23 +16,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-import javax.inject.Inject;
-
-import com.google.common.collect.Sets;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-@PerAdapter
 public class OpenFileFactory implements AutoCloseable {
 
 	private static final Logger LOG = LoggerFactory.getLogger(OpenFileFactory.class);
 
 	private final ConcurrentMap<Long, OpenFile> openFiles = new ConcurrentHashMap<>();
 	private final AtomicLong fileHandleGen = new AtomicLong(1l);
-
-	@Inject
-	public OpenFileFactory() {
-	}
 
 	/**
 	 * @param path path of the file to open
@@ -94,8 +83,8 @@ public class OpenFileFactory implements AutoCloseable {
 	@Override
 	public synchronized void close() throws IOException {
 		IOException exception = new IOException("At least one open file could not be closed.");
-		for (Iterator<Map.Entry<Long, OpenFile>> it = openFiles.entrySet().iterator(); it.hasNext();) {
-			Map.Entry<Long, OpenFile> entry = it.next();
+		for (var it = openFiles.entrySet().iterator(); it.hasNext();) {
+			var entry = it.next();
 			OpenFile openFile = entry.getValue();
 			LOG.warn("Closing unclosed file {}", openFile);
 			try {
