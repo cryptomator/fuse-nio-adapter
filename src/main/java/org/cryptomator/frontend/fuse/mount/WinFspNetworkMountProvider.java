@@ -22,7 +22,7 @@ import static org.cryptomator.integrations.mount.MountCapability.VOLUME_NAME;
 @OperatingSystem(OperatingSystem.Value.WINDOWS)
 public class WinFspNetworkMountProvider extends WinFspMountProvider {
 
-	private static final Pattern HOST_NAME_PATTERN_NEGATED = Pattern.compile("[a-zA-Z0-9-._~]+"); // all but unreserved chars according to https://www.rfc-editor.org/rfc/rfc3986#section-2.3
+	private static final Pattern HOST_NAME_PATTERN_NEGATED = Pattern.compile("[^a-zA-Z0-9-._~]+"); // all but unreserved chars according to https://www.rfc-editor.org/rfc/rfc3986#section-2.3
 
 	@Override
 	public String displayName() {
