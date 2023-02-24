@@ -43,7 +43,6 @@ public class WinFspNetworkMountProvider extends WinFspMountProvider {
 
 	private static class WinFspNetworkMountBuilder extends WinFspMountBuilder {
 
-		private String volumeName;
 		private String loopbackHostName = "localhost";
 
 		public WinFspNetworkMountBuilder(Path vfsRoot) {
