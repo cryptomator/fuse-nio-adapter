@@ -32,7 +32,7 @@
         <cryptofs.version>2.4.3</cryptofs.version>
 
         <!-- build dependencies -->
-        <dependency-check.version>8.1.0</dependency-check.version>
+        <dependency-check.version>8.1.2</dependency-check.version>
         <maven.deploy.version>3.1.0</maven.deploy.version>
     </properties>
 
