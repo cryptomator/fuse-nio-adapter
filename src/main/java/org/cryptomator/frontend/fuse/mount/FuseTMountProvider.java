@@ -14,6 +14,8 @@ import org.cryptomator.integrations.mount.MountService;
 import org.cryptomator.jfuse.api.Fuse;
 import org.cryptomator.jfuse.api.FuseMountFailedException;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -37,6 +39,7 @@ import static org.cryptomator.integrations.mount.MountCapability.VOLUME_NAME;
 public class FuseTMountProvider implements MountService {
 
 	private static final String DYLIB_PATH = "/usr/local/lib/libfuse-t.dylib";
+	private static final Path USER_HOME = Paths.get(System.getProperty("user.home"));
 
 	@Override
 	public String displayName() {
@@ -66,7 +69,13 @@ public class FuseTMountProvider implements MountService {
 	@Override
 	public String getDefaultMountFlags() {
 		// see: https://github.com/macos-fuse-t/fuse-t/wiki#supported-mount-options
-		return "-orwsize=262144";
+		try {
+			return "-orwsize=262144" //
+					+ " -ouid=" + Files.getAttribute(USER_HOME, "unix:uid") //
+					+ " -ogid=" + Files.getAttribute(USER_HOME, "unix:gid");
+		} catch (IOException e) {
+			throw new UncheckedIOException(e);
+		}
 	}
 
 	private static class FuseTMountBuilder extends AbstractMacMountBuilder {
