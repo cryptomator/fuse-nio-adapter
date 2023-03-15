@@ -11,6 +11,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
+import static org.cryptomator.integrations.mount.MountCapability.FILE_SYSTEM_NAME;
 import static org.cryptomator.integrations.mount.MountCapability.LOOPBACK_HOST_NAME;
 import static org.cryptomator.integrations.mount.MountCapability.MOUNT_AS_DRIVE_LETTER;
 import static org.cryptomator.integrations.mount.MountCapability.MOUNT_FLAGS;
@@ -32,7 +33,7 @@ public class WinFspNetworkMountProvider extends WinFspMountProvider {
 	@Override
 	public Set<MountCapability> capabilities() {
 		// no MOUNT_WITHIN_EXISTING_PARENT support here
-		return EnumSet.of(MOUNT_FLAGS, MOUNT_AS_DRIVE_LETTER, UNMOUNT_FORCED, READ_ONLY, VOLUME_NAME, LOOPBACK_HOST_NAME);
+		return EnumSet.of(MOUNT_FLAGS, MOUNT_AS_DRIVE_LETTER, UNMOUNT_FORCED, READ_ONLY, VOLUME_NAME, LOOPBACK_HOST_NAME, FILE_SYSTEM_NAME);
 	}
 
 	@Override

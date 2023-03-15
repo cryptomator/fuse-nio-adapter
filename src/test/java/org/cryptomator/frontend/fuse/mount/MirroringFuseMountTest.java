@@ -97,6 +97,9 @@ public class MirroringFuseMountTest {
 		if (mountProvider.hasCapability(MountCapability.LOOPBACK_HOST_NAME)) {
 			mountBuilder.setLoopbackHostName("mirrorHost");
 		}
+		if (mountProvider.hasCapability(MountCapability.FILE_SYSTEM_NAME)) {
+			mountBuilder.setFileSystemName("MirrorFS");
+		}
 		if (mountProvider.hasCapability(MountCapability.MOUNT_TO_SYSTEM_CHOSEN_PATH)) {
 			// don't set a mount point
 		} else {
