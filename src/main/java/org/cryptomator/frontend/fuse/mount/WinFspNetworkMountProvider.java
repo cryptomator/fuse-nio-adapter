@@ -17,6 +17,7 @@ import static org.cryptomator.integrations.mount.MountCapability.MOUNT_AS_DRIVE_
 import static org.cryptomator.integrations.mount.MountCapability.MOUNT_FLAGS;
 import static org.cryptomator.integrations.mount.MountCapability.READ_ONLY;
 import static org.cryptomator.integrations.mount.MountCapability.UNMOUNT_FORCED;
+import static org.cryptomator.integrations.mount.MountCapability.VOLUME_ID;
 import static org.cryptomator.integrations.mount.MountCapability.VOLUME_NAME;
 
 @Priority(100)
@@ -32,8 +33,7 @@ public class WinFspNetworkMountProvider extends WinFspMountProvider {
 
 	@Override
 	public Set<MountCapability> capabilities() {
-		// no MOUNT_WITHIN_EXISTING_PARENT support here
-		return EnumSet.of(MOUNT_FLAGS, MOUNT_AS_DRIVE_LETTER, UNMOUNT_FORCED, READ_ONLY, VOLUME_NAME, LOOPBACK_HOST_NAME, FILE_SYSTEM_NAME);
+		return EnumSet.of(MOUNT_FLAGS, MOUNT_AS_DRIVE_LETTER, UNMOUNT_FORCED, READ_ONLY, VOLUME_ID, LOOPBACK_HOST_NAME, FILE_SYSTEM_NAME);
 	}
 
 	@Override
@@ -45,9 +45,21 @@ public class WinFspNetworkMountProvider extends WinFspMountProvider {
 	private static class WinFspNetworkMountBuilder extends WinFspMountBuilder {
 
 		private String loopbackHostName = "localhost";
+		private String volumeId = UUID.randomUUID().toString();
 
 		public WinFspNetworkMountBuilder(Path vfsRoot) {
 			super(vfsRoot);
+		}
+
+		@Override
+		public MountBuilder setVolumeName(String name) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public MountBuilder setVolumeId(String id) {
+			this.volumeId = id;
+			return this;
 		}
 
 		@Override
@@ -72,11 +84,7 @@ public class WinFspNetworkMountProvider extends WinFspMountProvider {
 		@Override
 		protected Set<String> combinedMountFlags() {
 			var combined = super.combinedMountFlags();
-			if (volumeName != null && !volumeName.isBlank()) {
-				combined.add("-oVolumePrefix=/" + loopbackHostName + "/" + volumeName);
-			} else {
-				combined.add("-oVolumePrefix=/" + loopbackHostName + "/" + UUID.randomUUID());
-			}
+			combined.add("-oVolumePrefix=/" + loopbackHostName + "/" + volumeId);
 			return combined;
 		}
 	}
