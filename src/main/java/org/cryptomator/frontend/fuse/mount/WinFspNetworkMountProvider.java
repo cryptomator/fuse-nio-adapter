@@ -33,7 +33,7 @@ public class WinFspNetworkMountProvider extends WinFspMountProvider {
 
 	@Override
 	public Set<MountCapability> capabilities() {
-		return EnumSet.of(MOUNT_FLAGS, MOUNT_AS_DRIVE_LETTER, UNMOUNT_FORCED, READ_ONLY, VOLUME_ID, LOOPBACK_HOST_NAME, FILE_SYSTEM_NAME);
+		return EnumSet.of(FILE_SYSTEM_NAME, LOOPBACK_HOST_NAME, MOUNT_AS_DRIVE_LETTER, MOUNT_FLAGS, READ_ONLY, UNMOUNT_FORCED, VOLUME_ID, VOLUME_NAME);
 	}
 
 	@Override
@@ -49,11 +49,6 @@ public class WinFspNetworkMountProvider extends WinFspMountProvider {
 
 		public WinFspNetworkMountBuilder(Path vfsRoot) {
 			super(vfsRoot);
-		}
-
-		@Override
-		public MountBuilder setVolumeName(String name) {
-			throw new UnsupportedOperationException();
 		}
 
 		@Override
@@ -84,7 +79,9 @@ public class WinFspNetworkMountProvider extends WinFspMountProvider {
 		@Override
 		protected Set<String> combinedMountFlags() {
 			var combined = super.combinedMountFlags();
-			combined.add("-oVolumePrefix=/" + loopbackHostName + "/" + volumeId);
+			combined.removeIf(flag -> flag.startsWith("-oVolumePrefix="));
+			combined.removeIf(flag -> flag.startsWith("-oUNC="));
+			combined.add("-oUNC=/" + loopbackHostName + "/" + volumeId + "/" + volumeName);
 			return combined;
 		}
 	}
