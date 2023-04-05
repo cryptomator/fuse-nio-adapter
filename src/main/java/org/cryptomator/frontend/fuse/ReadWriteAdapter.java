@@ -92,7 +92,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 		} catch (FileSystemException e) {
 			return getErrorCodeForGenericFileSystemException(e, "mkdir " + path);
 		} catch (IOException | RuntimeException e) {
-			LOG.error("mkdir " + path + " failed.", e);
+			LOG.error("mkdir {} failed.", path, e);
 			return -errno.eio();
 		}
 	}
@@ -137,7 +137,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 		} catch (FileSystemException e) {
 			return getErrorCodeForGenericFileSystemException(e, "create " + path);
 		} catch (IOException | RuntimeException e) {
-			LOG.error("create " + path + " failed.", e);
+			LOG.error("create {} failed.", path, e);
 			return -errno.eio();
 		}
 	}
@@ -163,7 +163,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			LOG.warn("Setting posix permissions not supported by underlying file system.");
 			return -errno.enosys();
 		} catch (IOException | RuntimeException e) {
-			LOG.error("chmod " + path + " failed.", e);
+			LOG.error("chmod {} failed.", path, e);
 			return -errno.eio();
 		}
 	}
@@ -184,7 +184,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			LOG.warn("unlink {} failed, file not found.", path);
 			return -errno.enoent();
 		} catch (IOException | RuntimeException e) {
-			LOG.error("unlink " + path + " failed.", e);
+			LOG.error("unlink {} failed.", path, e);
 			return -errno.eio();
 		}
 	}
@@ -212,7 +212,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			LOG.warn("rmdir {} failed, directory not empty.", path);
 			return -errno.enotempty();
 		} catch (IOException | RuntimeException e) {
-			LOG.error("rmdir " + path + " failed.", e);
+			LOG.error("rmdir {} failed.", path, e);
 			return -errno.eio();
 		}
 	}
@@ -270,7 +270,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			LOG.warn("utimens {} failed, file not found.", path);
 			return -errno.enoent();
 		} catch (IOException | RuntimeException e) {
-			LOG.error("utimens " + path + " failed.", e);
+			LOG.error("utimens {} failed.", path, e);
 			return -errno.eio();
 		}
 	}
@@ -287,7 +287,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			LOG.warn("write {} failed, invalid file handle {}", path, fi.getFh());
 			return -errno.ebadf();
 		} catch (IOException | RuntimeException e) {
-			LOG.error("write " + path + " failed.", e);
+			LOG.error("write {} failed.", path, e);
 			return -errno.eio();
 		}
 	}
@@ -308,7 +308,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			LOG.warn("utimens {} failed, file not found.", path);
 			return -errno.enoent();
 		} catch (IOException | RuntimeException e) {
-			LOG.error("truncate " + path + " failed.", e);
+			LOG.error("truncate {} failed.", path, e);
 			return -errno.eio();
 		}
 	}
@@ -324,7 +324,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			LOG.warn("fsync {} failed, invalid file handle {}", path, fi.getFh());
 			return -errno.ebadf();
 		} catch (IOException | RuntimeException e) {
-			LOG.error("fsync " + path + " failed.", e);
+			LOG.error("fsync {} failed.", path, e);
 			return -errno.eio();
 		}
 	}

@@ -123,7 +123,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 			LOG.trace("statfs {} ({} / {})", path, avail, total);
 			return 0;
 		} catch (IOException | RuntimeException e) {
-			LOG.error("statfs " + path + " failed.", e);
+			LOG.error("statfs {} failed.", path, e);
 			return -errno.eio();
 		}
 	}
@@ -250,7 +250,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 			LOG.warn("Attempted to open file with unsupported flags.", e);
 			return -errno.erofs();
 		} catch (IOException | RuntimeException e) {
-			LOG.error("open " + path + " failed.", e);
+			LOG.error("open {} failed.", path, e);
 			return -errno.eio();
 		}
 	}
@@ -267,7 +267,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 			LOG.warn("read {} failed, invalid file handle {}", path, fi.getFh());
 			return -errno.ebadf();
 		} catch (IOException | RuntimeException e) {
-			LOG.error("read " + path + " failed.", e);
+			LOG.error("read {} failed.", path, e);
 			return -errno.eio();
 		}
 	}
@@ -283,7 +283,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 			LOG.warn("release {} failed, invalid file handle {}", path, fi.getFh());
 			return -errno.ebadf();
 		} catch (IOException | RuntimeException e) {
-			LOG.error("release " + path + " failed.", e);
+			LOG.error("release {} failed.", path, e);
 			return -errno.eio();
 		}
 	}
