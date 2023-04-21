@@ -305,7 +305,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			}
 			return 0;
 		} catch (NoSuchFileException e) {
-			LOG.warn("utimens {} failed, file not found.", path);
+			LOG.warn("truncate {} failed, file not found.", path);
 			return -errno.enoent();
 		} catch (IOException | RuntimeException e) {
 			LOG.error("truncate {} failed.", path, e);
