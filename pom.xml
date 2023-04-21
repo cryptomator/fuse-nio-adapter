@@ -17,23 +17,24 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.build.jdk>19</project.build.jdk>
+        <project.build.jdk>20</project.build.jdk>
 
         <!-- dependencies -->
         <integrations-api.version>1.2.0</integrations-api.version>
-        <jfuse.version>0.4.2</jfuse.version>
+        <jfuse.version>0.5.1</jfuse.version>
         <guava.version>31.1-jre</guava.version>
         <slf4j.version>2.0.3</slf4j.version>
         <caffeine.version>3.1.4</caffeine.version>
 
         <!-- test dependencies -->
         <junit.jupiter.version>5.9.0</junit.jupiter.version>
-        <mockito.version>4.7.0</mockito.version>
+        <mockito.version>5.2.0</mockito.version>
         <cryptofs.version>2.4.3</cryptofs.version>
 
         <!-- build dependencies -->
         <dependency-check.version>8.1.2</dependency-check.version>
         <maven.deploy.version>3.1.0</maven.deploy.version>
+        <jacoco.version>0.8.9</jacoco.version>
     </properties>
 
     <licenses>
@@ -175,7 +176,7 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.8</version>
+                <version>${jacoco.version}</version>
                 <executions>
                     <execution>
                         <id>prepare-agent</id>
