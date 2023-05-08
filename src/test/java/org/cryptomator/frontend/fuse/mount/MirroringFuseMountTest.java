@@ -28,11 +28,6 @@ import java.util.Scanner;
  */
 public class MirroringFuseMountTest {
 
-	static {
-		System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug");
-		System.setProperty("org.slf4j.simpleLogger.showDateTime", "true");
-		System.setProperty("org.slf4j.simpleLogger.dateTimeFormat", "HH:mm:ss.SSS");
-	}
 
 	private static final Logger LOG = LoggerFactory.getLogger(MirroringFuseMountTest.class);
 
@@ -40,6 +35,14 @@ public class MirroringFuseMountTest {
 	 * Mirror directory
 	 */
 	public static class Mirror {
+
+		static {
+			System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug");
+			System.setProperty("org.slf4j.simpleLogger.log.org.cryptomator.frontend.fuse.locks.DataLock", "warn");
+			System.setProperty("org.slf4j.simpleLogger.log.org.cryptomator.frontend.fuse.locks.PathLock", "warn");
+			System.setProperty("org.slf4j.simpleLogger.showDateTime", "true");
+			System.setProperty("org.slf4j.simpleLogger.dateTimeFormat", "HH:mm:ss.SSS");
+		}
 
 		public static void main(String[] args) throws MountFailedException {
 			var mountService = MountService.get().findAny().orElseThrow(() -> new MountFailedException("Did not find a mount provider"));
@@ -57,6 +60,14 @@ public class MirroringFuseMountTest {
 	 * Mirror vault
 	 */
 	public static class CryptoFsMirror {
+
+		static {
+			System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug");
+			System.setProperty("org.slf4j.simpleLogger.log.org.cryptomator.frontend.fuse.locks.DataLock", "warn");
+			System.setProperty("org.slf4j.simpleLogger.log.org.cryptomator.frontend.fuse.locks.PathLock", "warn");
+			System.setProperty("org.slf4j.simpleLogger.showDateTime", "true");
+			System.setProperty("org.slf4j.simpleLogger.dateTimeFormat", "HH:mm:ss.SSS");
+		}
 
 		public static void main(String[] args) throws IOException, NoSuchAlgorithmException, MountFailedException {
 			var mountService = MountService.get().findAny().orElseThrow(() -> new MountFailedException("Did not find a mount provider"));

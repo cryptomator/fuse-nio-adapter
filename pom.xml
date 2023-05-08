@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.cryptomator</groupId>
     <artifactId>fuse-nio-adapter</artifactId>
-    <version>2.0.5</version>
+    <version>3.0.0</version>
     <name>FUSE-NIO-Adapter</name>
     <description>Access resources at a given NIO path via FUSE.</description>
     <url>https://github.com/cryptomator/fuse-nio-adapter</url>
@@ -17,23 +17,24 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.build.jdk>19</project.build.jdk>
+        <project.build.jdk>20</project.build.jdk>
 
         <!-- dependencies -->
         <integrations-api.version>1.2.0</integrations-api.version>
-        <jfuse.version>0.4.2</jfuse.version>
+        <jfuse.version>0.5.1</jfuse.version>
         <guava.version>31.1-jre</guava.version>
-        <slf4j.version>2.0.3</slf4j.version>
-        <caffeine.version>3.1.4</caffeine.version>
+        <slf4j.version>2.0.7</slf4j.version>
+        <caffeine.version>3.1.6</caffeine.version>
 
         <!-- test dependencies -->
-        <junit.jupiter.version>5.9.0</junit.jupiter.version>
-        <mockito.version>4.7.0</mockito.version>
-        <cryptofs.version>2.4.3</cryptofs.version>
+        <junit.jupiter.version>5.9.3</junit.jupiter.version>
+        <mockito.version>5.3.1</mockito.version>
+        <cryptofs.version>2.6.4</cryptofs.version>
 
         <!-- build dependencies -->
-        <dependency-check.version>8.1.2</dependency-check.version>
+        <dependency-check.version>8.2.1</dependency-check.version>
         <maven.deploy.version>3.1.0</maven.deploy.version>
+        <jacoco.version>0.8.9</jacoco.version>
     </properties>
 
     <licenses>
@@ -138,12 +139,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-inline</artifactId>
-            <version>${mockito.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.cryptomator</groupId>
             <artifactId>cryptofs</artifactId>
             <version>${cryptofs.version}</version>
@@ -175,7 +170,7 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.8</version>
+                <version>${jacoco.version}</version>
                 <executions>
                     <execution>
                         <id>prepare-agent</id>
