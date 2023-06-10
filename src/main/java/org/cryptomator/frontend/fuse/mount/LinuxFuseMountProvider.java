@@ -1,6 +1,5 @@
 package org.cryptomator.frontend.fuse.mount;
 
-import com.google.common.base.Preconditions;
 import org.cryptomator.frontend.fuse.FileNameTranscoder;
 import org.cryptomator.frontend.fuse.FuseNioAdapter;
 import org.cryptomator.frontend.fuse.ReadWriteAdapter;
@@ -24,6 +23,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
 
@@ -42,7 +42,7 @@ public class LinuxFuseMountProvider implements MountService {
 	private static final String[] LIB_PATHS = {
 			"/usr/lib/libfuse3.so", // default
 			"/lib/x86_64-linux-gnu/libfuse3.so.3", // debian amd64
-			"/lib/aarch64-linux-gnu/libfuse3.so.3", // debiant aarch64
+			"/lib/aarch64-linux-gnu/libfuse3.so.3", // debian aarch64
 			"/usr/lib64/libfuse3.so.3", // fedora
 			"/app/lib/libfuse3.so" // flatpak
 	};
@@ -98,8 +98,8 @@ public class LinuxFuseMountProvider implements MountService {
 
 		@Override
 		public Mount mount() throws MountFailedException {
-			Preconditions.checkNotNull(mountPoint);
-			Preconditions.checkNotNull(mountFlags);
+			Objects.requireNonNull(mountPoint);
+			Objects.requireNonNull(mountFlags);
 
 			var libPath = Arrays.stream(LIB_PATHS).map(Path::of).filter(Files::exists).map(Path::toString).findAny().orElseThrow();
 			var builder = Fuse.builder();

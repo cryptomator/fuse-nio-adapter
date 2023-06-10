@@ -1,6 +1,5 @@
 package org.cryptomator.frontend.fuse;
 
-import com.google.common.base.MoreObjects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -97,10 +96,10 @@ public class OpenFile implements Closeable {
 
 	@Override
 	public String toString() {
-		return MoreObjects.toStringHelper(OpenFile.class) //
-				.add("path", path) //
-				.add("channel", channel) //
-				.toString();
+		return "OpenFile{"
+				+ "path=" + path + ", "
+				+ "channel=" + channel
+				+ "}";
 	}
 
 }

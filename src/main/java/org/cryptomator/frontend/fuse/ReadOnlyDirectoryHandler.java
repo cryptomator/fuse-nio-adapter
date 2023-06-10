@@ -1,19 +1,17 @@
 package org.cryptomator.frontend.fuse;
 
-import com.google.common.collect.Iterators;
 import org.cryptomator.jfuse.api.DirFiller;
 import org.cryptomator.jfuse.api.FileInfo;
 import org.cryptomator.jfuse.api.Stat;
 
 import java.io.IOException;
 import java.nio.file.DirectoryIteratorException;
-import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.PosixFileAttributes;
-import java.util.Iterator;
+import java.util.stream.Stream;
 
 public class ReadOnlyDirectoryHandler {
 
@@ -61,11 +59,11 @@ public class ReadOnlyDirectoryHandler {
 //		}
 
 		// just fill in names, getattr gets called for each entry anyway
-		try (DirectoryStream<Path> ds = Files.newDirectoryStream(path)) {
-			Iterator<Path> sameAndParent = Iterators.forArray(SAME_DIR, PARENT_DIR);
-			Iterator<Path> iter = Iterators.concat(sameAndParent, ds.iterator());
-			while (iter.hasNext()) {
-				String fileName = iter.next().getFileName().toString();
+		try (Stream<Path> ds = Files.list(path)) {
+			Stream<Path> sameAndParent = Stream.of(SAME_DIR, PARENT_DIR);
+			Stream<Path> iter = Stream.concat(sameAndParent, ds);
+			for (Path file : iter.toList()) {
+				String fileName = file.getFileName().toString();
 				filler.fill(fileNameTranscoder.nioToFuse(fileName));
 			}
 			return 0;
