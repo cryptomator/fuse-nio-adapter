@@ -1,6 +1,5 @@
 package org.cryptomator.frontend.fuse;
 
-import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -9,8 +8,6 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileAttribute;
-import java.util.Iterator;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -30,7 +27,7 @@ public class OpenFileFactory implements AutoCloseable {
 	 * @throws IOException
 	 */
 	public long open(Path path, OpenOption... options) throws IOException {
-		return this.open(path, Sets.newHashSet(options));
+		return open(path, Set.of(options));
 	}
 
 	/**

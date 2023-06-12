@@ -1,8 +1,5 @@
 package org.cryptomator.frontend.fuse;
 
-import com.google.common.base.CharMatcher;
-import com.google.common.base.Strings;
-import com.google.common.collect.Iterables;
 import org.cryptomator.frontend.fuse.locks.AlreadyLockedException;
 import org.cryptomator.frontend.fuse.locks.DataLock;
 import org.cryptomator.frontend.fuse.locks.LockManager;
@@ -102,8 +99,16 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 				Operation.STATFS);
 	}
 
+	private String stripLeadingFrom(String string) {
+		StringBuilder sb = new StringBuilder(string);
+		while (!sb.isEmpty() && sb.charAt(0) == '/') {
+			sb.deleteCharAt(0);
+		}
+		return sb.toString();
+	}
+
 	protected Path resolvePath(String absolutePath) {
-		String relativePath = CharMatcher.is('/').trimLeadingFrom(absolutePath);
+		String relativePath = stripLeadingFrom(absolutePath);
 		return root.resolve(relativePath);
 	}
 
@@ -149,7 +154,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 			if (!Collections.disjoint(requiredAccessModes, deniedAccessModes)) {
 				throw new AccessDeniedException(path.toString());
 			}
-			path.getFileSystem().provider().checkAccess(path, Iterables.toArray(requiredAccessModes, AccessMode.class));
+			path.getFileSystem().provider().checkAccess(path, requiredAccessModes.toArray(AccessMode[]::new));
 			return 0;
 		} catch (NoSuchFileException e) {
 			return -errno.enoent();
@@ -320,7 +325,8 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 	 * @return A specific error code or -EIO.
 	 */
 	protected int getErrorCodeForGenericFileSystemException(FileSystemException e, String opDesc) {
-		String reason = Strings.nullToEmpty(e.getReason());
+		String reason = e.getReason();
+		reason = reason != null ? reason : "";
 //		if (reason.contains("path too long") || reason.contains("name too long")) {
 //			LOG.warn("{} {} failed, name too long.", opDesc);
 //			return -ErrorCodes.ENAMETOOLONG();

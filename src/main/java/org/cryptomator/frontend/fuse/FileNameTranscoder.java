@@ -1,11 +1,10 @@
 package org.cryptomator.frontend.fuse;
 
-import com.google.common.base.Preconditions;
-
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
+import java.util.Objects;
 
 /**
  * Class to transcode filenames and path components from one encoding to another.
@@ -25,10 +24,10 @@ public class FileNameTranscoder {
 	private final boolean nioCharsetIsUnicode;
 
 	FileNameTranscoder(Charset fuseCharset, Charset nioCharset, Normalizer.Form fuseNormalization, Normalizer.Form nioNormalization) {
-		this.fuseCharset = Preconditions.checkNotNull(fuseCharset);
-		this.nioCharset = Preconditions.checkNotNull(nioCharset);
-		this.fuseNormalization = Preconditions.checkNotNull(fuseNormalization);
-		this.nioNormalization = Preconditions.checkNotNull(nioNormalization);
+		this.fuseCharset = Objects.requireNonNull(fuseCharset);
+		this.nioCharset = Objects.requireNonNull(nioCharset);
+		this.fuseNormalization = Objects.requireNonNull(fuseNormalization);
+		this.nioNormalization = Objects.requireNonNull(nioNormalization);
 		this.fuseCharsetIsUnicode = fuseCharset.name().startsWith("UTF");
 		this.nioCharsetIsUnicode = nioCharset.name().startsWith("UTF");
 	}

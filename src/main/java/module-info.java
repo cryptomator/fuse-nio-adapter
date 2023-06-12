@@ -9,7 +9,6 @@ module org.cryptomator.frontend.fuse {
 	requires org.cryptomator.jfuse;
 	requires org.cryptomator.integrations.api;
 	requires org.slf4j;
-	requires com.google.common; // TODO try to remove
 	requires com.github.benmanes.caffeine;
 	requires static org.jetbrains.annotations;
 
