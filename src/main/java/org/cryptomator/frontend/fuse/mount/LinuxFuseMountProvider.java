@@ -46,6 +46,7 @@ public class LinuxFuseMountProvider implements MountService {
 			"/usr/lib64/libfuse3.so.3", // fedora
 			"/app/lib/libfuse3.so" // flatpak
 	};
+	private static final String UNMOUNT_CMD_NAME = "fusermount3";
 
 	@Override
 	public String displayName() {
@@ -54,7 +55,17 @@ public class LinuxFuseMountProvider implements MountService {
 
 	@Override
 	public boolean isSupported() {
-		return Arrays.stream(LIB_PATHS).map(Path::of).anyMatch(Files::exists);
+		return Arrays.stream(LIB_PATHS).map(Path::of).anyMatch(Files::exists) && isFusermount3Installed();
+	}
+
+	private boolean isFusermount3Installed() {
+		try {
+			var p = new ProcessBuilder(UNMOUNT_CMD_NAME, "-V").start();
+			ProcessHelper.waitForSuccess(p, 2, String.format("`%s -V`", UNMOUNT_CMD_NAME));
+			return true;
+		} catch (IOException | TimeoutException | InterruptedException | ProcessHelper.CommandFailedException e) {
+			return false;
+		}
 	}
 
 	@Override
@@ -126,11 +137,12 @@ public class LinuxFuseMountProvider implements MountService {
 
 			@Override
 			public void unmount() throws UnmountFailedException {
-				ProcessBuilder command = new ProcessBuilder("fusermount3", "-u", "--", mountpoint.getFileName().toString());
+				var mp = mountpoint.getFileName().toString();
+				ProcessBuilder command = new ProcessBuilder(UNMOUNT_CMD_NAME, "-u", "--", mp);
 				command.directory(mountpoint.getParent().toFile());
 				try {
 					Process p = command.start();
-					ProcessHelper.waitForSuccess(p, 10, "`fusermount3 -u`");
+					ProcessHelper.waitForSuccess(p, 10, String.format("`%s -u -- %s`", UNMOUNT_CMD_NAME, mp));
 					fuse.close();
 					unmounted = true;
 				} catch (InterruptedException e) {
