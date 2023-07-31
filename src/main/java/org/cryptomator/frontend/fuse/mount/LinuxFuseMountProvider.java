@@ -64,6 +64,9 @@ public class LinuxFuseMountProvider implements MountService {
 			ProcessHelper.waitForSuccess(p, 2, String.format("`%s -V`", UNMOUNT_CMD_NAME));
 			return true;
 		} catch (IOException | TimeoutException | InterruptedException | ProcessHelper.CommandFailedException e) {
+			if( e instanceof InterruptedException) {
+				Thread.currentThread().interrupt();
+			}
 			return false;
 		}
 	}
