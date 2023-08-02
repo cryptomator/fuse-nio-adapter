@@ -8,6 +8,7 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileAttribute;
+import java.time.Instant;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -67,8 +68,18 @@ public class OpenFileFactory implements AutoCloseable {
 		}
 	}
 
-	public int getOpenFileCount(){
-		return openFiles.size();
+	/**
+	 * Checks, if any active {@link OpenFile} exists.
+	 * <p>
+	 * An OpenFile is active, if its read or write methods were called in the last threshold given seconds.
+	 * To get atomicity guarantees this method must be externally synchronized.
+	 *
+	 * @param activeThreshold number of seconds defining the threshold an OpenFile is considered active
+	 * @return {@code true} if at least one active OpenFile exists, otherwise {@code false}
+	 */
+	public boolean hasActiveFiles(long activeThreshold) {
+		var comparsion = Instant.now().minusSeconds(activeThreshold);
+		return openFiles.values().stream().anyMatch(openFile -> openFile.lastUsed().isAfter(comparsion));
 	}
 
 	/**

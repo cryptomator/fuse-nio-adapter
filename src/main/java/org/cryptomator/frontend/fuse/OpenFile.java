@@ -10,7 +10,9 @@ import java.nio.channels.FileChannel;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileAttribute;
+import java.time.Instant;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class OpenFile implements Closeable {
 
@@ -18,6 +20,7 @@ public class OpenFile implements Closeable {
 
 	private final Path path;
 	private final FileChannel channel;
+	private final AtomicReference<Instant> lastUsed = new AtomicReference(Instant.now());
 
 	private OpenFile(Path path, FileChannel channel) {
 		this.path = path;
@@ -39,6 +42,7 @@ public class OpenFile implements Closeable {
 	 * @throws IOException If an exception occurs during read.
 	 */
 	public int read(ByteBuffer buf, long num, long offset) throws IOException {
+		lastUsed.set(Instant.now());
 		long size = channel.size();
 		if (offset >= size) {
 			return 0;
@@ -69,6 +73,7 @@ public class OpenFile implements Closeable {
 	 * @throws IOException If an exception occurs during write.
 	 */
 	public int write(ByteBuffer buf, long num, long offset) throws IOException {
+		lastUsed.set(Instant.now());
 		if (num > Integer.MAX_VALUE) {
 			throw new IOException("Requested too many bytes");
 		}
@@ -78,6 +83,10 @@ public class OpenFile implements Closeable {
 			written += channel.write(buf, offset + written);
 		}
 		return written;
+	}
+
+	public Instant lastUsed() {
+		return lastUsed.get();
 	}
 
 	@Override

@@ -12,6 +12,13 @@ public interface FuseNioAdapter extends FuseOperations, AutoCloseable {
 	int DEFAULT_MAX_FILENAMELENGTH = 254; // 255 is preferred, but nautilus checks for this value + 1
 
 	/**
+	 * The default value until an {@link OpenFile} is considered active.
+	 * 
+	 * @see OpenFileFactory#hasActiveFiles(long) 
+	 */
+	long DEFAULT_ACTIVE_THRESHOLD = Long.MAX_VALUE;
+
+	/**
 	 * Checks if the filesystem is in use (and therefore an unmount attempt should be avoided).
 	 * <p>
 	 * Important: This function only checks, like the name suggests, if the filesystem is busy and used. A return value of {@code false} should not be considered as an unmount can be safely and successfully executed and thus an unmount may fail.

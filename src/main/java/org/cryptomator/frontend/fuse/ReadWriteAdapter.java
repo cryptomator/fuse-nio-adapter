@@ -38,21 +38,25 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 	private static final Logger LOG = LoggerFactory.getLogger(ReadWriteAdapter.class);
 	private final ReadWriteFileHandler fileHandler;
 
-	private ReadWriteAdapter(Errno errno, Path root, int maxFileNameLength, FileNameTranscoder fileNameTranscoder, FileStore fileStore, OpenFileFactory openFiles, ReadWriteDirectoryHandler dirHandler, ReadWriteFileHandler fileHandler) {
-		super(errno, root, maxFileNameLength, fileNameTranscoder, fileStore, openFiles, dirHandler, fileHandler);
+	private ReadWriteAdapter(Errno errno, Path root, int maxFileNameLength, FileNameTranscoder fileNameTranscoder, FileStore fileStore, OpenFileFactory openFiles, long activeOpenFileThreshold, ReadWriteDirectoryHandler dirHandler, ReadWriteFileHandler fileHandler) {
+		super(errno, root, maxFileNameLength, fileNameTranscoder, fileStore, openFiles, activeOpenFileThreshold, dirHandler, fileHandler);
 		this.fileHandler = fileHandler;
 	}
 
-	public static ReadWriteAdapter create(Errno errno, Path root, int maxFileNameLength, FileNameTranscoder fileNameTranscoder) {
+	public static ReadWriteAdapter create(Errno errno, Path root, int maxFileNameLength, FileNameTranscoder fileNameTranscoder, long activeOpenFileThreshold) {
 		try {
 			var fileStore = Files.getFileStore(root);
 			var openFiles = new OpenFileFactory();
 			var dirHandler = new ReadWriteDirectoryHandler(fileNameTranscoder);
 			var fileHandler = new ReadWriteFileHandler(openFiles);
-			return new ReadWriteAdapter(errno, root, maxFileNameLength, fileNameTranscoder, fileStore, openFiles, dirHandler, fileHandler);
+			return new ReadWriteAdapter(errno, root, maxFileNameLength, fileNameTranscoder, fileStore, openFiles, activeOpenFileThreshold, dirHandler, fileHandler);
 		} catch (IOException e) {
 			throw new UncheckedIOException(e);
 		}
+	}
+
+	public static ReadWriteAdapter create(Errno errno, Path root, int maxFileNameLength, FileNameTranscoder fileNameTranscoder) {
+		return create(errno, root, maxFileNameLength, fileNameTranscoder, DEFAULT_ACTIVE_THRESHOLD);
 	}
 
 	@Override
