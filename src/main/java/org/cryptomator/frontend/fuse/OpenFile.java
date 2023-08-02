@@ -15,7 +15,6 @@ import java.util.Set;
 public class OpenFile implements Closeable {
 
 	private static final Logger LOG = LoggerFactory.getLogger(OpenFile.class);
-	private static final int BUFFER_SIZE = 4096;
 
 	private final Path path;
 	private final FileChannel channel;
