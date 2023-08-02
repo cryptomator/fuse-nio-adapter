@@ -43,25 +43,23 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 	private final int maxFileNameLength;
 	protected final FileStore fileStore;
 	protected final LockManager lockManager;
-	protected final OpenFileFactory openFiles;
 	protected final FileNameTranscoder fileNameTranscoder;
 	private final ReadOnlyDirectoryHandler dirHandler;
 	private final ReadOnlyFileHandler fileHandler;
 	private final ReadOnlyLinkHandler linkHandler;
-	private final BooleanSupplier hasActiveOpenFiles;
+	private final BooleanSupplier inUseCheck;
 
-	protected ReadOnlyAdapter(Errno errno, Path root, int maxFileNameLength, FileNameTranscoder fileNameTranscoder, FileStore fileStore, OpenFileFactory openFiles, long activeOpenFileThreshold, ReadOnlyDirectoryHandler dirHandler, ReadOnlyFileHandler fileHandler) {
+	protected ReadOnlyAdapter(Errno errno, Path root, int maxFileNameLength, FileNameTranscoder fileNameTranscoder, FileStore fileStore, BooleanSupplier inUseCheck, ReadOnlyDirectoryHandler dirHandler, ReadOnlyFileHandler fileHandler) {
 		this.errno = errno;
 		this.root = root;
 		this.maxFileNameLength = maxFileNameLength;
 		this.fileNameTranscoder = fileNameTranscoder;
 		this.fileStore = fileStore;
 		this.lockManager = new LockManager();
-		this.openFiles = openFiles;
 		this.dirHandler = dirHandler;
 		this.fileHandler = fileHandler;
 		this.linkHandler = new ReadOnlyLinkHandler(fileNameTranscoder);
-		this.hasActiveOpenFiles = () -> openFiles.hasActiveFiles(30);
+		this.inUseCheck = inUseCheck;
 	}
 
 	public static ReadOnlyAdapter create(Errno errno, Path root, int maxFileNameLength, FileNameTranscoder fileNameTranscoder, long activeOpenFileThreshold) {
@@ -70,7 +68,8 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 			var openFiles = new OpenFileFactory();
 			var dirHandler = new ReadOnlyDirectoryHandler(fileNameTranscoder);
 			var fileHandler = new ReadOnlyFileHandler(openFiles);
-			return new ReadOnlyAdapter(errno, root, maxFileNameLength, fileNameTranscoder, fileStore, openFiles, activeOpenFileThreshold, dirHandler, fileHandler);
+			BooleanSupplier inUseCheck = () -> openFiles.hasActiveFiles(activeOpenFileThreshold);
+			return new ReadOnlyAdapter(errno, root, maxFileNameLength, fileNameTranscoder, fileStore, inUseCheck, dirHandler, fileHandler);
 		} catch (IOException e) {
 			throw new UncheckedIOException(e);
 		}
@@ -309,7 +308,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 	@Override
 	public boolean isInUse() {
 		try (PathLock pLock = lockManager.tryLockForWriting("/")) {
-			return hasActiveOpenFiles.getAsBoolean();
+			return inUseCheck.getAsBoolean();
 		} catch (AlreadyLockedException e) {
 			return true;
 		}

@@ -29,6 +29,7 @@ import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.EnumSet;
 import java.util.Set;
+import java.util.function.BooleanSupplier;
 
 /**
  *
@@ -38,8 +39,8 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 	private static final Logger LOG = LoggerFactory.getLogger(ReadWriteAdapter.class);
 	private final ReadWriteFileHandler fileHandler;
 
-	private ReadWriteAdapter(Errno errno, Path root, int maxFileNameLength, FileNameTranscoder fileNameTranscoder, FileStore fileStore, OpenFileFactory openFiles, long activeOpenFileThreshold, ReadWriteDirectoryHandler dirHandler, ReadWriteFileHandler fileHandler) {
-		super(errno, root, maxFileNameLength, fileNameTranscoder, fileStore, openFiles, activeOpenFileThreshold, dirHandler, fileHandler);
+	private ReadWriteAdapter(Errno errno, Path root, int maxFileNameLength, FileNameTranscoder fileNameTranscoder, FileStore fileStore, BooleanSupplier inUseCheck, ReadWriteDirectoryHandler dirHandler, ReadWriteFileHandler fileHandler) {
+		super(errno, root, maxFileNameLength, fileNameTranscoder, fileStore, inUseCheck, dirHandler, fileHandler);
 		this.fileHandler = fileHandler;
 	}
 
@@ -49,7 +50,8 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			var openFiles = new OpenFileFactory();
 			var dirHandler = new ReadWriteDirectoryHandler(fileNameTranscoder);
 			var fileHandler = new ReadWriteFileHandler(openFiles);
-			return new ReadWriteAdapter(errno, root, maxFileNameLength, fileNameTranscoder, fileStore, openFiles, activeOpenFileThreshold, dirHandler, fileHandler);
+			BooleanSupplier inUseCheck = () -> openFiles.hasActiveFiles(activeOpenFileThreshold);
+			return new ReadWriteAdapter(errno, root, maxFileNameLength, fileNameTranscoder, fileStore, inUseCheck, dirHandler, fileHandler);
 		} catch (IOException e) {
 			throw new UncheckedIOException(e);
 		}
