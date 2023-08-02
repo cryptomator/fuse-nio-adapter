@@ -31,9 +31,9 @@
         <cryptofs.version>2.6.6</cryptofs.version>
 
         <!-- build dependencies -->
-        <dependency-check.version>8.2.1</dependency-check.version>
-        <maven.deploy.version>3.1.0</maven.deploy.version>
-        <jacoco.version>0.8.9</jacoco.version>
+        <dependency-check.version>8.3.1</dependency-check.version>
+        <maven.deploy.version>3.1.1</maven.deploy.version>
+        <jacoco.version>0.8.10</jacoco.version>
     </properties>
 
     <licenses>
