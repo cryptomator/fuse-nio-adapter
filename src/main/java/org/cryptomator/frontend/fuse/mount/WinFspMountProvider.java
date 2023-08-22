@@ -17,13 +17,12 @@ import org.cryptomator.jfuse.api.FuseMountFailedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.EnumSet;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
 
+import static org.cryptomator.integrations.mount.MountCapability.FILE_SYSTEM_NAME;
 import static org.cryptomator.integrations.mount.MountCapability.MOUNT_AS_DRIVE_LETTER;
 import static org.cryptomator.integrations.mount.MountCapability.MOUNT_FLAGS;
-import static org.cryptomator.integrations.mount.MountCapability.MOUNT_TO_EXISTING_DIR;
 import static org.cryptomator.integrations.mount.MountCapability.MOUNT_WITHIN_EXISTING_PARENT;
 import static org.cryptomator.integrations.mount.MountCapability.READ_ONLY;
 import static org.cryptomator.integrations.mount.MountCapability.UNMOUNT_FORCED;
@@ -37,7 +36,7 @@ public class WinFspMountProvider implements MountService {
 
 	@Override
 	public String displayName() {
-		return "WinFSP";
+		return "WinFsp (Local Drive)";
 	}
 
 	@Override
@@ -47,13 +46,13 @@ public class WinFspMountProvider implements MountService {
 
 	@Override
 	public Set<MountCapability> capabilities() {
-		return EnumSet.of(MOUNT_FLAGS, MOUNT_AS_DRIVE_LETTER, MOUNT_WITHIN_EXISTING_PARENT, UNMOUNT_FORCED, READ_ONLY, VOLUME_NAME);
+		return EnumSet.of(MOUNT_FLAGS, MOUNT_AS_DRIVE_LETTER, MOUNT_WITHIN_EXISTING_PARENT, UNMOUNT_FORCED, READ_ONLY, VOLUME_NAME, FILE_SYSTEM_NAME);
 	}
 
 	@Override
 	public String getDefaultMountFlags() {
 		// see: https://github.com/winfsp/winfsp/blob/84b3f98d383b265ebdb33891fc911eaafb878497/src/dll/fuse/fuse.c#L628
-		return "-ouid=-1 -ogid=-1"; // TODO: research and use correct ones
+		return "-ouid=-1 -ogid=-1";
 	}
 
 	@Override
@@ -63,6 +62,8 @@ public class WinFspMountProvider implements MountService {
 
 	protected static class WinFspMountBuilder extends AbstractMountBuilder {
 
+		private static String DEFAULT_FS_NAME = "FUSE-NIO-FS";
+		String fsName = DEFAULT_FS_NAME;
 		boolean isReadOnly = false;
 
 		WinFspMountBuilder(Path vfsRoot) {
@@ -78,6 +79,12 @@ public class WinFspMountProvider implements MountService {
 			} else {
 				throw new IllegalArgumentException("mount point must either be a drive letter or a non-existing node within an existing parent");
 			}
+		}
+
+		@Override
+		public MountBuilder setFileSystemName(String fsName) {
+			this.fsName = fsName;
+			return this;
 		}
 
 		@Override
@@ -97,6 +104,12 @@ public class WinFspMountProvider implements MountService {
 			if (isReadOnly) {
 				combined.removeIf(flag -> flag.startsWith("-oumask="));
 				combined.add("-oumask=0333");
+			}
+			combined.removeIf(flag -> flag.startsWith("-oExactFileSystemName="));
+			combined.add("-oExactFileSystemName=" + fsName);
+			if(volumeName != null && !volumeName.isBlank()) {
+				combined.removeIf(flag -> flag.startsWith("-ovolname="));
+				combined.add("-ovolname=" + volumeName);
 			}
 			return combined;
 		}

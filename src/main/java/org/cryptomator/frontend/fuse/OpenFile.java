@@ -1,6 +1,5 @@
 package org.cryptomator.frontend.fuse;
 
-import com.google.common.base.MoreObjects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,7 +15,6 @@ import java.util.Set;
 public class OpenFile implements Closeable {
 
 	private static final Logger LOG = LoggerFactory.getLogger(OpenFile.class);
-	private static final int BUFFER_SIZE = 4096;
 
 	private final Path path;
 	private final FileChannel channel;
@@ -97,10 +95,10 @@ public class OpenFile implements Closeable {
 
 	@Override
 	public String toString() {
-		return MoreObjects.toStringHelper(OpenFile.class) //
-				.add("path", path) //
-				.add("channel", channel) //
-				.toString();
+		return "OpenFile{"
+				+ "path=" + path + ", "
+				+ "channel=" + channel
+				+ "}";
 	}
 
 }

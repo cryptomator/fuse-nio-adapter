@@ -1,6 +1,5 @@
 package org.cryptomator.frontend.fuse.mount;
 
-import com.google.common.base.Preconditions;
 import org.cryptomator.frontend.fuse.FileNameTranscoder;
 import org.cryptomator.frontend.fuse.FuseNioAdapter;
 import org.cryptomator.frontend.fuse.ReadWriteAdapter;
@@ -21,6 +20,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.Normalizer;
 import java.util.EnumSet;
+import java.util.Objects;
 import java.util.Set;
 
 import static org.cryptomator.integrations.mount.MountCapability.MOUNT_FLAGS;
@@ -89,7 +89,7 @@ public class MacFuseMountProvider implements MountService {
 
 		@Override
 		public MountBuilder setMountpoint(Path mountPoint) {
-			if (mountPoint.startsWith("/Volumes/") && Files.notExists(mountPoint) // DEFAULT_MOUNT_POINT
+			if (mountPoint.startsWith("/Volumes/") && Files.notExists(mountPoint) // MOUNT_TO_SYSTEM_CHOSEN_PATH
 					|| Files.isDirectory(mountPoint)) { // MOUNT_TO_EXISTING_DIR
 				this.mountPoint = mountPoint;
 			} else {
@@ -106,9 +106,9 @@ public class MacFuseMountProvider implements MountService {
 
 		@Override
 		public Mount mount() throws MountFailedException {
-			Preconditions.checkNotNull(mountFlags);
+			Objects.requireNonNull(mountFlags);
 			if (mountPoint == null) {
-				Preconditions.checkNotNull(volumeId);
+				Objects.requireNonNull(volumeId);
 				mountPoint = Path.of("/Volumes/", volumeId);
 			}
 

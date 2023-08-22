@@ -1,6 +1,5 @@
 package org.cryptomator.frontend.fuse.mount;
 
-import com.google.common.base.Preconditions;
 import org.cryptomator.frontend.fuse.FileNameTranscoder;
 import org.cryptomator.frontend.fuse.FuseNioAdapter;
 import org.cryptomator.frontend.fuse.ReadWriteAdapter;
@@ -14,14 +13,16 @@ import org.cryptomator.integrations.mount.MountService;
 import org.cryptomator.jfuse.api.Fuse;
 import org.cryptomator.jfuse.api.FuseMountFailedException;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.Normalizer;
 import java.util.EnumSet;
+import java.util.Objects;
 import java.util.Set;
 
-import static org.cryptomator.integrations.mount.MountCapability.LOOPBACK_PORT;
 import static org.cryptomator.integrations.mount.MountCapability.MOUNT_FLAGS;
 import static org.cryptomator.integrations.mount.MountCapability.MOUNT_TO_EXISTING_DIR;
 import static org.cryptomator.integrations.mount.MountCapability.READ_ONLY;
@@ -38,10 +39,11 @@ import static org.cryptomator.integrations.mount.MountCapability.VOLUME_NAME;
 public class FuseTMountProvider implements MountService {
 
 	private static final String DYLIB_PATH = "/usr/local/lib/libfuse-t.dylib";
+	private static final Path USER_HOME = Paths.get(System.getProperty("user.home"));
 
 	@Override
 	public String displayName() {
-		return "FUSE-T";
+		return "FUSE-T (Experimental)";
 	}
 
 	@Override
@@ -56,7 +58,7 @@ public class FuseTMountProvider implements MountService {
 
 	@Override
 	public Set<MountCapability> capabilities() {
-		return EnumSet.of(MOUNT_FLAGS, UNMOUNT_FORCED, READ_ONLY, MOUNT_TO_EXISTING_DIR, VOLUME_NAME); // adjusting LOOPBACK_PORT is currently broken
+		return EnumSet.of(MOUNT_FLAGS, UNMOUNT_FORCED, READ_ONLY, MOUNT_TO_EXISTING_DIR, VOLUME_NAME); // LOOPBACK_PORT is currently broken
 	}
 
 	@Override
@@ -67,7 +69,13 @@ public class FuseTMountProvider implements MountService {
 	@Override
 	public String getDefaultMountFlags() {
 		// see: https://github.com/macos-fuse-t/fuse-t/wiki#supported-mount-options
-		return "-orwsize=262144";
+		try {
+			return "-orwsize=262144" //
+					+ " -ouid=" + Files.getAttribute(USER_HOME, "unix:uid") //
+					+ " -ogid=" + Files.getAttribute(USER_HOME, "unix:gid");
+		} catch (IOException e) {
+			throw new UncheckedIOException(e);
+		}
 	}
 
 	private static class FuseTMountBuilder extends AbstractMacMountBuilder {
@@ -106,8 +114,8 @@ public class FuseTMountProvider implements MountService {
 
 		@Override
 		public Mount mount() throws MountFailedException {
-			Preconditions.checkNotNull(mountPoint);
-			Preconditions.checkNotNull(mountFlags);
+			Objects.requireNonNull(mountPoint);
+			Objects.requireNonNull(mountFlags);
 
 			var builder = Fuse.builder();
 			builder.setLibraryPath(DYLIB_PATH);

@@ -31,6 +31,9 @@ abstract class AbstractMacMountBuilder extends AbstractMountBuilder {
 		if (readOnly) {
 			combined.add("-r");
 		}
+		if (volumeName != null && !volumeName.isBlank()) {
+			combined.add("-ovolname=" + volumeName);
+		}
 		return combined;
 	}
 

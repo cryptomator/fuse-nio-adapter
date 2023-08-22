@@ -29,9 +29,10 @@ abstract class AbstractMountBuilder implements MountBuilder {
 
 	@Override
 	public MountBuilder setMountFlags(String mountFlagsString) {
+		var mfs = " "+mountFlagsString.trim();
 		// we assume that each flag starts with "-"
 		var notEmpty = Predicate.not(String::isBlank);
-		this.mountFlags = Pattern.compile("\\s+-").splitAsStream(" "+mountFlagsString).filter(notEmpty).map("-"::concat).collect(Collectors.toUnmodifiableSet());
+		this.mountFlags = Pattern.compile("\\s++-").splitAsStream(mfs).filter(notEmpty).map("-"::concat).collect(Collectors.toUnmodifiableSet());
 		return this;
 	}
 
@@ -50,9 +51,6 @@ abstract class AbstractMountBuilder implements MountBuilder {
 	@MustBeInvokedByOverriders
 	protected Set<String> combinedMountFlags() {
 		var combined = new HashSet<>(mountFlags);
-		if (volumeName != null && !volumeName.isBlank()) {
-			combined.add("-ovolname=" + volumeName);
-		}
 		return combined;
 	}
 

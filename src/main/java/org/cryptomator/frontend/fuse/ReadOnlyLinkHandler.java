@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
+import java.nio.file.NotLinkException;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.PosixFileAttributes;
@@ -39,6 +40,9 @@ class ReadOnlyLinkHandler {
 	 * @throws IOException
 	 */
 	public int readlink(Path path, ByteBuffer buf, long size) throws IOException {
+		if(path.getParent() == null) {
+			throw new NotLinkException("Root cannot be a link");
+		}
 		Path target = Files.readSymbolicLink(path);
 		ByteBuffer fuseEncodedTarget = fileNameTranscoder.interpretAsFuseString(fileNameTranscoder.nioToFuse(target.toString()));
 		int len = (int) Math.min(fuseEncodedTarget.remaining(), size - 1);
