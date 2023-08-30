@@ -227,7 +227,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 			LOG.trace("getxattr {} {}", path, name);
 			var xattr = Files.getFileAttributeView(node, UserDefinedFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
 			if (xattr == null) {
-				return -errno.enosys(); // TODO: return ENOTSUP
+				return -errno.enotsup();
 			}
 			int size = xattr.size(name);
 			if (value.capacity() == 0) {
