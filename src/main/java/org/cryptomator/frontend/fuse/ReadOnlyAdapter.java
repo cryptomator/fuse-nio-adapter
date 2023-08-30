@@ -229,6 +229,11 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 			if (xattr == null) {
 				return -errno.enotsup();
 			}
+			//we use this approach because on different file systems different execptions are thrown when accessing xattr
+			//	e.g. on Windows a NoSuchFileException, on Linux a generic FileSystenException is thrown
+			if (xattr.list().stream().noneMatch(key -> key.equals(name))) {
+				return -errno.enodata();
+			}
 			int size = xattr.size(name);
 			if (value.capacity() == 0) {
 				return size;
