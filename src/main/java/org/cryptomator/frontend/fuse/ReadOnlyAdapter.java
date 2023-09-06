@@ -232,7 +232,10 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 			//we use this approach because on different file systems different execptions are thrown when accessing xattr
 			//	e.g. on Windows a NoSuchFileException, on Linux a generic FileSystenException is thrown
 			if (xattr.list().stream().noneMatch(key -> key.equals(name))) {
-				return -errno.enodata();
+				return switch (OS.current()) {
+					case MAC -> -errno.enoattr();
+					default -> -errno.enodata();
+				};
 			}
 			int size = xattr.size(name);
 			if (value.capacity() == 0) {
@@ -257,7 +260,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 			LOG.trace("listxattr {}", path);
 			var xattr = Files.getFileAttributeView(node, UserDefinedFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
 			if (xattr == null) {
-				return -errno.enosys(); // TODO: return ENOTSUP
+				return -errno.enotsup();
 			}
 			var names = xattr.list();
 			if (list.capacity() == 0) {

@@ -108,7 +108,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			LOG.trace("removexattr {} {}", path, name);
 			var xattr = Files.getFileAttributeView(node, UserDefinedFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
 			if (xattr == null) {
-				return -errno.enosys(); // TODO: return ENOTSUP
+				return -errno.enotsup();
 			}
 			xattr.delete(name);
 			return 0;
@@ -127,7 +127,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			LOG.trace("setxattr {} {}", path, name);
 			var xattr = Files.getFileAttributeView(node, UserDefinedFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
 			if (xattr == null) {
-				return -errno.enosys(); // TODO: return ENOTSUP
+				return -errno.enotsup();
 			}
 			xattr.write(name, value);
 			return 0;
