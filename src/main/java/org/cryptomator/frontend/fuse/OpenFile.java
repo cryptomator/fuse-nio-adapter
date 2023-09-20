@@ -12,7 +12,7 @@ import java.nio.file.Path;
 import java.nio.file.attribute.FileAttribute;
 import java.time.Instant;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class OpenFile implements Closeable {
 
@@ -20,13 +20,13 @@ public class OpenFile implements Closeable {
 
 	private final Path path;
 	private final FileChannel channel;
-	private final AtomicReference<Instant> lastUsed = new AtomicReference(Instant.now());
+	private final AtomicLong lastUsed = new AtomicLong(Instant.now().toEpochMilli());
 
 	private OpenFile(Path path, FileChannel channel) {
 		this.path = path;
 		this.channel = channel;
 	}
-	
+
 	static OpenFile create(Path path, Set<? extends OpenOption> options, FileAttribute<?>... attrs) throws IOException {
 		FileChannel ch = FileChannel.open(path, options, attrs);
 		return new OpenFile(path, ch);
@@ -42,7 +42,7 @@ public class OpenFile implements Closeable {
 	 * @throws IOException If an exception occurs during read.
 	 */
 	public int read(ByteBuffer buf, long num, long offset) throws IOException {
-		lastUsed.set(Instant.now());
+		lastUsed.set(Instant.now().toEpochMilli());
 		long size = channel.size();
 		if (offset >= size) {
 			return 0;
@@ -73,7 +73,7 @@ public class OpenFile implements Closeable {
 	 * @throws IOException If an exception occurs during write.
 	 */
 	public int write(ByteBuffer buf, long num, long offset) throws IOException {
-		lastUsed.set(Instant.now());
+		lastUsed.set(Instant.now().toEpochMilli());
 		if (num > Integer.MAX_VALUE) {
 			throw new IOException("Requested too many bytes");
 		}
@@ -86,7 +86,7 @@ public class OpenFile implements Closeable {
 	}
 
 	public Instant lastUsed() {
-		return lastUsed.get();
+		return Instant.ofEpochMilli(lastUsed.get());
 	}
 
 	@Override
