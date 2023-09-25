@@ -100,6 +100,7 @@ public class OpenFile implements Closeable {
 
 	public void fsync(boolean metaData) throws IOException {
 		channel.force(metaData);
+		dirty = false;
 	}
 
 	public void truncate(long size) throws IOException {
