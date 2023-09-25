@@ -19,6 +19,7 @@ public class OpenFile implements Closeable {
 	private final Path path;
 	private final FileChannel channel;
 
+	//"volatile" is fine, since methods of OpenFile ar externally synchronized
 	private volatile boolean dirty;
 
 	private OpenFile(Path path, FileChannel channel) {
