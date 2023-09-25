@@ -19,7 +19,11 @@ public class OpenFile implements Closeable {
 	private final Path path;
 	private final FileChannel channel;
 
-	//"volatile" is fine, since methods of OpenFile ar externally synchronized
+	/**
+	 * Whether any data has been changed on this file.
+	 *
+	 * This value only changes while holding a write lock, see {@link org.cryptomator.frontend.fuse.locks.LockManager}.
+	 */
 	private volatile boolean dirty;
 
 	private OpenFile(Path path, FileChannel channel) {
