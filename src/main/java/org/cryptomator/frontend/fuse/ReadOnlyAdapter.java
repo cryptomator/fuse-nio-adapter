@@ -32,7 +32,6 @@ import java.nio.file.attribute.PosixFileAttributes;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
-import java.util.function.BooleanSupplier;
 
 public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteAdapter {
 
@@ -303,7 +302,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 	@Override
 	public boolean isInUse() {
 		try (PathLock pLock = lockManager.tryLockForWriting("/")) {
-			return openFiles.hasWrittenToOpenFiles();
+			return openFiles.hastDirtyOpenFiles();
 		} catch (AlreadyLockedException e) {
 			return true;
 		}

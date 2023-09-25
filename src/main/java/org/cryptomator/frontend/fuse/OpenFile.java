@@ -19,12 +19,12 @@ public class OpenFile implements Closeable {
 	private final Path path;
 	private final FileChannel channel;
 
-	private volatile boolean writeCalled;
+	private volatile boolean dirty;
 
 	private OpenFile(Path path, FileChannel channel) {
 		this.path = path;
 		this.channel = channel;
-		this.writeCalled = false;
+		this.dirty = false;
 	}
 
 	static OpenFile create(Path path, Set<? extends OpenOption> options, FileAttribute<?>... attrs) throws IOException {
@@ -72,7 +72,7 @@ public class OpenFile implements Closeable {
 	 * @throws IOException If an exception occurs during write.
 	 */
 	public int write(ByteBuffer buf, long num, long offset) throws IOException {
-		writeCalled = true;
+		dirty = true;
 		if (num > Integer.MAX_VALUE) {
 			throw new IOException("Requested too many bytes");
 		}
@@ -89,8 +89,8 @@ public class OpenFile implements Closeable {
 	 *
 	 * @return {@code true} if {@link OpenFile#write(ByteBuffer, long, long)} was called on this object, otherwise {@code false}
 	 */
-	public boolean isWrittenTo() {
-		return writeCalled;
+	boolean isDirty() {
+		return dirty;
 	}
 
 	@Override

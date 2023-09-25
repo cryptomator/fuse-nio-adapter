@@ -68,13 +68,14 @@ public class OpenFileFactory implements AutoCloseable {
 	}
 
 	/**
-	 * Tests, if there exists {@link OpenFile}s, which has been written to.
-	 * The check performed in this method is not atomic and therefore requires external synchronization.
+	 * Tests, if there exists dirty {@link OpenFile}s
+	 * This method is neither atomic regarding the set of open files nor regarding each open file individually. Therefore, external synchronization is required.
 	 *
-	 * @return {@code true} if and only if at least one {@link OpenFile} exists, where {@link OpenFile#isWrittenTo()} returns {@code true}. Otherwise {@code false}.
+	 * @return {@code true} if and only if at least one dirty {@link OpenFile} exists. Otherwise {@code false}.
+	 * @see OpenFile#isDirty()
 	 */
-	public boolean hasWrittenToOpenFiles(){
-		return openFiles.entrySet().stream().anyMatch(entry -> entry.getValue().isWrittenTo());
+	boolean hastDirtyOpenFiles() {
+		return openFiles.entrySet().stream().anyMatch(entry -> entry.getValue().isDirty());
 	}
 
 	/**
