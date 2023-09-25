@@ -48,7 +48,6 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 	private final ReadOnlyDirectoryHandler dirHandler;
 	private final ReadOnlyFileHandler fileHandler;
 	private final ReadOnlyLinkHandler linkHandler;
-	private final BooleanSupplier hasOpenFiles;
 
 	protected ReadOnlyAdapter(Errno errno, Path root, int maxFileNameLength, FileNameTranscoder fileNameTranscoder, FileStore fileStore, OpenFileFactory openFiles, ReadOnlyDirectoryHandler dirHandler, ReadOnlyFileHandler fileHandler) {
 		this.errno = errno;
@@ -61,7 +60,6 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 		this.dirHandler = dirHandler;
 		this.fileHandler = fileHandler;
 		this.linkHandler = new ReadOnlyLinkHandler(fileNameTranscoder);
-		this.hasOpenFiles = () -> openFiles.getOpenFileCount() != 0;
 	}
 
 	public static ReadOnlyAdapter create(Errno errno, Path root, int maxFileNameLength, FileNameTranscoder fileNameTranscoder) {
@@ -305,7 +303,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 	@Override
 	public boolean isInUse() {
 		try (PathLock pLock = lockManager.tryLockForWriting("/")) {
-			return hasOpenFiles.getAsBoolean();
+			return openFiles.hasWrittenToOpenFiles();
 		} catch (AlreadyLockedException e) {
 			return true;
 		}
@@ -320,7 +318,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 	 * Attempts to get a specific error code that best describes the given exception.
 	 * As a side effect this logs the error.
 	 *
-	 * @param e An exception
+	 * @param e      An exception
 	 * @param opDesc A human-friendly string describing what operation was attempted (for logging purposes)
 	 * @return A specific error code or -EIO.
 	 */
@@ -331,8 +329,8 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 //			LOG.warn("{} {} failed, name too long.", opDesc);
 //			return -ErrorCodes.ENAMETOOLONG();
 //		} else {
-			LOG.error(opDesc + " failed.", e);
-			return -errno.eio();
+		LOG.error(opDesc + " failed.", e);
+		return -errno.eio();
 //		}
 	}
 }

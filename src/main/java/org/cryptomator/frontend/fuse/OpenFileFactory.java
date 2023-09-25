@@ -67,8 +67,14 @@ public class OpenFileFactory implements AutoCloseable {
 		}
 	}
 
-	public int getOpenFileCount(){
-		return openFiles.size();
+	/**
+	 * Tests, if there exists {@link OpenFile}s, which has been written to.
+	 * The check performed in this method is not atomic and therefore requires external synchronization.
+	 *
+	 * @return {@code true} if and only if at least one {@link OpenFile} exists, where {@link OpenFile#isWrittenTo()} returns {@code true}. Otherwise {@code false}.
+	 */
+	public boolean hasWrittenToOpenFiles(){
+		return openFiles.entrySet().stream().anyMatch(entry -> entry.getValue().isWrittenTo());
 	}
 
 	/**
