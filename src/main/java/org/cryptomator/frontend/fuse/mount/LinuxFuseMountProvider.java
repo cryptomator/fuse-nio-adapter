@@ -55,7 +55,7 @@ public class LinuxFuseMountProvider implements MountService {
 
 	@Override
 	public boolean isSupported() {
-		return Arrays.stream(LIB_PATHS).map(Path::of).anyMatch(Files::exists) && isFusermount3Installed();
+		return isFusermount3Installed();
 	}
 
 	private boolean isFusermount3Installed() {
@@ -115,9 +115,8 @@ public class LinuxFuseMountProvider implements MountService {
 			Objects.requireNonNull(mountPoint);
 			Objects.requireNonNull(mountFlags);
 
-			var libPath = Arrays.stream(LIB_PATHS).map(Path::of).filter(Files::exists).map(Path::toString).findAny().orElseThrow();
 			var builder = Fuse.builder();
-			builder.setLibraryPath(libPath);
+			Arrays.stream(LIB_PATHS).map(Path::of).filter(Files::exists).map(Path::toString).findAny().ifPresent(builder::setLibraryPath);
 			if (mountFlags.contains("-oallow_other") || mountFlags.contains("-oallow_root")) {
 				LOG.warn("Mounting with flag -oallow_other or -oallow_root. Ensure that in /etc/fuse.conf option user_allow_other is enabled.");
 			}
