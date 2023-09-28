@@ -40,7 +40,6 @@ public class LinuxFuseMountProvider implements MountService {
 	private static final Logger LOG = LoggerFactory.getLogger(LinuxFuseMountProvider.class);
 	private static final Path USER_HOME = Paths.get(System.getProperty("user.home"));
 	private static final String[] LIB_PATHS = {
-			"/usr/lib/libfuse3.so", // default
 			"/lib/x86_64-linux-gnu/libfuse3.so.3", // debian amd64
 			"/lib/aarch64-linux-gnu/libfuse3.so.3", // debian aarch64
 			"/usr/lib64/libfuse3.so.3", // fedora
