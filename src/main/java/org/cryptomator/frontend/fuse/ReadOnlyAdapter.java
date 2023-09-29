@@ -302,7 +302,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 	@Override
 	public boolean isInUse() {
 		try (PathLock pLock = lockManager.tryLockForWriting("/")) {
-			return openFiles.hastDirtyOpenFiles();
+			return openFiles.hasDirtyFiles();
 		} catch (AlreadyLockedException e) {
 			return true;
 		}

@@ -90,7 +90,8 @@ public class OpenFile implements Closeable {
 	}
 
 	/**
-	 * Tests, if the write method of this open file was called at least once.
+	 * Tests, if this OpenFile is <em>dirty</em>.
+	 * An OpenFile is dirty, if its write method is called at least once.
 	 *
 	 * @return {@code true} if {@link OpenFile#write(ByteBuffer, long, long)} was called on this object, otherwise {@code false}
 	 */
