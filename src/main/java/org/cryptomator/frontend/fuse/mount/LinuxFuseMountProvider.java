@@ -40,7 +40,6 @@ public class LinuxFuseMountProvider implements MountService {
 	private static final Logger LOG = LoggerFactory.getLogger(LinuxFuseMountProvider.class);
 	private static final Path USER_HOME = Paths.get(System.getProperty("user.home"));
 	private static final String[] LIB_PATHS = {
-			"/usr/lib/libfuse3.so", // default
 			"/lib/x86_64-linux-gnu/libfuse3.so.3", // debian amd64
 			"/lib/aarch64-linux-gnu/libfuse3.so.3", // debian aarch64
 			"/usr/lib64/libfuse3.so.3", // fedora
@@ -55,7 +54,7 @@ public class LinuxFuseMountProvider implements MountService {
 
 	@Override
 	public boolean isSupported() {
-		return Arrays.stream(LIB_PATHS).map(Path::of).anyMatch(Files::exists) && isFusermount3Installed();
+		return isFusermount3Installed();
 	}
 
 	private boolean isFusermount3Installed() {
@@ -115,9 +114,8 @@ public class LinuxFuseMountProvider implements MountService {
 			Objects.requireNonNull(mountPoint);
 			Objects.requireNonNull(mountFlags);
 
-			var libPath = Arrays.stream(LIB_PATHS).map(Path::of).filter(Files::exists).map(Path::toString).findAny().orElseThrow();
 			var builder = Fuse.builder();
-			builder.setLibraryPath(libPath);
+			Arrays.stream(LIB_PATHS).map(Path::of).filter(Files::exists).map(Path::toString).findAny().ifPresent(builder::setLibraryPath);
 			if (mountFlags.contains("-oallow_other") || mountFlags.contains("-oallow_root")) {
 				LOG.warn("Mounting with flag -oallow_other or -oallow_root. Ensure that in /etc/fuse.conf option user_allow_other is enabled.");
 			}
