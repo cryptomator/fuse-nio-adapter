@@ -39,18 +39,18 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 	private static final Logger LOG = LoggerFactory.getLogger(ReadWriteAdapter.class);
 	private final ReadWriteFileHandler fileHandler;
 
-	private ReadWriteAdapter(Errno errno, Path root, int maxFileNameLength, FileNameTranscoder fileNameTranscoder, FileStore fileStore, OpenFileFactory openFiles, ReadWriteDirectoryHandler dirHandler, ReadWriteFileHandler fileHandler) {
-		super(errno, root, maxFileNameLength, fileNameTranscoder, fileStore, openFiles, dirHandler, fileHandler);
+	private ReadWriteAdapter(Errno errno, Path root, int maxFileNameLength, FileNameTranscoder fileNameTranscoder, FileStore fileStore, OpenFileFactory openFiles, ReadWriteDirectoryHandler dirHandler, ReadWriteFileHandler fileHandler, boolean enableXattr) {
+		super(errno, root, maxFileNameLength, fileNameTranscoder, fileStore, openFiles, dirHandler, fileHandler, enableXattr);
 		this.fileHandler = fileHandler;
 	}
 
-	public static ReadWriteAdapter create(Errno errno, Path root, int maxFileNameLength, FileNameTranscoder fileNameTranscoder) {
+	public static ReadWriteAdapter create(Errno errno, Path root, int maxFileNameLength, FileNameTranscoder fileNameTranscoder, boolean enableXattr) {
 		try {
 			var fileStore = Files.getFileStore(root);
 			var openFiles = new OpenFileFactory();
 			var dirHandler = new ReadWriteDirectoryHandler(fileNameTranscoder);
 			var fileHandler = new ReadWriteFileHandler(openFiles);
-			return new ReadWriteAdapter(errno, root, maxFileNameLength, fileNameTranscoder, fileStore, openFiles, dirHandler, fileHandler);
+			return new ReadWriteAdapter(errno, root, maxFileNameLength, fileNameTranscoder, fileStore, openFiles, dirHandler, fileHandler, enableXattr);
 		} catch (IOException e) {
 			throw new UncheckedIOException(e);
 		}
@@ -64,15 +64,17 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 		ops.add(Operation.CREATE);
 		//ops.add(Operation.FSYNC);
 		ops.add(Operation.MKDIR);
-		ops.add(Operation.REMOVE_XATTR);
 		ops.add(Operation.RENAME);
 		ops.add(Operation.RMDIR);
-		ops.add(Operation.SET_XATTR);
 		ops.add(Operation.SYMLINK);
 		ops.add(Operation.TRUNCATE);
 		ops.add(Operation.UNLINK);
 		ops.add(Operation.UTIMENS);
 		ops.add(Operation.WRITE);
+		if (enableXattr) {
+			ops.add(Operation.SET_XATTR);
+			ops.add(Operation.REMOVE_XATTR);
+		}
 		return ops;
 	}
 

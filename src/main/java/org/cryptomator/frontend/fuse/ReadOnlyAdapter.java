@@ -45,6 +45,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 	protected final Path root;
 	private final int maxFileNameLength;
 	protected final FileStore fileStore;
+	protected final boolean enableXattr;
 	protected final LockManager lockManager;
 	protected final OpenFileFactory openFiles;
 	protected final FileNameTranscoder fileNameTranscoder;
@@ -53,12 +54,13 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 	private final ReadOnlyLinkHandler linkHandler;
 	private final BooleanSupplier hasOpenFiles;
 
-	protected ReadOnlyAdapter(Errno errno, Path root, int maxFileNameLength, FileNameTranscoder fileNameTranscoder, FileStore fileStore, OpenFileFactory openFiles, ReadOnlyDirectoryHandler dirHandler, ReadOnlyFileHandler fileHandler) {
+	protected ReadOnlyAdapter(Errno errno, Path root, int maxFileNameLength, FileNameTranscoder fileNameTranscoder, FileStore fileStore, OpenFileFactory openFiles, ReadOnlyDirectoryHandler dirHandler, ReadOnlyFileHandler fileHandler, boolean enableXattr) {
 		this.errno = errno;
 		this.root = root;
 		this.maxFileNameLength = maxFileNameLength;
 		this.fileNameTranscoder = fileNameTranscoder;
 		this.fileStore = fileStore;
+		this.enableXattr = enableXattr;
 		this.lockManager = new LockManager();
 		this.openFiles = openFiles;
 		this.dirHandler = dirHandler;
@@ -67,13 +69,13 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 		this.hasOpenFiles = () -> openFiles.getOpenFileCount() != 0;
 	}
 
-	public static ReadOnlyAdapter create(Errno errno, Path root, int maxFileNameLength, FileNameTranscoder fileNameTranscoder) {
+	public static ReadOnlyAdapter create(Errno errno, Path root, int maxFileNameLength, FileNameTranscoder fileNameTranscoder, boolean enableXattr) {
 		try {
 			var fileStore = Files.getFileStore(root);
 			var openFiles = new OpenFileFactory();
 			var dirHandler = new ReadOnlyDirectoryHandler(fileNameTranscoder);
 			var fileHandler = new ReadOnlyFileHandler(openFiles);
-			return new ReadOnlyAdapter(errno, root, maxFileNameLength, fileNameTranscoder, fileStore, openFiles, dirHandler, fileHandler);
+			return new ReadOnlyAdapter(errno, root, maxFileNameLength, fileNameTranscoder, fileStore, openFiles, dirHandler, fileHandler, enableXattr);
 		} catch (IOException e) {
 			throw new UncheckedIOException(e);
 		}
@@ -86,6 +88,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 
 	@Override
 	public Set<Operation> supportedOperations() {
+		// FIXME: respect enableXattr
 		return Set.of(Operation.ACCESS,
 				Operation.CHMOD,
 				Operation.CREATE,
