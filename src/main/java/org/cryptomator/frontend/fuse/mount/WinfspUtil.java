@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.NoSuchElementException;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -23,25 +24,27 @@ public class WinfspUtil {
 
 	private static final String REGSTR_TOKEN = "REG_SZ";
 	private static final String REG_WINFSP_KEY = "HKLM\\SOFTWARE\\WOW6432Node\\WinFsp";
-	private static final String REG_WINFSP_VALUE = "InstallDir";
+	private static final String REG_WINFSP_INSTALLDIR_VALUE = "InstallDir";
+	private static final String REG_WINFSP_SXSDIR_VALUE = "SxsDir";
 
 	private static final AtomicReference<String> cache = new AtomicReference<>(null);
 
-	static String getWinFspInstallDir() throws WinFspNotFoundException {
+	static String getWinFspSharedLibraryDir() throws WinFspNotFoundException {
 		if (cache.get() == null) {
-			cache.set(readWinFspInstallDirFromRegistry());
+			cache.set(readWinFspDirFromRegistry() + "bin\\");
 		}
 		return cache.get();
 	}
 
-	static String readWinFspInstallDirFromRegistry() {
+
+	static String readWinFspDirFromRegistry() {
 		try {
-			ProcessBuilder command = new ProcessBuilder("reg", "query", REG_WINFSP_KEY, "/v", REG_WINFSP_VALUE);
-			Process p = command.start();
-			ProcessHelper.waitForSuccess(p, 3, "`reg query`");
-			String result = p.inputReader(StandardCharsets.UTF_8).lines().filter(l -> l.contains(REG_WINFSP_VALUE)).findFirst().orElseThrow();
-			return result.substring(result.indexOf(REGSTR_TOKEN) + REGSTR_TOKEN.length()).trim();
-		} catch (TimeoutException | IOException | ProcessHelper.CommandFailedException e) {
+			try {
+				return readDataOfRegValue(REG_WINFSP_SXSDIR_VALUE);
+			} catch (NoSuchElementException e) {
+				return readDataOfRegValue(REG_WINFSP_INSTALLDIR_VALUE);
+			}
+		} catch (TimeoutException | IOException | ProcessHelper.CommandFailedException | NoSuchElementException e) {
 			throw new WinFspNotFoundException(e);
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
@@ -49,9 +52,19 @@ public class WinfspUtil {
 		}
 	}
 
+	static String readDataOfRegValue(String regValue) throws IOException, InterruptedException, ProcessHelper.CommandFailedException, TimeoutException {
+		ProcessBuilder command = new ProcessBuilder("reg", "query", REG_WINFSP_KEY, "/v", regValue);
+		Process p = command.start();
+		ProcessHelper.waitForSuccess(p, 3, "`reg query`");
+		String result = p.inputReader(StandardCharsets.UTF_8).lines() //
+				.filter(l -> l.contains(regValue)) //
+				.findFirst().orElseThrow();
+		return result.substring(result.indexOf(REGSTR_TOKEN) + REGSTR_TOKEN.length()).trim();
+	}
+
 	static boolean isWinFspInstalled() {
 		try {
-			return Files.exists(Path.of(getWinFspInstallDir()));
+			return Files.exists(Path.of(getWinFspSharedLibraryDir()));
 		} catch (WinFspNotFoundException e) {
 			return false;
 		}
@@ -61,6 +74,10 @@ public class WinfspUtil {
 
 		public WinFspNotFoundException(Exception e) {
 			super(e);
+		}
+
+		public WinFspNotFoundException(String msg) {
+			super(msg);
 		}
 	}
 

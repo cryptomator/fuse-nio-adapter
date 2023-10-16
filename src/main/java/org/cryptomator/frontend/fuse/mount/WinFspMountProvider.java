@@ -117,7 +117,7 @@ public class WinFspMountProvider implements MountService {
 		@Override
 		public Mount mount() throws MountFailedException {
 			var builder = Fuse.builder();
-			var libPath = WinfspUtil.getWinFspInstallDir() + "bin\\" + (OS_ARCH.contains("aarch64") ? "winfsp-a64.dll" : "winfsp-x64.dll");
+			var libPath = WinfspUtil.getWinFspSharedLibraryDir() + (OS_ARCH.contains("aarch64") ? "winfsp-a64.dll" : "winfsp-x64.dll");
 			builder.setLibraryPath(libPath);
 			var fuseAdapter = ReadWriteAdapter.create(builder.errno(), vfsRoot, FuseNioAdapter.DEFAULT_MAX_FILENAMELENGTH, FileNameTranscoder.transcoder());
 			try {
