@@ -35,7 +35,6 @@ import java.nio.file.attribute.UserDefinedFileAttributeView;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
-import java.util.function.BooleanSupplier;
 
 public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteAdapter {
 
@@ -52,7 +51,6 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 	private final ReadOnlyDirectoryHandler dirHandler;
 	private final ReadOnlyFileHandler fileHandler;
 	private final ReadOnlyLinkHandler linkHandler;
-	private final BooleanSupplier hasOpenFiles;
 
 	protected ReadOnlyAdapter(Errno errno, Path root, int maxFileNameLength, FileNameTranscoder fileNameTranscoder, FileStore fileStore, OpenFileFactory openFiles, ReadOnlyDirectoryHandler dirHandler, ReadOnlyFileHandler fileHandler, boolean enableXattr) {
 		this.errno = errno;
@@ -66,7 +64,6 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 		this.dirHandler = dirHandler;
 		this.fileHandler = fileHandler;
 		this.linkHandler = new ReadOnlyLinkHandler(fileNameTranscoder);
-		this.hasOpenFiles = () -> openFiles.getOpenFileCount() != 0;
 	}
 
 	public static ReadOnlyAdapter create(Errno errno, Path root, int maxFileNameLength, FileNameTranscoder fileNameTranscoder, boolean enableXattr) {
@@ -377,7 +374,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 	@Override
 	public boolean isInUse() {
 		try (PathLock pLock = lockManager.tryLockForWriting("/")) {
-			return hasOpenFiles.getAsBoolean();
+			return openFiles.hasDirtyFiles();
 		} catch (AlreadyLockedException e) {
 			return true;
 		}

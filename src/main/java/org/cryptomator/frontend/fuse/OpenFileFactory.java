@@ -67,8 +67,15 @@ public class OpenFileFactory implements AutoCloseable {
 		}
 	}
 
-	public int getOpenFileCount(){
-		return openFiles.size();
+	/**
+	 * Tests, if any {@link OpenFile} is considered <em>dirty</em>, e.g. might have pending changes.
+	 * This method is neither atomic regarding the set of OpenFiles nor regarding each OpenFile individually. Therefore, external synchronization is required.
+	 *
+	 * @return {@code true} if and only if at least one dirty {@link OpenFile} exists. Otherwise {@code false}.
+	 * @see OpenFile#isDirty()
+	 */
+	boolean hasDirtyFiles() {
+		return openFiles.entrySet().stream().anyMatch(entry -> entry.getValue().isDirty());
 	}
 
 	/**

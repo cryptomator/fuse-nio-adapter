@@ -19,11 +19,19 @@ public class OpenFile implements Closeable {
 	private final Path path;
 	private final FileChannel channel;
 
+	/**
+	 * Whether any data has been changed on this file.
+	 *
+	 * This value only changes while holding a write lock, see {@link org.cryptomator.frontend.fuse.locks.LockManager}.
+	 */
+	private volatile boolean dirty;
+
 	private OpenFile(Path path, FileChannel channel) {
 		this.path = path;
 		this.channel = channel;
+		this.dirty = false;
 	}
-	
+
 	static OpenFile create(Path path, Set<? extends OpenOption> options, FileAttribute<?>... attrs) throws IOException {
 		FileChannel ch = FileChannel.open(path, options, attrs);
 		return new OpenFile(path, ch);
@@ -69,6 +77,7 @@ public class OpenFile implements Closeable {
 	 * @throws IOException If an exception occurs during write.
 	 */
 	public int write(ByteBuffer buf, long num, long offset) throws IOException {
+		dirty = true;
 		if (num > Integer.MAX_VALUE) {
 			throw new IOException("Requested too many bytes");
 		}
@@ -80,6 +89,16 @@ public class OpenFile implements Closeable {
 		return written;
 	}
 
+	/**
+	 * Tests, if this OpenFile is <em>dirty</em>.
+	 * An OpenFile is dirty, if its write method is called at least once.
+	 *
+	 * @return {@code true} if {@link OpenFile#write(ByteBuffer, long, long)} was called on this object, otherwise {@code false}
+	 */
+	boolean isDirty() {
+		return dirty;
+	}
+
 	@Override
 	public void close() throws IOException {
 		channel.close();
@@ -87,6 +106,7 @@ public class OpenFile implements Closeable {
 
 	public void fsync(boolean metaData) throws IOException {
 		channel.force(metaData);
+		dirty = false;
 	}
 
 	public void truncate(long size) throws IOException {
