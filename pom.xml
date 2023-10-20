@@ -21,19 +21,19 @@
 
         <!-- dependencies -->
         <integrations-api.version>1.3.0</integrations-api.version>
-        <jfuse.version>0.6.2</jfuse.version>
-        <slf4j.version>2.0.7</slf4j.version>
-        <caffeine.version>3.1.7</caffeine.version>
+        <jfuse.version>0.6.3</jfuse.version>
+        <slf4j.version>2.0.9</slf4j.version>
+        <caffeine.version>3.1.8</caffeine.version>
 
         <!-- test dependencies -->
         <junit.jupiter.version>5.10.0</junit.jupiter.version>
-        <mockito.version>5.4.0</mockito.version>
+        <mockito.version>5.6.0</mockito.version>
         <cryptofs.version>2.6.7</cryptofs.version>
 
         <!-- build dependencies -->
-        <dependency-check.version>8.3.1</dependency-check.version>
+        <dependency-check.version>8.4.0</dependency-check.version>
         <maven.deploy.version>3.1.1</maven.deploy.version>
-        <jacoco.version>0.8.10</jacoco.version>
+        <jacoco.version>0.8.11</jacoco.version>
     </properties>
 
     <licenses>
@@ -90,7 +90,7 @@
         <dependency>
             <groupId>org.jetbrains</groupId>
             <artifactId>annotations</artifactId>
-            <version>23.0.0</version>
+            <version>24.0.1</version>
             <scope>provided</scope>
         </dependency>
 
@@ -152,7 +152,7 @@
         <plugins>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.10.1</version>
+                <version>3.11.0</version>
                 <configuration>
                     <showWarnings>true</showWarnings>
                     <release>${project.build.jdk}</release>
@@ -179,7 +179,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.0.0-M7</version>
+                <version>3.1.2</version>
                 <configuration>
                     <argLine>@{surefire.jacoco.args} --enable-preview --enable-native-access=ALL-UNNAMED</argLine>
                 </configuration>
@@ -191,7 +191,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-source-plugin</artifactId>
-                <version>3.2.1</version>
+                <version>3.3.0</version>
                 <executions>
                     <execution>
                         <id>attach-sources</id>
@@ -203,7 +203,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.4.1</version>
+                <version>3.6.0</version>
                 <executions>
                     <execution>
                         <id>attach-javadocs</id>
@@ -282,7 +282,7 @@
                 <plugins>
                     <plugin>
                         <artifactId>maven-gpg-plugin</artifactId>
-                        <version>3.0.1</version>
+                        <version>3.1.0</version>
                         <executions>
                             <execution>
                                 <id>sign-artifacts</id>
@@ -317,7 +317,7 @@
                     <plugin>
                         <groupId>org.sonatype.plugins</groupId>
                         <artifactId>nexus-staging-maven-plugin</artifactId>
-                        <version>1.6.8</version>
+                        <version>1.6.13</version>
                         <extensions>true</extensions>
                         <configuration>
                             <serverId>ossrh</serverId>
