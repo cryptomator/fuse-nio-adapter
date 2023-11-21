@@ -119,8 +119,7 @@ public class WinFspMountProvider implements MountService {
 			var builder = Fuse.builder();
 			var libPath = WinfspUtil.getWinFspInstallDir() + "bin\\" + (OS_ARCH.contains("aarch64") ? "winfsp-a64.dll" : "winfsp-x64.dll");
 			builder.setLibraryPath(libPath);
-			//xattr disabled due to https://github.com/cryptomator/fuse-nio-adapter/issues/86
-			var fuseAdapter = ReadWriteAdapter.create(builder.errno(), vfsRoot, FuseNioAdapter.DEFAULT_MAX_FILENAMELENGTH, FileNameTranscoder.transcoder(), false);
+			var fuseAdapter = ReadWriteAdapter.create(builder.errno(), vfsRoot, FuseNioAdapter.DEFAULT_MAX_FILENAMELENGTH, FileNameTranscoder.transcoder(), true);
 			try {
 				var fuse = builder.build(fuseAdapter);
 				fuse.mount("fuse-nio-adapter", mountPoint, combinedMountFlags().toArray(String[]::new));
