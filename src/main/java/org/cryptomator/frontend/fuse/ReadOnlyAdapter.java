@@ -36,10 +36,14 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
 
+import static org.cryptomator.jfuse.api.FuseOperations.Operation.GET_XATTR;
+import static org.cryptomator.jfuse.api.FuseOperations.Operation.LIST_XATTR;
+
 public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteAdapter {
 
 	private static final Logger LOG = LoggerFactory.getLogger(ReadOnlyAdapter.class);
 	private static final int BLOCKSIZE = 4096;
+
 	protected final Errno errno;
 	protected final Path root;
 	private final int maxFileNameLength;
@@ -85,15 +89,14 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 
 	@Override
 	public Set<Operation> supportedOperations() {
-		// FIXME: respect enableXattr
-		return Set.of(Operation.ACCESS,
+		var supportedOps = EnumSet.of(Operation.ACCESS,
 				Operation.CHMOD,
 				Operation.CREATE,
 				Operation.DESTROY,
 				Operation.GET_ATTR,
-				Operation.GET_XATTR,
+				GET_XATTR,
 				Operation.INIT,
-				Operation.LIST_XATTR,
+				LIST_XATTR,
 				Operation.OPEN,
 				Operation.OPEN_DIR,
 				Operation.READ,
@@ -102,6 +105,11 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 				Operation.RELEASE,
 				Operation.RELEASE_DIR,
 				Operation.STATFS);
+		if (!enableXattr) {
+			supportedOps.remove(GET_XATTR);
+			supportedOps.remove(LIST_XATTR);
+		}
+		return supportedOps;
 	}
 
 	private String stripLeadingFrom(String string) {
