@@ -160,7 +160,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			LOG.warn("chmod {} failed, file not found.", path);
 			return -errno.enoent();
 		} catch (UnsupportedOperationException e) {
-			if (OS.WINDOWS.isCurrent()) { //prevent spamming warnings
+			if (!OS.WINDOWS.isCurrent()) { //prevent spamming warnings
 				LOG.warn("Setting posix permissions not supported by underlying file system.");
 			}
 			return -errno.enosys();
