@@ -1,8 +1,5 @@
 package org.cryptomator.frontend.fuse;
 
-import com.google.common.base.CharMatcher;
-import com.google.common.base.Strings;
-import com.google.common.collect.Iterables;
 import org.cryptomator.frontend.fuse.locks.AlreadyLockedException;
 import org.cryptomator.frontend.fuse.locks.DataLock;
 import org.cryptomator.frontend.fuse.locks.LockManager;
@@ -17,8 +14,10 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.AccessMode;
 import java.nio.file.FileStore;
@@ -32,48 +31,52 @@ import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.PosixFileAttributes;
+import java.nio.file.attribute.UserDefinedFileAttributeView;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
-import java.util.function.BooleanSupplier;
+
+import static org.cryptomator.jfuse.api.FuseOperations.Operation.GET_XATTR;
+import static org.cryptomator.jfuse.api.FuseOperations.Operation.LIST_XATTR;
 
 public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteAdapter {
 
 	private static final Logger LOG = LoggerFactory.getLogger(ReadOnlyAdapter.class);
 	private static final int BLOCKSIZE = 4096;
+
 	protected final Errno errno;
 	protected final Path root;
 	private final int maxFileNameLength;
 	protected final FileStore fileStore;
+	protected final boolean enableXattr;
 	protected final LockManager lockManager;
 	protected final OpenFileFactory openFiles;
 	protected final FileNameTranscoder fileNameTranscoder;
 	private final ReadOnlyDirectoryHandler dirHandler;
 	private final ReadOnlyFileHandler fileHandler;
 	private final ReadOnlyLinkHandler linkHandler;
-	private final BooleanSupplier hasOpenFiles;
 
-	protected ReadOnlyAdapter(Errno errno, Path root, int maxFileNameLength, FileNameTranscoder fileNameTranscoder, FileStore fileStore, OpenFileFactory openFiles, ReadOnlyDirectoryHandler dirHandler, ReadOnlyFileHandler fileHandler) {
+	protected ReadOnlyAdapter(Errno errno, Path root, int maxFileNameLength, FileNameTranscoder fileNameTranscoder, FileStore fileStore, OpenFileFactory openFiles, ReadOnlyDirectoryHandler dirHandler, ReadOnlyFileHandler fileHandler, boolean enableXattr) {
 		this.errno = errno;
 		this.root = root;
 		this.maxFileNameLength = maxFileNameLength;
 		this.fileNameTranscoder = fileNameTranscoder;
 		this.fileStore = fileStore;
+		this.enableXattr = enableXattr;
 		this.lockManager = new LockManager();
 		this.openFiles = openFiles;
 		this.dirHandler = dirHandler;
 		this.fileHandler = fileHandler;
 		this.linkHandler = new ReadOnlyLinkHandler(fileNameTranscoder);
-		this.hasOpenFiles = () -> openFiles.getOpenFileCount() != 0;
 	}
 
-	public static ReadOnlyAdapter create(Errno errno, Path root, int maxFileNameLength, FileNameTranscoder fileNameTranscoder) {
+	public static ReadOnlyAdapter create(Errno errno, Path root, int maxFileNameLength, FileNameTranscoder fileNameTranscoder, boolean enableXattr) {
 		try {
 			var fileStore = Files.getFileStore(root);
 			var openFiles = new OpenFileFactory();
 			var dirHandler = new ReadOnlyDirectoryHandler(fileNameTranscoder);
 			var fileHandler = new ReadOnlyFileHandler(openFiles);
-			return new ReadOnlyAdapter(errno, root, maxFileNameLength, fileNameTranscoder, fileStore, openFiles, dirHandler, fileHandler);
+			return new ReadOnlyAdapter(errno, root, maxFileNameLength, fileNameTranscoder, fileStore, openFiles, dirHandler, fileHandler, enableXattr);
 		} catch (IOException e) {
 			throw new UncheckedIOException(e);
 		}
@@ -86,12 +89,14 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 
 	@Override
 	public Set<Operation> supportedOperations() {
-		return Set.of(Operation.ACCESS,
+		var supportedOps = EnumSet.of(Operation.ACCESS,
 				Operation.CHMOD,
 				Operation.CREATE,
 				Operation.DESTROY,
 				Operation.GET_ATTR,
+				GET_XATTR,
 				Operation.INIT,
+				LIST_XATTR,
 				Operation.OPEN,
 				Operation.OPEN_DIR,
 				Operation.READ,
@@ -100,10 +105,23 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 				Operation.RELEASE,
 				Operation.RELEASE_DIR,
 				Operation.STATFS);
+		if (!enableXattr) {
+			supportedOps.remove(GET_XATTR);
+			supportedOps.remove(LIST_XATTR);
+		}
+		return supportedOps;
+	}
+
+	private String stripLeadingFrom(String string) {
+		StringBuilder sb = new StringBuilder(string);
+		while (!sb.isEmpty() && sb.charAt(0) == '/') {
+			sb.deleteCharAt(0);
+		}
+		return sb.toString();
 	}
 
 	protected Path resolvePath(String absolutePath) {
-		String relativePath = CharMatcher.is('/').trimLeadingFrom(absolutePath);
+		String relativePath = stripLeadingFrom(absolutePath);
 		return root.resolve(relativePath);
 	}
 
@@ -149,7 +167,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 			if (!Collections.disjoint(requiredAccessModes, deniedAccessModes)) {
 				throw new AccessDeniedException(path.toString());
 			}
-			path.getFileSystem().provider().checkAccess(path, Iterables.toArray(requiredAccessModes, AccessMode.class));
+			path.getFileSystem().provider().checkAccess(path, requiredAccessModes.toArray(AccessMode[]::new));
 			return 0;
 		} catch (NoSuchFileException e) {
 			return -errno.enoent();
@@ -205,6 +223,70 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 			return getErrorCodeForGenericFileSystemException(e, "getattr " + path);
 		} catch (IOException | RuntimeException e) {
 			LOG.error("getattr failed.", e);
+			return -errno.eio();
+		}
+	}
+
+	@Override
+	public int getxattr(String path, String name, ByteBuffer value) {
+		try (PathLock pathLock = lockManager.lockForReading(path);
+			 DataLock dataLock = pathLock.lockDataForReading()) {
+			Path node = resolvePath(path);
+			LOG.trace("getxattr {} {}", path, name);
+			var xattr = Files.getFileAttributeView(node, UserDefinedFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
+			if (xattr == null) {
+				return -errno.enotsup();
+			}
+			//we use this approach because on different file systems different execptions are thrown when accessing xattr
+			//	e.g. on Windows a NoSuchFileException, on Linux a generic FileSystenException is thrown
+			if (xattr.list().stream().noneMatch(key -> key.equals(name))) {
+				return switch (OS.current()) {
+					case MAC -> -errno.enoattr();
+					default -> -errno.enodata();
+				};
+			}
+			int size = xattr.size(name);
+			if (value.capacity() == 0) {
+				return size;
+			} else if (value.remaining() < size) {
+				return -errno.erange();
+			} else {
+				return xattr.read(name, value);
+			}
+		} catch (NoSuchFileException e) {
+			return -errno.enoent();
+		} catch (IOException e) {
+			return -errno.eio();
+		}
+	}
+
+	@Override
+	public int listxattr(String path, ByteBuffer list) {
+		try (PathLock pathLock = lockManager.lockForReading(path);
+			 DataLock dataLock = pathLock.lockDataForReading()) {
+			Path node = resolvePath(path);
+			LOG.trace("listxattr {}", path);
+			var xattr = Files.getFileAttributeView(node, UserDefinedFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
+			if (xattr == null) {
+				return -errno.enotsup();
+			}
+			var names = xattr.list();
+			if (list.capacity() == 0) {
+				var contentBytes = xattr.list().stream().map(StandardCharsets.UTF_8::encode).mapToInt(ByteBuffer::remaining).sum();
+				var nulBytes = names.size();
+				return contentBytes + nulBytes; // attr1\0aattr2\0attr3\0
+			} else {
+				int startpos = list.position();
+				for (var name : names) {
+					list.put(StandardCharsets.UTF_8.encode(name)).put((byte) 0x00);
+				}
+				return list.position() - startpos;
+			}
+		} catch (BufferOverflowException e) {
+			return -errno.erange();
+		} catch (NoSuchFileException e) {
+			return -errno.enoent();
+		} catch (IOException e) {
 			return -errno.eio();
 		}
 	}
@@ -300,7 +382,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 	@Override
 	public boolean isInUse() {
 		try (PathLock pLock = lockManager.tryLockForWriting("/")) {
-			return hasOpenFiles.getAsBoolean();
+			return openFiles.hasDirtyFiles();
 		} catch (AlreadyLockedException e) {
 			return true;
 		}
@@ -315,18 +397,19 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 	 * Attempts to get a specific error code that best describes the given exception.
 	 * As a side effect this logs the error.
 	 *
-	 * @param e An exception
+	 * @param e      An exception
 	 * @param opDesc A human-friendly string describing what operation was attempted (for logging purposes)
 	 * @return A specific error code or -EIO.
 	 */
 	protected int getErrorCodeForGenericFileSystemException(FileSystemException e, String opDesc) {
-		String reason = Strings.nullToEmpty(e.getReason());
+		String reason = e.getReason();
+		reason = reason != null ? reason : "";
 //		if (reason.contains("path too long") || reason.contains("name too long")) {
 //			LOG.warn("{} {} failed, name too long.", opDesc);
 //			return -ErrorCodes.ENAMETOOLONG();
 //		} else {
-			LOG.error(opDesc + " failed.", e);
-			return -errno.eio();
+		LOG.error(opDesc + " failed.", e);
+		return -errno.eio();
 //		}
 	}
 }

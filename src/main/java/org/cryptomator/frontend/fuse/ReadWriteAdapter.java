@@ -27,6 +27,7 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.nio.file.attribute.UserDefinedFileAttributeView;
 import java.util.EnumSet;
 import java.util.Set;
 
@@ -38,18 +39,18 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 	private static final Logger LOG = LoggerFactory.getLogger(ReadWriteAdapter.class);
 	private final ReadWriteFileHandler fileHandler;
 
-	private ReadWriteAdapter(Errno errno, Path root, int maxFileNameLength, FileNameTranscoder fileNameTranscoder, FileStore fileStore, OpenFileFactory openFiles, ReadWriteDirectoryHandler dirHandler, ReadWriteFileHandler fileHandler) {
-		super(errno, root, maxFileNameLength, fileNameTranscoder, fileStore, openFiles, dirHandler, fileHandler);
+	private ReadWriteAdapter(Errno errno, Path root, int maxFileNameLength, FileNameTranscoder fileNameTranscoder, FileStore fileStore, OpenFileFactory openFiles, ReadWriteDirectoryHandler dirHandler, ReadWriteFileHandler fileHandler, boolean enableXattr) {
+		super(errno, root, maxFileNameLength, fileNameTranscoder, fileStore, openFiles, dirHandler, fileHandler, enableXattr);
 		this.fileHandler = fileHandler;
 	}
 
-	public static ReadWriteAdapter create(Errno errno, Path root, int maxFileNameLength, FileNameTranscoder fileNameTranscoder) {
+	public static ReadWriteAdapter create(Errno errno, Path root, int maxFileNameLength, FileNameTranscoder fileNameTranscoder, boolean enableXattr) {
 		try {
 			var fileStore = Files.getFileStore(root);
 			var openFiles = new OpenFileFactory();
 			var dirHandler = new ReadWriteDirectoryHandler(fileNameTranscoder);
 			var fileHandler = new ReadWriteFileHandler(openFiles);
-			return new ReadWriteAdapter(errno, root, maxFileNameLength, fileNameTranscoder, fileStore, openFiles, dirHandler, fileHandler);
+			return new ReadWriteAdapter(errno, root, maxFileNameLength, fileNameTranscoder, fileStore, openFiles, dirHandler, fileHandler, enableXattr);
 		} catch (IOException e) {
 			throw new UncheckedIOException(e);
 		}
@@ -70,6 +71,10 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 		ops.add(Operation.UNLINK);
 		ops.add(Operation.UTIMENS);
 		ops.add(Operation.WRITE);
+		if (enableXattr) {
+			ops.add(Operation.SET_XATTR);
+			ops.add(Operation.REMOVE_XATTR);
+		}
 		return ops;
 	}
 
@@ -93,6 +98,44 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			return getErrorCodeForGenericFileSystemException(e, "mkdir " + path);
 		} catch (IOException | RuntimeException e) {
 			LOG.error("mkdir {} failed.", path, e);
+			return -errno.eio();
+		}
+	}
+
+	@Override
+	public int removexattr(String path, String name) {
+		try (PathLock pathLock = lockManager.lockForReading(path);
+			 DataLock dataLock = pathLock.lockDataForWriting()) {
+			Path node = resolvePath(path);
+			LOG.trace("removexattr {} {}", path, name);
+			var xattr = Files.getFileAttributeView(node, UserDefinedFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
+			if (xattr == null) {
+				return -errno.enotsup();
+			}
+			xattr.delete(name);
+			return 0;
+		} catch (NoSuchFileException e) {
+			return -errno.enoent();
+		} catch (IOException e) {
+			return -errno.eio();
+		}
+	}
+
+	@Override
+	public int setxattr(String path, String name, ByteBuffer value, int flags) {
+		try (PathLock pathLock = lockManager.lockForReading(path);
+			 DataLock dataLock = pathLock.lockDataForWriting()) {
+			Path node = resolvePath(path);
+			LOG.trace("setxattr {} {}", path, name);
+			var xattr = Files.getFileAttributeView(node, UserDefinedFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
+			if (xattr == null) {
+				return -errno.enotsup();
+			}
+			xattr.write(name, value);
+			return 0;
+		} catch (NoSuchFileException e) {
+			return -errno.enoent();
+		} catch (IOException e) {
 			return -errno.eio();
 		}
 	}
@@ -160,7 +203,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			LOG.warn("chmod {} failed, file not found.", path);
 			return -errno.enoent();
 		} catch (UnsupportedOperationException e) {
-			if (!WindowsUtil.IS_RUNNING_OS) { //prevent spamming warnings
+			if (!OS.WINDOWS.isCurrent()) { //prevent spamming warnings
 				LOG.warn("Setting posix permissions not supported by underlying file system.");
 			}
 			return -errno.enosys();

@@ -1,6 +1,5 @@
 package org.cryptomator.frontend.fuse.mount;
 
-import com.google.common.base.Preconditions;
 import org.cryptomator.frontend.fuse.FileNameTranscoder;
 import org.cryptomator.frontend.fuse.FuseNioAdapter;
 import org.cryptomator.frontend.fuse.ReadWriteAdapter;
@@ -21,6 +20,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.Normalizer;
 import java.util.EnumSet;
+import java.util.Objects;
 import java.util.Set;
 
 import static org.cryptomator.integrations.mount.MountCapability.MOUNT_FLAGS;
@@ -114,13 +114,13 @@ public class FuseTMountProvider implements MountService {
 
 		@Override
 		public Mount mount() throws MountFailedException {
-			Preconditions.checkNotNull(mountPoint);
-			Preconditions.checkNotNull(mountFlags);
+			Objects.requireNonNull(mountPoint);
+			Objects.requireNonNull(mountFlags);
 
 			var builder = Fuse.builder();
 			builder.setLibraryPath(DYLIB_PATH);
 			var filenameTranscoder = FileNameTranscoder.transcoder().withFuseNormalization(Normalizer.Form.NFD);
-			var fuseAdapter = ReadWriteAdapter.create(builder.errno(), vfsRoot, FuseNioAdapter.DEFAULT_MAX_FILENAMELENGTH, filenameTranscoder);
+			var fuseAdapter = ReadWriteAdapter.create(builder.errno(), vfsRoot, FuseNioAdapter.DEFAULT_MAX_FILENAMELENGTH, filenameTranscoder, false);
 			var fuse = builder.build(fuseAdapter);
 			try {
 				fuse.mount("fuse-nio-adapter", mountPoint, combinedMountFlags().toArray(String[]::new));
