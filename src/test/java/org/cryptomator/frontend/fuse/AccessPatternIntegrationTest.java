@@ -32,7 +32,7 @@ public class AccessPatternIntegrationTest {
 	@BeforeEach
 	void setup(@TempDir Path tmpDir) {
 		var builder = Fuse.builder();
-		adapter = ReadWriteAdapter.create(builder.errno(), tmpDir, FuseNioAdapter.DEFAULT_MAX_FILENAMELENGTH, FileNameTranscoder.transcoder());
+		adapter = ReadWriteAdapter.create(builder.errno(), tmpDir, FuseNioAdapter.DEFAULT_MAX_FILENAMELENGTH, FileNameTranscoder.transcoder(), true);
 	}
 
 	@Test
