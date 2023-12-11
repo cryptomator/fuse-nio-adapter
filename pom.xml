@@ -31,7 +31,7 @@
         <cryptofs.version>2.6.7</cryptofs.version>
 
         <!-- build dependencies -->
-        <dependency-check.version>8.4.2</dependency-check.version>
+        <dependency-check.version>9.0.4</dependency-check.version>
         <maven.deploy.version>3.1.1</maven.deploy.version>
         <jacoco.version>0.8.11</jacoco.version>
     </properties>
@@ -236,13 +236,11 @@
                         <artifactId>dependency-check-maven</artifactId>
                         <version>${dependency-check.version}</version>
                         <configuration>
-                            <cveValidForHours>24</cveValidForHours>
                             <failBuildOnCVSS>0</failBuildOnCVSS>
                             <skipTestScope>true</skipTestScope>
                             <detail>true</detail>
-                            <suppressionFiles>
-                                <suppressionFile>suppression.xml</suppressionFile>
-                            </suppressionFiles>
+                            <suppressionFile>suppression.xml</suppressionFile>
+                            <nvdApiKey>${env.NVD_API_KEY}</nvdApiKey>
                         </configuration>
                         <executions>
                             <execution>
