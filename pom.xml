@@ -162,6 +162,19 @@
                 </configuration>
             </plugin>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>3.6.1</version>
+                <executions>
+                    <execution>
+                        <id>jar-paths-to-properties</id>
+                        <goals>
+                            <goal>properties</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>${jacoco.version}</version>
@@ -181,7 +194,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.2.1</version>
                 <configuration>
-                    <argLine>@{surefire.jacoco.args} --enable-preview --enable-native-access=ALL-UNNAMED</argLine>
+                    <argLine>@{surefire.jacoco.args} -javaagent:${net.bytebuddy:byte-buddy-agent:jar} --enable-preview --enable-native-access=ALL-UNNAMED </argLine>
                 </configuration>
             </plugin>
             <plugin>
