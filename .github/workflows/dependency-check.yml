@@ -23,7 +23,7 @@ jobs:
           java-version: 21
           cache: 'maven'
       - name: Cache NVD DB
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.m2/repository/org/owasp/dependency-check-data/
           key: dependency-check-${{ github.run_id }}
