@@ -31,9 +31,9 @@
         <cryptofs.version>2.6.9</cryptofs.version>
 
         <!-- build dependencies -->
-        <dependency-check.version>9.0.10</dependency-check.version>
+        <dependency-check.version>9.1.0</dependency-check.version>
         <maven.deploy.version>3.1.1</maven.deploy.version>
-        <jacoco.version>0.8.11</jacoco.version>
+        <jacoco.version>0.8.12</jacoco.version>
     </properties>
 
     <licenses>
@@ -204,7 +204,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-source-plugin</artifactId>
-                <version>3.3.0</version>
+                <version>3.3.1</version>
                 <executions>
                     <execution>
                         <id>attach-sources</id>
@@ -295,7 +295,7 @@
                 <plugins>
                     <plugin>
                         <artifactId>maven-gpg-plugin</artifactId>
-                        <version>3.2.1</version>
+                        <version>3.2.2</version>
                         <executions>
                             <execution>
                                 <id>sign-artifacts</id>
