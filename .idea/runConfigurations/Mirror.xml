@@ -2,7 +2,7 @@
   <configuration default="false" name="Mirror" type="Application" factoryName="Application" singleton="false">
     <option name="MAIN_CLASS_NAME" value="org.cryptomator.frontend.fuse.mount.MirroringFuseMountTest$Mirror" />
     <module name="fuse-nio-adapter" />
-    <option name="VM_PARAMETERS" value="--enable-native-access=ALL-UNNAMED --enable-preview" />
+    <option name="VM_PARAMETERS" value="--enable-native-access=ALL-UNNAMED" />
     <extension name="coverage">
       <pattern>
         <option name="PATTERN" value="org.cryptomator.frontend.fuse.*" />

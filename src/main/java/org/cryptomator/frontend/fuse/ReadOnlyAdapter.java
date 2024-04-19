@@ -182,7 +182,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 	@Override
 	public int readlink(String path, ByteBuffer buf, long size) {
 		try (PathLock pathLock = lockManager.lockForReading(path);
-			 DataLock dataLock = pathLock.lockDataForReading()) {
+			 DataLock _ = pathLock.lockDataForReading()) {
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
 			return linkHandler.readlink(node, buf, size);
 		} catch (NotLinkException | NoSuchFileException e) {
@@ -197,7 +197,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 	@Override
 	public int getattr(String path, Stat stat, FileInfo fi) {
 		try (PathLock pathLock = lockManager.lockForReading(path);
-			 DataLock dataLock = pathLock.lockDataForReading()) {
+			 DataLock _ = pathLock.lockDataForReading()) {
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
 			BasicFileAttributes attrs;
 			if (fileStore.supportsFileAttributeView(PosixFileAttributeView.class)) {
@@ -230,7 +230,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 	@Override
 	public int getxattr(String path, String name, ByteBuffer value) {
 		try (PathLock pathLock = lockManager.lockForReading(path);
-			 DataLock dataLock = pathLock.lockDataForReading()) {
+			 DataLock _ = pathLock.lockDataForReading()) {
 			Path node = resolvePath(path);
 			LOG.trace("getxattr {} {}", path, name);
 			var xattr = Files.getFileAttributeView(node, UserDefinedFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
@@ -263,7 +263,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 	@Override
 	public int listxattr(String path, ByteBuffer list) {
 		try (PathLock pathLock = lockManager.lockForReading(path);
-			 DataLock dataLock = pathLock.lockDataForReading()) {
+			 DataLock _ = pathLock.lockDataForReading()) {
 			Path node = resolvePath(path);
 			LOG.trace("listxattr {}", path);
 			var xattr = Files.getFileAttributeView(node, UserDefinedFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
@@ -299,7 +299,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 	@Override
 	public int readdir(String path, DirFiller filler, long offset, FileInfo fi, int flags) {
 		try (PathLock pathLock = lockManager.lockForReading(path);
-			 DataLock dataLock = pathLock.lockDataForReading()) {
+			 DataLock _ = pathLock.lockDataForReading()) {
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
 			LOG.trace("readdir {}", path);
 			return dirHandler.readdir(node, filler, offset, fi);
@@ -320,7 +320,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 	@Override
 	public int open(String path, FileInfo fi) {
 		try (PathLock pathLock = lockManager.lockForReading(path);
-			 DataLock dataLock = pathLock.lockDataForReading()) {
+			 DataLock _ = pathLock.lockDataForReading()) {
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
 			LOG.trace("open {} ({})", path, fi.getFh());
 			fileHandler.open(node, fi);
@@ -340,7 +340,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 	@Override
 	public int read(String path, ByteBuffer buf, long size, long offset, FileInfo fi) {
 		try (PathLock pathLock = lockManager.lockForReading(path);
-			 DataLock dataLock = pathLock.lockDataForReading()) {
+			 DataLock _ = pathLock.lockDataForReading()) {
 			LOG.trace("read {} bytes from file {} starting at {}...", size, path, offset);
 			int read = fileHandler.read(buf, size, offset, fi);
 			LOG.trace("read {} bytes from file {}", read, path);
@@ -357,7 +357,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 	@Override
 	public int release(String path, FileInfo fi) {
 		try (PathLock pathLock = lockManager.lockForReading(path);
-			 DataLock dataLock = pathLock.lockDataForReading()) {
+			 DataLock _ = pathLock.lockDataForReading()) {
 			LOG.trace("release {} ({})", path, fi.getFh());
 			fileHandler.release(fi);
 			return 0;
