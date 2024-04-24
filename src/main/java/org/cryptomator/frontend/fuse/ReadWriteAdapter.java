@@ -86,7 +86,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 	@Override
 	public int mkdir(String path, int mode) {
 		try (PathLock pathLock = lockManager.lockForWriting(path);
-			 DataLock dataLock = pathLock.lockDataForWriting()) {
+			 DataLock _ = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
 			LOG.trace("mkdir {} ({})", path, mode);
 			Files.createDirectory(node);
@@ -105,7 +105,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 	@Override
 	public int removexattr(String path, String name) {
 		try (PathLock pathLock = lockManager.lockForReading(path);
-			 DataLock dataLock = pathLock.lockDataForWriting()) {
+			 DataLock _ = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(path);
 			LOG.trace("removexattr {} {}", path, name);
 			var xattr = Files.getFileAttributeView(node, UserDefinedFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
@@ -124,7 +124,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 	@Override
 	public int setxattr(String path, String name, ByteBuffer value, int flags) {
 		try (PathLock pathLock = lockManager.lockForReading(path);
-			 DataLock dataLock = pathLock.lockDataForWriting()) {
+			 DataLock _ = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(path);
 			LOG.trace("setxattr {} {}", path, name);
 			var xattr = Files.getFileAttributeView(node, UserDefinedFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
@@ -143,7 +143,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 	@Override
 	public int symlink(String targetPath, String linkPath) {
 		try (PathLock pathLock = lockManager.lockForWriting(linkPath);
-			 DataLock dataLock = pathLock.lockDataForWriting()) {
+			 DataLock _ = pathLock.lockDataForWriting()) {
 			Path link = resolvePath(fileNameTranscoder.fuseToNio(linkPath));
 			Path target = link.getFileSystem().getPath(fileNameTranscoder.fuseToNio(targetPath));
 			LOG.trace("symlink {} -> {}", linkPath, targetPath);
@@ -163,7 +163,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 	@Override
 	public int create(String path, int mode, FileInfo fi) {
 		try (PathLock pathLock = lockManager.lockForWriting(path);
-			 DataLock dataLock = pathLock.lockDataForWriting()) {
+			 DataLock _ = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
 			var flags = fi.getOpenFlags();
 			LOG.trace("create {} with flags {}", path, flags);
@@ -194,7 +194,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 	@Override
 	public int chmod(String path, int mode, FileInfo fi) {
 		try (PathLock pathLock = lockManager.lockForReading(path);
-			 DataLock dataLock = pathLock.lockDataForWriting()) {
+			 DataLock _ = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
 			LOG.trace("chmod {} ({})", path, mode);
 			Files.setPosixFilePermissions(node, FileAttributesUtil.octalModeToPosixPermissions(mode));
@@ -216,7 +216,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 	@Override
 	public int unlink(String path) {
 		try (PathLock pathLock = lockManager.lockForWriting(path);
-			 DataLock dataLock = pathLock.lockDataForWriting()) {
+			 DataLock _ = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
 			if (Files.isDirectory(node, LinkOption.NOFOLLOW_LINKS)) {
 				LOG.warn("unlink {} failed, node is a directory.", path);
@@ -237,7 +237,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 	@Override
 	public int rmdir(String path) {
 		try (PathLock pathLock = lockManager.lockForWriting(path);
-			 DataLock dataLock = pathLock.lockDataForWriting()) {
+			 DataLock _ = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
 			if (!Files.isDirectory(node, LinkOption.NOFOLLOW_LINKS)) {
 				throw new NotDirectoryException(path);
@@ -306,7 +306,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 	@Override
 	public int utimens(String path, TimeSpec atime, TimeSpec mtime, FileInfo fi) {
 		try (PathLock pathLock = lockManager.lockForReading(path);
-			 DataLock dataLock = pathLock.lockDataForWriting()) {
+			 DataLock _ = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
 			LOG.trace("utimens {} (last modification {}, last access {})", path, mtime, atime);
 			fileHandler.utimens(node, mtime, atime);
@@ -323,7 +323,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 	@Override
 	public int write(String path, ByteBuffer buf, long size, long offset, FileInfo fi) {
 		try (PathLock pathLock = lockManager.lockForReading(path);
-			 DataLock dataLock = pathLock.lockDataForWriting()) {
+			 DataLock _ = pathLock.lockDataForWriting()) {
 			LOG.trace("write {} bytes to file {} starting at {}...", size, path, offset);
 			int written = fileHandler.write(buf, size, offset, fi);
 			LOG.trace("wrote {} bytes to file {}.", written, path);
@@ -340,7 +340,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 	@Override
 	public int truncate(String path, long size, FileInfo fi) {
 		try (PathLock pathLock = lockManager.lockForReading(path);
-			 DataLock dataLock = pathLock.lockDataForWriting()) {
+			 DataLock _ = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
 			LOG.trace("truncate {} {}", path, size);
 			if (fi != null) {
