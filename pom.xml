@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.cryptomator</groupId>
     <artifactId>fuse-nio-adapter</artifactId>
-    <version>4.1.0-SNAPSHOT</version>
+    <version>5.1.0-SNAPSHOT</version>
     <name>FUSE-NIO-Adapter</name>
     <description>Access resources at a given NIO path via FUSE.</description>
     <url>https://github.com/cryptomator/fuse-nio-adapter</url>
