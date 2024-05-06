@@ -32,7 +32,7 @@
 
         <!-- build dependencies -->
         <dependency-check.version>9.1.0</dependency-check.version>
-        <maven.deploy.version>3.1.1</maven.deploy.version>
+        <maven.deploy.version>3.1.2</maven.deploy.version>
         <jacoco.version>0.8.12</jacoco.version>
     </properties>
 
