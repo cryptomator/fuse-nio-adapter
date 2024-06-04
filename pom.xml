@@ -31,8 +31,8 @@
         <cryptofs.version>2.6.9</cryptofs.version>
 
         <!-- build dependencies -->
-        <dependency-check.version>9.1.0</dependency-check.version>
-        <maven.deploy.version>3.1.1</maven.deploy.version>
+        <dependency-check.version>9.2.0</dependency-check.version>
+        <maven.deploy.version>3.1.2</maven.deploy.version>
         <jacoco.version>0.8.12</jacoco.version>
     </properties>
 
@@ -213,7 +213,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.6.3</version>
+                <version>3.7.0</version>
                 <executions>
                     <execution>
                         <id>attach-javadocs</id>
@@ -327,7 +327,7 @@
                     <plugin>
                         <groupId>org.sonatype.plugins</groupId>
                         <artifactId>nexus-staging-maven-plugin</artifactId>
-                        <version>1.6.13</version>
+                        <version>1.7.0</version>
                         <extensions>true</extensions>
                         <configuration>
                             <serverId>ossrh</serverId>
