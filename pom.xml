@@ -161,7 +161,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
-                <version>3.6.1</version>
+                <version>3.7.0</version>
                 <executions>
                     <execution>
                         <id>jar-paths-to-properties</id>
@@ -189,7 +189,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.2.5</version>
+                <version>3.3.0</version>
                 <configuration>
                     <argLine>@{surefire.jacoco.args} -javaagent:${net.bytebuddy:byte-buddy-agent:jar}</argLine>
                 </configuration>
