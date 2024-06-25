@@ -322,7 +322,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 		try (PathLock pathLock = lockManager.lockForReading(path);
 			 DataLock _ = pathLock.lockDataForReading()) {
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
-			LOG.trace("open {} ({})", path, fi.getFh());
+			LOG.trace("open {}", path);
 			fileHandler.open(node, fi);
 			return 0;
 		} catch (NoSuchFileException e) {
