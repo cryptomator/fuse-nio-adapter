@@ -3,6 +3,7 @@ package org.cryptomator.frontend.fuse.mount;
 import org.cryptomator.frontend.fuse.FileNameTranscoder;
 import org.cryptomator.frontend.fuse.FuseNioAdapter;
 import org.cryptomator.frontend.fuse.ReadWriteAdapter;
+import org.cryptomator.frontend.fuse.microsoft.MicrosoftOfficeLockingAdapter;
 import org.cryptomator.integrations.common.OperatingSystem;
 import org.cryptomator.integrations.common.Priority;
 import org.cryptomator.integrations.mount.Mount;
@@ -28,7 +29,7 @@ import static org.cryptomator.integrations.mount.MountCapability.READ_ONLY;
 import static org.cryptomator.integrations.mount.MountCapability.UNMOUNT_FORCED;
 import static org.cryptomator.integrations.mount.MountCapability.VOLUME_NAME;
 
-@Priority(90)
+@Priority(990)
 @OperatingSystem(OperatingSystem.Value.WINDOWS)
 public class WinFspMountProvider implements MountService {
 
@@ -121,10 +122,11 @@ public class WinFspMountProvider implements MountService {
 			builder.setLibraryPath(libPath);
 			//xattr disabled due to https://github.com/cryptomator/fuse-nio-adapter/issues/86
 			var fuseAdapter = ReadWriteAdapter.create(builder.errno(), vfsRoot, FuseNioAdapter.DEFAULT_MAX_FILENAMELENGTH, FileNameTranscoder.transcoder(), false);
+			var officeDecorator = new MicrosoftOfficeLockingAdapter(fuseAdapter);
 			try {
-				var fuse = builder.build(fuseAdapter);
+				var fuse = builder.build(officeDecorator);
 				fuse.mount("fuse-nio-adapter", mountPoint, combinedMountFlags().toArray(String[]::new));
-				return new WinfspMount(fuse, fuseAdapter, mountPoint);
+				return new WinfspMount(fuse, officeDecorator, mountPoint);
 			} catch (FuseMountFailedException e) {
 				throw new MountFailedException(e);
 			}
