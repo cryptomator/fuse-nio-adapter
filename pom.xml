@@ -31,7 +31,7 @@
         <cryptofs.version>2.6.9</cryptofs.version>
 
         <!-- build dependencies -->
-        <dependency-check.version>10.0.2</dependency-check.version>
+        <dependency-check.version>10.0.3</dependency-check.version>
         <maven.deploy.version>3.1.2</maven.deploy.version>
         <jacoco.version>0.8.12</jacoco.version>
     </properties>
@@ -189,7 +189,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.3.0</version>
+                <version>3.3.1</version>
                 <configuration>
                     <argLine>@{surefire.jacoco.args} -javaagent:${net.bytebuddy:byte-buddy-agent:jar}</argLine>
                 </configuration>
@@ -213,7 +213,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.7.0</version>
+                <version>3.8.0</version>
                 <executions>
                     <execution>
                         <id>attach-javadocs</id>
