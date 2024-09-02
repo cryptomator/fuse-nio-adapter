@@ -26,8 +26,8 @@
         <caffeine.version>3.1.8</caffeine.version>
 
         <!-- test dependencies -->
-        <junit.jupiter.version>5.10.3</junit.jupiter.version>
-        <mockito.version>5.12.0</mockito.version>
+        <junit.jupiter.version>5.11.0</junit.jupiter.version>
+        <mockito.version>5.13.0</mockito.version>
         <cryptofs.version>2.6.9</cryptofs.version>
 
         <!-- build dependencies -->
