@@ -40,6 +40,7 @@ public class FuseTMountProvider implements MountService {
 
 	private static final String DYLIB_PATH = "/usr/local/lib/libfuse-t.dylib";
 	private static final Path USER_HOME = Paths.get(System.getProperty("user.home"));
+	private static final String MOUNT_OPTION_NOXATTR = "-ononamedattr";
 
 	@Override
 	public String displayName() {
@@ -70,7 +71,7 @@ public class FuseTMountProvider implements MountService {
 	public String getDefaultMountFlags() {
 		// see: https://github.com/macos-fuse-t/fuse-t/wiki#supported-mount-options
 		try {
-			return "-o nonamedattr"//
+			return MOUNT_OPTION_NOXATTR //
 					+ " -orwsize=262144" //
 					+ " -ouid=" + Files.getAttribute(USER_HOME, "unix:uid") //
 					+ " -ogid=" + Files.getAttribute(USER_HOME, "unix:gid");
@@ -110,6 +111,7 @@ public class FuseTMountProvider implements MountService {
 //			if (port != 0) {
 //				combined.add("-l 0:" + port);
 //			}
+			combined.add(MOUNT_OPTION_NOXATTR); //required due to https://github.com/cryptomator/cryptomator/issues/3538
 			return combined;
 		}
 
