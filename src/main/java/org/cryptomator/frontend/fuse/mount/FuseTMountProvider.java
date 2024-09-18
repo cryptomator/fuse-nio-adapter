@@ -70,7 +70,8 @@ public class FuseTMountProvider implements MountService {
 	public String getDefaultMountFlags() {
 		// see: https://github.com/macos-fuse-t/fuse-t/wiki#supported-mount-options
 		try {
-			return "-orwsize=262144" //
+			return "-o nonamedattr"//
+					+ " -orwsize=262144" //
 					+ " -ouid=" + Files.getAttribute(USER_HOME, "unix:uid") //
 					+ " -ogid=" + Files.getAttribute(USER_HOME, "unix:gid");
 		} catch (IOException e) {
