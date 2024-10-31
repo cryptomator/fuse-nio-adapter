@@ -31,6 +31,7 @@
         <cryptofs.version>2.7.0</cryptofs.version>
 
         <!-- build dependencies -->
+        <mvn-sign.version>3.2.7</mvn-sign.version>
         <dependency-check.version>11.0.0</dependency-check.version>
         <maven.deploy.version>3.1.3</maven.deploy.version>
         <jacoco.version>0.8.12</jacoco.version>
@@ -292,7 +293,7 @@
                 <plugins>
                     <plugin>
                         <artifactId>maven-gpg-plugin</artifactId>
-                        <version>3.2.7</version>
+                        <version>${mvn-sign.version}</version>
                         <executions>
                             <execution>
                                 <id>sign-artifacts</id>
