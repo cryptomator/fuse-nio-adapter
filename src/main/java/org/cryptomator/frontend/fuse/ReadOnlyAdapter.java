@@ -357,7 +357,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 	@Override
 	public int release(String path, FileInfo fi) {
 		try (PathLock pathLock = lockManager.lockForReading(path);
-			 DataLock _ = pathLock.lockDataForReading()) {
+			 DataLock _ = pathLock.lockDataForWriting()) {
 			LOG.trace("release {} ({})", path, fi.getFh());
 			fileHandler.release(fi);
 			return 0;
