@@ -38,6 +38,7 @@ public class MirroringFuseMountTest {
 
 		static {
 			System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug");
+			System.setProperty("org.slf4j.simpleLogger.log.org.cryptomator.frontend.fuse.locks.LockManager", "warn");
 			System.setProperty("org.slf4j.simpleLogger.log.org.cryptomator.frontend.fuse.locks.DataLock", "warn");
 			System.setProperty("org.slf4j.simpleLogger.log.org.cryptomator.frontend.fuse.locks.PathLock", "warn");
 			System.setProperty("org.slf4j.simpleLogger.showDateTime", "true");
@@ -63,6 +64,7 @@ public class MirroringFuseMountTest {
 
 		static {
 			System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug");
+			System.setProperty("org.slf4j.simpleLogger.log.org.cryptomator.frontend.fuse.locks.LockManager", "warn");
 			System.setProperty("org.slf4j.simpleLogger.log.org.cryptomator.frontend.fuse.locks.DataLock", "warn");
 			System.setProperty("org.slf4j.simpleLogger.log.org.cryptomator.frontend.fuse.locks.PathLock", "warn");
 			System.setProperty("org.slf4j.simpleLogger.showDateTime", "true");

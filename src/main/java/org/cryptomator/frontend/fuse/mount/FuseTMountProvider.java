@@ -72,6 +72,7 @@ public class FuseTMountProvider implements MountService {
 		// see: https://github.com/macos-fuse-t/fuse-t/wiki#supported-mount-options
 		try {
 			return MOUNT_OPTION_NOXATTR //
+					+ " -obackend=smb" //
 					+ " -orwsize=262144" //
 					+ " -ouid=" + Files.getAttribute(USER_HOME, "unix:uid") //
 					+ " -ogid=" + Files.getAttribute(USER_HOME, "unix:gid");
