@@ -223,7 +223,6 @@
                         </goals>
                         <configuration>
                             <release>${project.build.jdk}</release>
-                            <additionalOptions>--enable-preview</additionalOptions>
                         </configuration>
                     </execution>
                 </executions>
