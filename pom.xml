@@ -192,7 +192,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.5.1</version>
                 <configuration>
-                    <argLine>@{surefire.jacoco.args} -javaagent:${net.bytebuddy:byte-buddy-agent:jar}</argLine>
+                    <argLine>@{surefire.jacoco.args} -javaagent:"${org.mockito:mockito-core:jar}"</argLine>
                 </configuration>
             </plugin>
             <plugin>
