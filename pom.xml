@@ -32,7 +32,7 @@
 
         <!-- build dependencies -->
         <mvn-sign.version>3.2.7</mvn-sign.version>
-        <dependency-check.version>11.0.0</dependency-check.version>
+        <dependency-check.version>12.1.0</dependency-check.version>
         <maven.deploy.version>3.1.3</maven.deploy.version>
         <jacoco.version>0.8.12</jacoco.version>
     </properties>
@@ -190,7 +190,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.5.1</version>
+                <version>3.5.2</version>
                 <configuration>
                     <argLine>@{surefire.jacoco.args} -javaagent:"${org.mockito:mockito-core:jar}"</argLine>
                 </configuration>
@@ -214,7 +214,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.10.1</version>
+                <version>3.11.2</version>
                 <executions>
                     <execution>
                         <id>attach-javadocs</id>
