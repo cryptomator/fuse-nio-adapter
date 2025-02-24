@@ -20,10 +20,10 @@
         <project.build.jdk>22</project.build.jdk>
 
         <!-- dependencies -->
-        <integrations-api.version>1.4.0</integrations-api.version>
+        <integrations-api.version>1.5.0</integrations-api.version>
         <jfuse.version>0.7.0</jfuse.version>
         <slf4j.version>2.0.16</slf4j.version>
-        <caffeine.version>3.1.8</caffeine.version>
+        <caffeine.version>3.2.0</caffeine.version>
 
         <!-- test dependencies -->
         <junit.jupiter.version>5.11.3</junit.jupiter.version>
@@ -91,7 +91,7 @@
         <dependency>
             <groupId>org.jetbrains</groupId>
             <artifactId>annotations</artifactId>
-            <version>26.0.1</version>
+            <version>26.0.2</version>
             <scope>provided</scope>
         </dependency>
 
