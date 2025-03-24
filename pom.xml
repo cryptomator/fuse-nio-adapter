@@ -17,7 +17,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.build.jdk>22</project.build.jdk>
+        <project.build.jdk>23</project.build.jdk>
 
         <!-- dependencies -->
         <integrations-api.version>1.5.1</integrations-api.version>
