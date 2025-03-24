@@ -41,8 +41,11 @@ public class LinuxFuseMountProvider implements MountService {
 	private static final Path USER_HOME = Paths.get(System.getProperty("user.home"));
 	private static final String[] LIB_PATHS = {
 			"/lib/x86_64-linux-gnu/libfuse3.so.3", // debian amd64
+			"/lib/x86_64-linux-gnu/libfuse3.so.4", // debian amd64
 			"/lib/aarch64-linux-gnu/libfuse3.so.3", // debian aarch64
+			"/lib/aarch64-linux-gnu/libfuse3.so.4", // debian aarch64
 			"/usr/lib64/libfuse3.so.3", // fedora
+			"/usr/lib64/libfuse3.so.4", // fedora
 			"/app/lib/libfuse3.so" // flatpak
 	};
 	private static final String UNMOUNT_CMD_NAME = "fusermount3";
