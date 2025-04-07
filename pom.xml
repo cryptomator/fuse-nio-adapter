@@ -32,9 +32,9 @@
 
         <!-- build dependencies -->
         <mvn-sign.version>3.2.7</mvn-sign.version>
-        <dependency-check.version>12.1.0</dependency-check.version>
+        <dependency-check.version>12.1.1</dependency-check.version>
         <maven.deploy.version>3.1.4</maven.deploy.version>
-        <jacoco.version>0.8.12</jacoco.version>
+        <jacoco.version>0.8.13</jacoco.version>
     </properties>
 
     <licenses>
@@ -190,7 +190,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.5.2</version>
+                <version>3.5.3</version>
                 <configuration>
                     <argLine>@{surefire.jacoco.args} -javaagent:"${org.mockito:mockito-core:jar}"</argLine>
                 </configuration>
