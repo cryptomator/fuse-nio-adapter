@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 The changelog starts with version 5.0.4.
 Changes to prior versions can be found on the [Github release page](https://github.com/cryptomator/fuse-nio-adapter/releases).
 
-## [Unreleased]
+## [5.0.5] - 2025-04-09
 
 ### Changed
 
@@ -18,7 +18,7 @@ Changes to prior versions can be found on the [Github release page](https://gith
 
 * MountFailedException thrown when using with libfuse 3.17.1 (aka ABI version 4) ([#176](https://github.com/cryptomator/fuse-nio-adapter/issues/176))
 
-## [5.0.4] - 24-03-2025
+## [5.0.4] - 2025-03-24
 
 ### Added
 
