@@ -10,6 +10,10 @@ Changes to prior versions can be found on the [Github release page](https://gith
 
 ## [Unreleased]
 
+### Changed
+
+* Extend list of known libfuse locations in LinuxFuseMountProvider
+
 ### Fixed
 
 * MountFailedException thrown when using with libfuse 3.17.1 (aka ABI version 4) ([#176](https://github.com/cryptomator/fuse-nio-adapter/issues/176))
@@ -18,10 +22,10 @@ Changes to prior versions can be found on the [Github release page](https://gith
 
 ### Added
 
-* changelog file
-* support libfuse3-4 on Linux (#174)
+* Changelog file
+* Support libfuse3-4 on Linux (#174)
 
 ### Changed
 
-* switch build to JDK 23 (fe75b0a0e627ddb7196806cc7c56ece1ef268cc7)
+* Switch build to JDK 23 (fe75b0a0e627ddb7196806cc7c56ece1ef268cc7)
 
