@@ -10,13 +10,15 @@ Changes to prior versions can be found on the [Github release page](https://gith
 
 ## [Unreleased]
 
-No changes
+### Fixed
+
+* MountFailedException thrown when using with libfuse 3.17.1 (aka ABI version 4) ([#176](https://github.com/cryptomator/fuse-nio-adapter/issues/176))
 
 ## [5.0.4] - 24-03-2025
 
 ### Added
 
-* changelog file 
+* changelog file
 * support libfuse3-4 on Linux (#174)
 
 ### Changed
