@@ -31,8 +31,8 @@
         <cryptofs.version>2.8.0</cryptofs.version>
 
         <!-- build dependencies -->
-        <mvn-sign.version>3.2.7</mvn-sign.version>
-        <dependency-check.version>12.1.1</dependency-check.version>
+        <mvn-sign.version>3.2.8</mvn-sign.version>
+        <dependency-check.version>12.1.3</dependency-check.version>
         <maven.deploy.version>3.1.4</maven.deploy.version>
         <jacoco.version>0.8.13</jacoco.version>
     </properties>
@@ -214,7 +214,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.11.2</version>
+                <version>3.11.3</version>
                 <executions>
                     <execution>
                         <id>attach-javadocs</id>
