@@ -9,6 +9,9 @@ The changelog starts with version 5.0.4.
 Changes to prior versions can be found on the [Github release page](https://github.com/cryptomator/fuse-nio-adapter/releases).
 
 ## [Unreleased]
+### Added
+* Support fsync (#94)
+
 ### Changed
 * Update `org.cryptomator:integrations-api` from 1.5.1 to 1.7.0
 * Update `com.github.ben-manes.caffeine:caffeine` from 3.2.0 to 3.2.2
