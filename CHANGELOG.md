@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 The changelog starts with version 5.0.4.
 Changes to prior versions can be found on the [Github release page](https://github.com/cryptomator/fuse-nio-adapter/releases).
 
+## [Unreleased]
+### Fixed
+* MacFuseMountProvider does not find macFUSE library (#190)
+
 ## [5.0.5] - 2025-04-09
 
 ### Changed

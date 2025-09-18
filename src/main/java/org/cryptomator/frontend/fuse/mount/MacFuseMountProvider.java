@@ -19,6 +19,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.Normalizer;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Objects;
 import java.util.Set;
@@ -40,7 +41,10 @@ import static org.cryptomator.integrations.mount.MountCapability.VOLUME_NAME;
 @OperatingSystem(OperatingSystem.Value.MAC)
 public class MacFuseMountProvider implements MountService {
 
-	private static final String DYLIB_PATH = "/usr/local/lib/libosxfuse.2.dylib";
+	private static final String[] DYLIB_PATHS = { //
+			"/usr/local/lib/libosxfuse.2.dylib", //osxfuse
+			"/usr/local/lib/libfuse.2.dylib"}; //macFuse
+
 	private static final Path USER_HOME = Paths.get(System.getProperty("user.home"));
 
 	@Override
@@ -50,7 +54,7 @@ public class MacFuseMountProvider implements MountService {
 
 	@Override
 	public boolean isSupported() {
-		return Files.exists(Paths.get(DYLIB_PATH));
+		return Arrays.stream(DYLIB_PATHS).map(Path::of).anyMatch(Files::exists);
 	}
 
 	@Override
@@ -113,7 +117,10 @@ public class MacFuseMountProvider implements MountService {
 			}
 
 			var builder = Fuse.builder();
-			builder.setLibraryPath(DYLIB_PATH);
+			var libPath = Arrays.stream(DYLIB_PATHS) //
+					.filter(s -> Files.exists(Path.of(s))).findFirst() //
+					.orElseThrow(() -> new IllegalStateException("Unable to find fuse library during mount. Searched locations: %s".formatted(Arrays.toString(DYLIB_PATHS))));
+			builder.setLibraryPath(libPath);
 			var filenameTranscoder = FileNameTranscoder.transcoder().withFuseNormalization(Normalizer.Form.NFD);
 			var fuseAdapter = ReadWriteAdapter.create(builder.errno(), vfsRoot, FuseNioAdapter.DEFAULT_MAX_FILENAMELENGTH, filenameTranscoder, true);
 			var fuse = builder.build(fuseAdapter);
