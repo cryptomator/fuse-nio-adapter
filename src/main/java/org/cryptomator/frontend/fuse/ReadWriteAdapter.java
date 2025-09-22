@@ -62,7 +62,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 		ops.add(Operation.CHMOD);
 		//ops.add(Operation.CHOWN);
 		ops.add(Operation.CREATE);
-		//ops.add(Operation.FSYNC);
+		ops.add(Operation.FSYNC);
 		ops.add(Operation.MKDIR);
 		ops.add(Operation.RENAME);
 		ops.add(Operation.RMDIR);

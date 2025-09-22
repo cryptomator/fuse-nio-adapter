@@ -18,7 +18,7 @@ updates:
           - "org.apache.maven.plugins:*"
           - "org.jacoco:jacoco-maven-plugin"
           - "org.owasp:dependency-check-maven"
-          - "org.sonatype.plugins:nexus-staging-maven-plugin"
+          - "org.sonatype.central:central-publishing-maven-plugin"
       java-production-dependencies:
         patterns:
           - "*"
@@ -29,7 +29,7 @@ updates:
           - "org.apache.maven.plugins:*"
           - "org.jacoco:jacoco-maven-plugin"
           - "org.owasp:dependency-check-maven"
-          - "org.sonatype.plugins:nexus-staging-maven-plugin"
+          - "org.sonatype.central:central-publishing-maven-plugin"
 
   - package-ecosystem: "github-actions"
     directory: "/" # even for `.github/workflows`
