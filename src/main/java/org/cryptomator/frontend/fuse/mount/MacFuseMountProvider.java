@@ -15,12 +15,14 @@ import org.cryptomator.jfuse.api.FuseMountFailedException;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.Normalizer;
 import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -58,8 +60,11 @@ public class MacFuseMountProvider implements MountService {
 	}
 
 	@Override
-	public MountBuilder forFileSystem(Path fileSystemRoot) {
-		return new MacFuseMountBuilder(fileSystemRoot);
+	public MountBuilder forFileSystem(Path fileSystemRoot, Map<Class<? extends FileSystemException>, ?> secretKnowledge) {
+		if(secretKnowledge.values().stream().anyMatch(o -> !(o instanceof Integer))) {
+			throw new IllegalArgumentException("the secretKnowledge must only contain integer values!");
+		}
+		return new MacFuseMountBuilder(fileSystemRoot, (Map<Class<? extends FileSystemException>, Integer>) secretKnowledge);
 	}
 
 	@Override
@@ -87,8 +92,8 @@ public class MacFuseMountProvider implements MountService {
 
 		private String volumeId;
 
-		public MacFuseMountBuilder(Path vfsRoot) {
-			super(vfsRoot);
+		public MacFuseMountBuilder(Path vfsRoot, Map<Class<? extends FileSystemException>, Integer> secretKnowledge) {
+			super(vfsRoot, secretKnowledge);
 		}
 
 		@Override
@@ -122,7 +127,7 @@ public class MacFuseMountProvider implements MountService {
 					.orElseThrow(() -> new IllegalStateException("Unable to find fuse library during mount. Searched locations: %s".formatted(Arrays.toString(DYLIB_PATHS))));
 			builder.setLibraryPath(libPath);
 			var filenameTranscoder = FileNameTranscoder.transcoder().withFuseNormalization(Normalizer.Form.NFD);
-			var fuseAdapter = ReadWriteAdapter.create(builder.errno(), vfsRoot, FuseNioAdapter.DEFAULT_MAX_FILENAMELENGTH, filenameTranscoder, true);
+			var fuseAdapter = ReadWriteAdapter.create(builder.errno(), vfsRoot, FuseNioAdapter.DEFAULT_MAX_FILENAMELENGTH, filenameTranscoder, true, secretKnowledge);
 			var fuse = builder.build(fuseAdapter);
 			try {
 				fuse.mount("fuse-nio-adapter", mountPoint, combinedMountFlags().toArray(String[]::new));

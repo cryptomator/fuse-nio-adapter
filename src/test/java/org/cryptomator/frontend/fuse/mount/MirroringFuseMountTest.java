@@ -4,21 +4,25 @@ import com.google.common.base.Preconditions;
 import org.cryptomator.cryptofs.CryptoFileSystemProperties;
 import org.cryptomator.cryptofs.CryptoFileSystemProvider;
 import org.cryptomator.cryptofs.DirStructure;
+import org.cryptomator.cryptofs.inuse.FileAlreadyInUseException;
 import org.cryptomator.cryptolib.common.MasterkeyFileAccess;
 import org.cryptomator.integrations.mount.MountCapability;
 import org.cryptomator.integrations.mount.MountFailedException;
 import org.cryptomator.integrations.mount.MountService;
 import org.cryptomator.integrations.mount.UnmountFailedException;
+import org.cryptomator.jfuse.api.Errno;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.FileSystem;
+import java.nio.file.FileSystemException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.util.Map;
 import java.util.Scanner;
 
 /**
@@ -51,7 +55,7 @@ public class MirroringFuseMountTest {
 			try (Scanner scanner = new Scanner(System.in)) {
 				System.out.println("Enter path to the directory you want to mirror:");
 				Path p = Paths.get(scanner.nextLine());
-				mount(mountService, p, scanner);
+				mount(mountService, p, Map.of(), scanner);
 			}
 		}
 
@@ -88,16 +92,17 @@ public class MirroringFuseMountTest {
 						.build();
 				try (FileSystem cryptoFs = CryptoFileSystemProvider.newFileSystem(vaultPath, props)) {
 					Path p = cryptoFs.getPath("/");
-					mount(mountService, p, scanner);
+					var secretKnowledge = Map.<Class<? extends FileSystemException>, Integer>of(FileAlreadyInUseException.class, 13);
+					mount(mountService, p, secretKnowledge, scanner);
 				}
 			}
 		}
 
 	}
 
-	private static void mount(MountService mountProvider, Path pathToMirror, Scanner scanner) throws MountFailedException {
+	private static void mount(MountService mountProvider, Path pathToMirror, Map<Class<? extends FileSystemException>, Integer> secretKnowledge, Scanner scanner) throws MountFailedException {
 
-		var mountBuilder = mountProvider.forFileSystem(pathToMirror);
+		var mountBuilder = mountProvider.forFileSystem(pathToMirror, secretKnowledge);
 		if (mountProvider.hasCapability(MountCapability.MOUNT_FLAGS)) {
 			mountBuilder.setMountFlags(mountProvider.getDefaultMountFlags());
 		}

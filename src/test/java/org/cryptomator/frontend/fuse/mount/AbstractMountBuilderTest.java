@@ -3,13 +3,12 @@ package org.cryptomator.frontend.fuse.mount;
 import org.cryptomator.integrations.mount.Mount;
 import org.cryptomator.integrations.mount.MountFailedException;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Map;
 
 public class AbstractMountBuilderTest {
 
@@ -34,7 +33,7 @@ public class AbstractMountBuilderTest {
 	class TestMountBuilder extends AbstractMountBuilder {
 
 		public TestMountBuilder() {
-			super(Path.of("abc"));
+			super(Path.of("abc"), Map.of());
 		}
 
 		@Override

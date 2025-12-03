@@ -14,9 +14,11 @@ import org.cryptomator.integrations.mount.UnmountFailedException;
 import org.cryptomator.jfuse.api.Fuse;
 import org.cryptomator.jfuse.api.FuseMountFailedException;
 
+import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.EnumSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
 
@@ -56,8 +58,11 @@ public class WinFspMountProvider implements MountService {
 	}
 
 	@Override
-	public MountBuilder forFileSystem(Path vfsRoot) {
-		return new WinFspMountBuilder(vfsRoot);
+	public MountBuilder forFileSystem(Path fileSystemRoot, Map<Class<? extends FileSystemException>, ?> secretKnowledge) {
+		if(secretKnowledge.values().stream().anyMatch(o -> !(o instanceof Integer))) {
+			throw new IllegalArgumentException("the secretKnowledge must only contain integer values!");
+		}
+		return new WinFspMountBuilder(fileSystemRoot, (Map<Class<? extends FileSystemException>, Integer>) secretKnowledge);
 	}
 
 	protected static class WinFspMountBuilder extends AbstractMountBuilder {
@@ -66,8 +71,8 @@ public class WinFspMountProvider implements MountService {
 		String fsName = DEFAULT_FS_NAME;
 		boolean isReadOnly = false;
 
-		WinFspMountBuilder(Path vfsRoot) {
-			super(vfsRoot);
+		WinFspMountBuilder(Path vfsRoot, Map<Class<? extends FileSystemException>, Integer> secretKnowledge) {
+			super(vfsRoot, secretKnowledge);
 		}
 
 		@Override
@@ -120,7 +125,7 @@ public class WinFspMountProvider implements MountService {
 			var libPath = WinfspUtil.getWinFspInstallDir() + "bin\\" + (OS_ARCH.contains("aarch64") ? "winfsp-a64.dll" : "winfsp-x64.dll");
 			builder.setLibraryPath(libPath);
 			//xattr disabled due to https://github.com/cryptomator/fuse-nio-adapter/issues/86
-			var fuseAdapter = ReadWriteAdapter.create(builder.errno(), vfsRoot, FuseNioAdapter.DEFAULT_MAX_FILENAMELENGTH, FileNameTranscoder.transcoder(), false);
+			var fuseAdapter = ReadWriteAdapter.create(builder.errno(), vfsRoot, FuseNioAdapter.DEFAULT_MAX_FILENAMELENGTH, FileNameTranscoder.transcoder(), false, secretKnowledge);
 			try {
 				var fuse = builder.build(fuseAdapter);
 				fuse.mount("fuse-nio-adapter", mountPoint, combinedMountFlags().toArray(String[]::new));

@@ -15,11 +15,13 @@ import org.cryptomator.jfuse.api.FuseMountFailedException;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.Normalizer;
 import java.util.EnumSet;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -52,9 +54,13 @@ public class FuseTMountProvider implements MountService {
 		return Files.exists(Paths.get(DYLIB_PATH));
 	}
 
+
 	@Override
-	public MountBuilder forFileSystem(Path fileSystemRoot) {
-		return new FuseTMountBuilder(fileSystemRoot);
+	public MountBuilder forFileSystem(Path fileSystemRoot, Map<Class<? extends FileSystemException>, ?> secretKnowledge) {
+		if(secretKnowledge.values().stream().anyMatch(o -> !(o instanceof Integer))) {
+			throw new IllegalArgumentException("the secretKnowledge must only contain integer values!");
+		}
+		return new FuseTMountBuilder(fileSystemRoot, (Map<Class<? extends FileSystemException>, Integer>) secretKnowledge);
 	}
 
 	@Override
@@ -85,8 +91,8 @@ public class FuseTMountProvider implements MountService {
 
 		private int port;
 
-		public FuseTMountBuilder(Path vfsRoot) {
-			super(vfsRoot);
+		public FuseTMountBuilder(Path fileSystemRoot, Map<Class<? extends FileSystemException>, Integer> secretKnowledge) {
+			super(fileSystemRoot, secretKnowledge);
 		}
 
 		@Override
@@ -124,7 +130,7 @@ public class FuseTMountProvider implements MountService {
 			var builder = Fuse.builder();
 			builder.setLibraryPath(DYLIB_PATH);
 			var filenameTranscoder = FileNameTranscoder.transcoder().withFuseNormalization(Normalizer.Form.NFD);
-			var fuseAdapter = ReadWriteAdapter.create(builder.errno(), vfsRoot, FuseNioAdapter.DEFAULT_MAX_FILENAMELENGTH, filenameTranscoder, false);
+			var fuseAdapter = ReadWriteAdapter.create(builder.errno(), vfsRoot, FuseNioAdapter.DEFAULT_MAX_FILENAMELENGTH, filenameTranscoder, false, secretKnowledge);
 			var fuse = builder.build(fuseAdapter);
 			try {
 				fuse.mount("fuse-nio-adapter", mountPoint, combinedMountFlags().toArray(String[]::new));

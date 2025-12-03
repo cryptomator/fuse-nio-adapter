@@ -15,6 +15,7 @@ import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.Set;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
@@ -32,7 +33,7 @@ public class AccessPatternIntegrationTest {
 	@BeforeEach
 	void setup(@TempDir Path tmpDir) {
 		var builder = Fuse.builder();
-		adapter = ReadWriteAdapter.create(builder.errno(), tmpDir, FuseNioAdapter.DEFAULT_MAX_FILENAMELENGTH, FileNameTranscoder.transcoder(), true);
+		adapter = ReadWriteAdapter.create(builder.errno(), tmpDir, FuseNioAdapter.DEFAULT_MAX_FILENAMELENGTH, FileNameTranscoder.transcoder(), true, Map.of());
 	}
 
 	@Test

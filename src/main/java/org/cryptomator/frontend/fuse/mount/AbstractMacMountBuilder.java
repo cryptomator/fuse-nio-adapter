@@ -2,16 +2,18 @@ package org.cryptomator.frontend.fuse.mount;
 
 import org.cryptomator.integrations.mount.MountBuilder;
 
+import java.nio.file.FileSystemException;
 import java.nio.file.Path;
-import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 abstract class AbstractMacMountBuilder extends AbstractMountBuilder {
 
+
 	protected boolean readOnly;
 
-	public AbstractMacMountBuilder(Path vfsRoot) {
-		super(vfsRoot);
+	public AbstractMacMountBuilder(Path vfsRoot, Map<Class<? extends FileSystemException>, Integer> secretKnowledge) {
+		super(vfsRoot, secretKnowledge);
 	}
 
 	@Override

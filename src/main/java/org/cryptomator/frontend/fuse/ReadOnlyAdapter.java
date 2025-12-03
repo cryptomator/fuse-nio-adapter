@@ -34,6 +34,7 @@ import java.nio.file.attribute.PosixFileAttributes;
 import java.nio.file.attribute.UserDefinedFileAttributeView;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.Map;
 import java.util.Set;
 
 import static org.cryptomator.jfuse.api.FuseOperations.Operation.GET_XATTR;
@@ -49,6 +50,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 	private final int maxFileNameLength;
 	protected final FileStore fileStore;
 	protected final boolean enableXattr;
+	protected final Map<Class<? extends FileSystemException>, Integer> fsExceptionMapper;
 	protected final LockManager lockManager;
 	protected final OpenFileFactory openFiles;
 	protected final FileNameTranscoder fileNameTranscoder;
@@ -56,13 +58,14 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 	private final ReadOnlyFileHandler fileHandler;
 	private final ReadOnlyLinkHandler linkHandler;
 
-	protected ReadOnlyAdapter(Errno errno, Path root, int maxFileNameLength, FileNameTranscoder fileNameTranscoder, FileStore fileStore, OpenFileFactory openFiles, ReadOnlyDirectoryHandler dirHandler, ReadOnlyFileHandler fileHandler, boolean enableXattr) {
+	protected ReadOnlyAdapter(Errno errno, Path root, int maxFileNameLength, FileNameTranscoder fileNameTranscoder, FileStore fileStore, OpenFileFactory openFiles, ReadOnlyDirectoryHandler dirHandler, ReadOnlyFileHandler fileHandler, boolean enableXattr, Map<Class<? extends FileSystemException>, Integer> fsExceptionMapper) {
 		this.errno = errno;
 		this.root = root;
 		this.maxFileNameLength = maxFileNameLength;
 		this.fileNameTranscoder = fileNameTranscoder;
 		this.fileStore = fileStore;
 		this.enableXattr = enableXattr;
+		this.fsExceptionMapper = fsExceptionMapper;
 		this.lockManager = new LockManager();
 		this.openFiles = openFiles;
 		this.dirHandler = dirHandler;
@@ -70,13 +73,13 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 		this.linkHandler = new ReadOnlyLinkHandler(fileNameTranscoder);
 	}
 
-	public static ReadOnlyAdapter create(Errno errno, Path root, int maxFileNameLength, FileNameTranscoder fileNameTranscoder, boolean enableXattr) {
+	public static ReadOnlyAdapter create(Errno errno, Path root, int maxFileNameLength, FileNameTranscoder fileNameTranscoder, boolean enableXattr, Map<Class<? extends FileSystemException>, Integer> fsExceptionMapper) {
 		try {
 			var fileStore = Files.getFileStore(root);
 			var openFiles = new OpenFileFactory();
 			var dirHandler = new ReadOnlyDirectoryHandler(fileNameTranscoder);
 			var fileHandler = new ReadOnlyFileHandler(openFiles);
-			return new ReadOnlyAdapter(errno, root, maxFileNameLength, fileNameTranscoder, fileStore, openFiles, dirHandler, fileHandler, enableXattr);
+			return new ReadOnlyAdapter(errno, root, maxFileNameLength, fileNameTranscoder, fileStore, openFiles, dirHandler, fileHandler, enableXattr, fsExceptionMapper);
 		} catch (IOException e) {
 			throw new UncheckedIOException(e);
 		}
@@ -140,6 +143,9 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 			stbuf.setNameMax(maxFileNameLength);
 			LOG.trace("statfs {} ({} / {})", path, avail, total);
 			return 0;
+		} catch (FileSystemException e) {
+			LOG.trace("statfs {} failed with specifc fs exception, returning custom error code.", path, e);
+			return -fsExceptionMapper.getOrDefault(e.getClass(), errno.eio());
 		} catch (IOException | RuntimeException e) {
 			LOG.error("statfs {} failed.", path, e);
 			return -errno.eio();
@@ -173,6 +179,9 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 			return -errno.enoent();
 		} catch (AccessDeniedException e) {
 			return -errno.eacces();
+		} catch (FileSystemException e) {
+			LOG.trace("checkAccess {} failed with specifc fs exception, returning custom error code.", path, e);
+			return -fsExceptionMapper.getOrDefault(e.getClass(), errno.eio());
 		} catch (IOException e) {
 			LOG.error("checkAccess failed.", e);
 			return -errno.eio();
@@ -188,6 +197,9 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 		} catch (NotLinkException | NoSuchFileException e) {
 			LOG.trace("readlink {} failed, node not found or not a symlink", path);
 			return -errno.enoent();
+		} catch (FileSystemException e) {
+			LOG.trace("readlink {} failed with specifc fs exception, returning custom error code.", path, e);
+			return -fsExceptionMapper.getOrDefault(e.getClass(), errno.eio());
 		} catch (IOException | RuntimeException e) {
 			LOG.error("readlink failed.", e);
 			return -errno.eio();
@@ -220,7 +232,8 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 			LOG.trace("getattr {} failed, node not found", path);
 			return -errno.enoent();
 		} catch (FileSystemException e) {
-			return getErrorCodeForGenericFileSystemException(e, "getattr " + path);
+			LOG.trace("getattr {} failed with specifc fs exception, returning custom error code.", path, e);
+			return -fsExceptionMapper.getOrDefault(e.getClass(), errno.eio());
 		} catch (IOException | RuntimeException e) {
 			LOG.error("getattr failed.", e);
 			return -errno.eio();
@@ -255,6 +268,9 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 			}
 		} catch (NoSuchFileException e) {
 			return -errno.enoent();
+		} catch (FileSystemException e) {
+			LOG.trace("getxattr {} failed with specifc fs exception, returning custom error code.", path, e);
+			return -fsExceptionMapper.getOrDefault(e.getClass(), errno.eio());
 		} catch (IOException e) {
 			return -errno.eio();
 		}
@@ -286,6 +302,9 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 			return -errno.erange();
 		} catch (NoSuchFileException e) {
 			return -errno.enoent();
+		} catch (FileSystemException e) {
+			LOG.trace("listxattr {} failed with specifc fs exception, returning custom error code.", path, e);
+			return -fsExceptionMapper.getOrDefault(e.getClass(), errno.eio());
 		} catch (IOException e) {
 			return -errno.eio();
 		}
@@ -306,6 +325,9 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 		} catch (NotDirectoryException e) {
 			LOG.error("readdir {} failed, node is not a directory.", path);
 			return -errno.enoent();
+		} catch (FileSystemException e) {
+			LOG.trace("readdir {} failed with specifc fs exception, returning custom error code.", path, e);
+			return -fsExceptionMapper.getOrDefault(e.getClass(), errno.eio());
 		} catch (IOException | RuntimeException e) {
 			LOG.error("readdir failed.", e);
 			return -errno.eio();
@@ -331,6 +353,9 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 		} catch (AccessDeniedException e) {
 			LOG.warn("Attempted to open file with unsupported flags.", e);
 			return -errno.erofs();
+		} catch (FileSystemException e) {
+			LOG.trace("open {} failed with specifc fs exception, returning custom error code.", path, e);
+			return -fsExceptionMapper.getOrDefault(e.getClass(), errno.eio());
 		} catch (IOException | RuntimeException e) {
 			LOG.error("open {} failed.", path, e);
 			return -errno.eio();
@@ -348,6 +373,9 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 		} catch (ClosedChannelException e) {
 			LOG.warn("read {} failed, invalid file handle {}", path, fi.getFh());
 			return -errno.ebadf();
+		} catch (FileSystemException e) {
+			LOG.trace("read {} failed with specifc fs exception, returning custom error code.", path, e);
+			return -fsExceptionMapper.getOrDefault(e.getClass(), errno.eio());
 		} catch (IOException | RuntimeException e) {
 			LOG.error("read {} failed.", path, e);
 			return -errno.eio();
@@ -364,6 +392,9 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 		} catch (ClosedChannelException e) {
 			LOG.warn("release {} failed, invalid file handle {}", path, fi.getFh());
 			return -errno.ebadf();
+		} catch (FileSystemException e) {
+			LOG.trace("release {} failed with specifc fs exception, returning custom error code.",path, e);
+			return -fsExceptionMapper.getOrDefault(e.getClass(), errno.eio());
 		} catch (IOException | RuntimeException e) {
 			LOG.error("release {} failed.", path, e);
 			return -errno.eio();
@@ -393,23 +424,4 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 		fileHandler.close();
 	}
 
-	/**
-	 * Attempts to get a specific error code that best describes the given exception.
-	 * As a side effect this logs the error.
-	 *
-	 * @param e      An exception
-	 * @param opDesc A human-friendly string describing what operation was attempted (for logging purposes)
-	 * @return A specific error code or -EIO.
-	 */
-	protected int getErrorCodeForGenericFileSystemException(FileSystemException e, String opDesc) {
-		String reason = e.getReason();
-		reason = reason != null ? reason : "";
-//		if (reason.contains("path too long") || reason.contains("name too long")) {
-//			LOG.warn("{} {} failed, name too long.", opDesc);
-//			return -ErrorCodes.ENAMETOOLONG();
-//		} else {
-		LOG.error(opDesc + " failed.", e);
-		return -errno.eio();
-//		}
-	}
 }

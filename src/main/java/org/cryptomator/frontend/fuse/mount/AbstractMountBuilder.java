@@ -3,8 +3,10 @@ package org.cryptomator.frontend.fuse.mount;
 import org.cryptomator.integrations.mount.MountBuilder;
 import org.jetbrains.annotations.MustBeInvokedByOverriders;
 
+import java.nio.file.FileSystemException;
 import java.nio.file.Path;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
@@ -16,9 +18,11 @@ abstract class AbstractMountBuilder implements MountBuilder {
 	protected Path mountPoint;
 	protected Set<String> mountFlags;
 	protected String volumeName;
+	protected final Map<Class<? extends FileSystemException>, Integer> secretKnowledge;
 
-	public AbstractMountBuilder(Path vfsRoot) {
+	public AbstractMountBuilder(Path vfsRoot, Map<Class<? extends FileSystemException>, Integer> secretKnowledge) {
 		this.vfsRoot = vfsRoot;
+		this.secretKnowledge = secretKnowledge;
 	}
 
 	@Override

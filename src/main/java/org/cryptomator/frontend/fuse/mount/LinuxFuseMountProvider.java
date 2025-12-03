@@ -18,11 +18,13 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
@@ -85,8 +87,11 @@ public class LinuxFuseMountProvider implements MountService {
 	}
 
 	@Override
-	public MountBuilder forFileSystem(Path fileSystemRoot) {
-		return new LinuxFuseMountBuilder(fileSystemRoot);
+	public MountBuilder forFileSystem(Path fileSystemRoot, Map<Class<? extends FileSystemException>, ?> secretKnowledge) {
+		if(secretKnowledge.values().stream().anyMatch(o -> !(o instanceof Integer))) {
+			throw new IllegalArgumentException("the secretKnowledge must only contain integer values!");
+		}
+		return new LinuxFuseMountBuilder(fileSystemRoot, (Map<Class<? extends FileSystemException>, Integer>) secretKnowledge);
 	}
 
 	@Override
@@ -104,8 +109,8 @@ public class LinuxFuseMountProvider implements MountService {
 
 	private static class LinuxFuseMountBuilder extends AbstractMountBuilder {
 
-		public LinuxFuseMountBuilder(Path vfsRoot) {
-			super(vfsRoot);
+		public LinuxFuseMountBuilder(Path vfsRoot, Map<Class<? extends FileSystemException>, Integer> secretKnowledge) {
+			super(vfsRoot, secretKnowledge);
 		}
 
 		@Override
@@ -128,7 +133,7 @@ public class LinuxFuseMountProvider implements MountService {
 			if (mountFlags.contains("-oallow_other") || mountFlags.contains("-oallow_root")) {
 				LOG.warn("Mounting with flag -oallow_other or -oallow_root. Ensure that in /etc/fuse.conf option user_allow_other is enabled.");
 			}
-			var fuseAdapter = ReadWriteAdapter.create(builder.errno(), vfsRoot, FuseNioAdapter.DEFAULT_MAX_FILENAMELENGTH, FileNameTranscoder.transcoder(), true);
+			var fuseAdapter = ReadWriteAdapter.create(builder.errno(), vfsRoot, FuseNioAdapter.DEFAULT_MAX_FILENAMELENGTH, FileNameTranscoder.transcoder(), true, secretKnowledge);
 			var fuse = builder.build(fuseAdapter);
 			try {
 				fuse.mount("fuse-nio-adapter", mountPoint, mountFlags.toArray(String[]::new));

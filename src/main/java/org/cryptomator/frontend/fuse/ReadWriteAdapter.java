@@ -29,6 +29,7 @@ import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.nio.file.attribute.UserDefinedFileAttributeView;
 import java.util.EnumSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -39,18 +40,18 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 	private static final Logger LOG = LoggerFactory.getLogger(ReadWriteAdapter.class);
 	private final ReadWriteFileHandler fileHandler;
 
-	private ReadWriteAdapter(Errno errno, Path root, int maxFileNameLength, FileNameTranscoder fileNameTranscoder, FileStore fileStore, OpenFileFactory openFiles, ReadWriteDirectoryHandler dirHandler, ReadWriteFileHandler fileHandler, boolean enableXattr) {
-		super(errno, root, maxFileNameLength, fileNameTranscoder, fileStore, openFiles, dirHandler, fileHandler, enableXattr);
+	private ReadWriteAdapter(Errno errno, Path root, int maxFileNameLength, FileNameTranscoder fileNameTranscoder, FileStore fileStore, OpenFileFactory openFiles, ReadWriteDirectoryHandler dirHandler, ReadWriteFileHandler fileHandler, boolean enableXattr, Map<Class<? extends FileSystemException>, Integer> fsExceptionMapper) {
+		super(errno, root, maxFileNameLength, fileNameTranscoder, fileStore, openFiles, dirHandler, fileHandler, enableXattr, fsExceptionMapper);
 		this.fileHandler = fileHandler;
 	}
 
-	public static ReadWriteAdapter create(Errno errno, Path root, int maxFileNameLength, FileNameTranscoder fileNameTranscoder, boolean enableXattr) {
+	public static ReadWriteAdapter create(Errno errno, Path root, int maxFileNameLength, FileNameTranscoder fileNameTranscoder, boolean enableXattr, Map<Class<? extends FileSystemException>, Integer> fsExceptionMapper) {
 		try {
 			var fileStore = Files.getFileStore(root);
 			var openFiles = new OpenFileFactory();
 			var dirHandler = new ReadWriteDirectoryHandler(fileNameTranscoder);
 			var fileHandler = new ReadWriteFileHandler(openFiles);
-			return new ReadWriteAdapter(errno, root, maxFileNameLength, fileNameTranscoder, fileStore, openFiles, dirHandler, fileHandler, enableXattr);
+			return new ReadWriteAdapter(errno, root, maxFileNameLength, fileNameTranscoder, fileStore, openFiles, dirHandler, fileHandler, enableXattr, fsExceptionMapper);
 		} catch (IOException e) {
 			throw new UncheckedIOException(e);
 		}
@@ -95,7 +96,8 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			LOG.warn("mkdir {} failed, file already exists.", path);
 			return -errno.eexist();
 		} catch (FileSystemException e) {
-			return getErrorCodeForGenericFileSystemException(e, "mkdir " + path);
+			LOG.trace("mkdir {} failed with specifc fs exception, returning custom error code.",path, e);
+			return -fsExceptionMapper.getOrDefault(e.getClass(), errno.eio());
 		} catch (IOException | RuntimeException e) {
 			LOG.error("mkdir {} failed.", path, e);
 			return -errno.eio();
@@ -116,6 +118,9 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			return 0;
 		} catch (NoSuchFileException e) {
 			return -errno.enoent();
+		} catch (FileSystemException e) {
+			LOG.trace("removexattr {} failed with specifc fs exception, returning custom error code.",path, e);
+			return -fsExceptionMapper.getOrDefault(e.getClass(), errno.eio());
 		} catch (IOException e) {
 			return -errno.eio();
 		}
@@ -135,6 +140,9 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			return 0;
 		} catch (NoSuchFileException e) {
 			return -errno.enoent();
+		} catch (FileSystemException e) {
+			LOG.trace("setxattr {} failed with specifc fs exception, returning custom error code.",path, e);
+			return -fsExceptionMapper.getOrDefault(e.getClass(), errno.eio());
 		} catch (IOException e) {
 			return -errno.eio();
 		}
@@ -153,7 +161,8 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			LOG.warn("symlink {} -> {} failed, file already exists.", linkPath, targetPath);
 			return -errno.eexist();
 		} catch (FileSystemException e) {
-			return getErrorCodeForGenericFileSystemException(e, "symlink " + targetPath + " -> " + linkPath);
+			LOG.trace("symlink {} failed with specifc fs exception, returning custom error code.", linkPath, e);
+			return -fsExceptionMapper.getOrDefault(e.getClass(), errno.eio());
 		} catch (IOException | RuntimeException e) {
 			LOG.error("symlink failed.", e);
 			return -errno.eio();
@@ -178,7 +187,8 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			LOG.warn("create {} failed, file already exists.", path);
 			return -errno.eexist();
 		} catch (FileSystemException e) {
-			return getErrorCodeForGenericFileSystemException(e, "create " + path);
+			LOG.trace("create {} failed with specifc fs exception, returning custom error code.",path, e);
+			return -fsExceptionMapper.getOrDefault(e.getClass(), errno.eio());
 		} catch (IOException | RuntimeException e) {
 			LOG.error("create {} failed.", path, e);
 			return -errno.eio();
@@ -202,6 +212,9 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 		} catch (NoSuchFileException e) {
 			LOG.warn("chmod {} failed, file not found.", path);
 			return -errno.enoent();
+		} catch (FileSystemException e) {
+			LOG.trace("chmod {} failed with specifc fs exception, returning custom error code.",path, e);
+			return -fsExceptionMapper.getOrDefault(e.getClass(), errno.eio());
 		} catch (UnsupportedOperationException e) {
 			if (!OS.WINDOWS.isCurrent()) { //prevent spamming warnings
 				LOG.warn("Setting posix permissions not supported by underlying file system.");
@@ -228,6 +241,9 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 		} catch (NoSuchFileException e) {
 			LOG.warn("unlink {} failed, file not found.", path);
 			return -errno.enoent();
+		} catch (FileSystemException e) {
+			LOG.trace("unlink {} failed with specifc fs exception, returning custom error code.",path, e);
+			return -fsExceptionMapper.getOrDefault(e.getClass(), errno.eio());
 		} catch (IOException | RuntimeException e) {
 			LOG.error("unlink {} failed.", path, e);
 			return -errno.eio();
@@ -256,6 +272,9 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 		} catch (DirectoryNotEmptyException e) {
 			LOG.warn("rmdir {} failed, directory not empty.", path);
 			return -errno.enotempty();
+		} catch (FileSystemException e) {
+			LOG.trace("rmdir {} failed with specifc fs exception, returning custom error code.",path, e);
+			return -fsExceptionMapper.getOrDefault(e.getClass(), errno.eio());
 		} catch (IOException | RuntimeException e) {
 			LOG.error("rmdir {} failed.", path, e);
 			return -errno.eio();
@@ -296,7 +315,8 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			LOG.warn("rename {} to {} failed, directory not empty.", oldPath, newPath);
 			return -errno.enotempty();
 		} catch (FileSystemException e) {
-			return getErrorCodeForGenericFileSystemException(e, "rename " + oldPath + " -> " + newPath);
+			LOG.trace("rename {} failed with specifc fs exception, returning custom error code.", newPath, e);
+			return -fsExceptionMapper.getOrDefault(e.getClass(), errno.eio());
 		} catch (IOException | RuntimeException e) {
 			LOG.error("rename " + oldPath + " to " + newPath + " failed.", e);
 			return -errno.eio();
@@ -314,6 +334,9 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 		} catch (NoSuchFileException e) {
 			LOG.warn("utimens {} failed, file not found.", path);
 			return -errno.enoent();
+		} catch (FileSystemException e) {
+			LOG.trace("utimens {} failed with specifc fs exception, returning custom error code.",path, e);
+			return -fsExceptionMapper.getOrDefault(e.getClass(), errno.eio());
 		} catch (IOException | RuntimeException e) {
 			LOG.error("utimens {} failed.", path, e);
 			return -errno.eio();
@@ -331,6 +354,9 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 		} catch (ClosedChannelException e) {
 			LOG.warn("write {} failed, invalid file handle {}", path, fi.getFh());
 			return -errno.ebadf();
+		} catch (FileSystemException e) {
+			LOG.trace("write {} failed with specifc fs exception, returning custom error code.",path, e);
+			return -fsExceptionMapper.getOrDefault(e.getClass(), errno.eio());
 		} catch (IOException | RuntimeException e) {
 			LOG.error("write {} failed.", path, e);
 			return -errno.eio();
@@ -352,6 +378,9 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 		} catch (NoSuchFileException e) {
 			LOG.warn("truncate {} failed, file not found.", path);
 			return -errno.enoent();
+		} catch (FileSystemException e) {
+			LOG.trace("truncate {} failed with specifc fs exception, returning custom error code.",path, e);
+			return -fsExceptionMapper.getOrDefault(e.getClass(), errno.eio());
 		} catch (IOException | RuntimeException e) {
 			LOG.error("truncate {} failed.", path, e);
 			return -errno.eio();
@@ -368,6 +397,9 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 		} catch (ClosedChannelException e) {
 			LOG.warn("fsync {} failed, invalid file handle {}", path, fi.getFh());
 			return -errno.ebadf();
+		} catch (FileSystemException e) {
+			LOG.trace("fsync {} failed with specifc fs exception, returning custom error code.",path, e);
+			return -fsExceptionMapper.getOrDefault(e.getClass(), errno.eio());
 		} catch (IOException | RuntimeException e) {
 			LOG.error("fsync {} failed.", path, e);
 			return -errno.eio();

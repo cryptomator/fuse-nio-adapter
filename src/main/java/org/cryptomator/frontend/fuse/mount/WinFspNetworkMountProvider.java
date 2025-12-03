@@ -5,8 +5,10 @@ import org.cryptomator.integrations.common.Priority;
 import org.cryptomator.integrations.mount.MountBuilder;
 import org.cryptomator.integrations.mount.MountCapability;
 
+import java.nio.file.FileSystemException;
 import java.nio.file.Path;
 import java.util.EnumSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
@@ -37,8 +39,11 @@ public class WinFspNetworkMountProvider extends WinFspMountProvider {
 	}
 
 	@Override
-	public MountBuilder forFileSystem(Path vfsRoot) {
-		return new WinFspNetworkMountBuilder(vfsRoot);
+	public MountBuilder forFileSystem(Path fileSystemRoot, Map<Class<? extends FileSystemException>, ?> secretKnowledge) {
+		if(secretKnowledge.values().stream().anyMatch(o -> !(o instanceof Integer))) {
+			throw new IllegalArgumentException("the secretKnowledge must only contain integer values!");
+		}
+		return new WinFspNetworkMountBuilder(fileSystemRoot, (Map<Class<? extends FileSystemException>, Integer>) secretKnowledge);
 	}
 
 
@@ -47,8 +52,8 @@ public class WinFspNetworkMountProvider extends WinFspMountProvider {
 		private String loopbackHostName = "localhost";
 		private String volumeId = UUID.randomUUID().toString();
 
-		public WinFspNetworkMountBuilder(Path vfsRoot) {
-			super(vfsRoot);
+		public WinFspNetworkMountBuilder(Path vfsRoot, Map<Class<? extends FileSystemException>, Integer> secretKnowledge) {
+			super(vfsRoot, secretKnowledge);
 		}
 
 		@Override
