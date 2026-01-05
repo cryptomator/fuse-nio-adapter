@@ -6,10 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 The changelog starts with version 5.0.4.
-Changes to prior versions can be found on the [Github release page](https://github.com/cryptomator/fuse-nio-adapter/releases).
-## [Unreleased]
+Changes to prior versions can be found on the [GitHub release page](https://github.com/cryptomator/fuse-nio-adapter/releases).
 
-No changes yet.
+## [Unreleased]
+### Changed
+* Update maven project to use JDK 25 ([#204](https://github.com/cryptomator/fuse-nio-adapter/pull/204))
+* Update dependency `com.github.ben-manes.caffeine:caffeine` from 3.2.2 to 3.2.3
 
 
 ## [5.1.0] - 2025-09-18
