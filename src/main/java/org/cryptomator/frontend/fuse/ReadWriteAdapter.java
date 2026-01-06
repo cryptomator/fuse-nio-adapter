@@ -79,7 +79,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 	}
 
 	@Override
-	protected int checkAccess(Path path, Set<AccessMode> requiredAccessModes) {
+	protected int checkAccess(Path path, Set<AccessMode> requiredAccessModes) throws IOException {
 		return checkAccess(path, requiredAccessModes, EnumSet.noneOf(AccessMode.class));
 	}
 
@@ -97,7 +97,11 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 		} catch (FileSystemException e) {
 			return getErrorCodeForGenericFileSystemException(e, "mkdir " + path);
 		} catch (IOException | RuntimeException e) {
-			LOG.error("mkdir {} failed.", path, e);
+			if(LOG.isDebugEnabled()) {
+				LOG.debug("mkdir {} returns EIO due to exception.", path, e);
+			} else {
+				LOG.warn("mkdir returns EIO due to {}", e.getClass().getName());
+			}
 			return -errno.eio();
 		}
 	}
@@ -117,6 +121,11 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 		} catch (NoSuchFileException e) {
 			return -errno.enoent();
 		} catch (IOException e) {
+			if(LOG.isDebugEnabled()) {
+				LOG.debug("removexattr {} returns EIO due to exception.", path, e);
+			} else {
+				LOG.warn("removexattr returns EIO due to {}", e.getClass().getName());
+			}
 			return -errno.eio();
 		}
 	}
@@ -136,6 +145,11 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 		} catch (NoSuchFileException e) {
 			return -errno.enoent();
 		} catch (IOException e) {
+			if(LOG.isDebugEnabled()) {
+				LOG.debug("setxattr {} returns EIO due to exception.", path, e);
+			} else {
+				LOG.warn("setxattr returns EIO due to {}", e.getClass().getName());
+			}
 			return -errno.eio();
 		}
 	}
@@ -155,7 +169,11 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 		} catch (FileSystemException e) {
 			return getErrorCodeForGenericFileSystemException(e, "symlink " + targetPath + " -> " + linkPath);
 		} catch (IOException | RuntimeException e) {
-			LOG.error("symlink failed.", e);
+			if(LOG.isDebugEnabled()) {
+				LOG.debug("symlink {} -> {} returns EIO due to exception.", targetPath, linkPath, e);
+			} else {
+				LOG.warn("symlink returns EIO due to {}", e.getClass().getName());
+			}
 			return -errno.eio();
 		}
 	}
@@ -180,7 +198,11 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 		} catch (FileSystemException e) {
 			return getErrorCodeForGenericFileSystemException(e, "create " + path);
 		} catch (IOException | RuntimeException e) {
-			LOG.error("create {} failed.", path, e);
+			if(LOG.isDebugEnabled()) {
+				LOG.debug("create {} returns EIO due to exception.", path, e);
+			} else {
+				LOG.warn("create returns EIO due to {}", e.getClass().getName());
+			}
 			return -errno.eio();
 		}
 	}
@@ -208,7 +230,11 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			}
 			return -errno.enosys();
 		} catch (IOException | RuntimeException e) {
-			LOG.error("chmod {} failed.", path, e);
+			if(LOG.isDebugEnabled()) {
+				LOG.debug("chmod {} returns EIO due to exception.", path, e);
+			} else {
+				LOG.warn("chmod returns EIO due to {}", e.getClass().getName());
+			}
 			return -errno.eio();
 		}
 	}
@@ -229,7 +255,11 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			LOG.warn("unlink {} failed, file not found.", path);
 			return -errno.enoent();
 		} catch (IOException | RuntimeException e) {
-			LOG.error("unlink {} failed.", path, e);
+			if(LOG.isDebugEnabled()) {
+				LOG.debug("unlink {} returns EIO due to exception.", path, e);
+			} else {
+				LOG.warn("unlink returns EIO due to {}", e.getClass().getName());
+			}
 			return -errno.eio();
 		}
 	}
@@ -257,7 +287,11 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			LOG.warn("rmdir {} failed, directory not empty.", path);
 			return -errno.enotempty();
 		} catch (IOException | RuntimeException e) {
-			LOG.error("rmdir {} failed.", path, e);
+			if(LOG.isDebugEnabled()) {
+				LOG.debug("rmdir {} returns EIO due to exception.", path, e);
+			} else {
+				LOG.warn("rmdir returns EIO due to {}", e.getClass().getName());
+			}
 			return -errno.eio();
 		}
 	}
@@ -298,7 +332,11 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 		} catch (FileSystemException e) {
 			return getErrorCodeForGenericFileSystemException(e, "rename " + oldPath + " -> " + newPath);
 		} catch (IOException | RuntimeException e) {
-			LOG.error("rename " + oldPath + " to " + newPath + " failed.", e);
+			if(LOG.isDebugEnabled()) {
+				LOG.debug("rename {} -> {} returns EIO due to exception.", oldPath, newPath, e);
+			} else {
+				LOG.warn("rename returns EIO due to {}", e.getClass().getName());
+			}
 			return -errno.eio();
 		}
 	}
@@ -315,7 +353,11 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			LOG.warn("utimens {} failed, file not found.", path);
 			return -errno.enoent();
 		} catch (IOException | RuntimeException e) {
-			LOG.error("utimens {} failed.", path, e);
+			if(LOG.isDebugEnabled()) {
+				LOG.debug("utimens {} returns EIO due to exception.", path, e);
+			} else {
+				LOG.warn("utimens returns EIO due to {}", e.getClass().getName());
+			}
 			return -errno.eio();
 		}
 	}
@@ -332,7 +374,11 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			LOG.warn("write {} failed, invalid file handle {}", path, fi.getFh());
 			return -errno.ebadf();
 		} catch (IOException | RuntimeException e) {
-			LOG.error("write {} failed.", path, e);
+			if(LOG.isDebugEnabled()) {
+				LOG.debug("write {} returns EIO due to exception.", path, e);
+			} else {
+				LOG.warn("write returns EIO due to {}", e.getClass().getName());
+			}
 			return -errno.eio();
 		}
 	}
@@ -353,7 +399,11 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			LOG.warn("truncate {} failed, file not found.", path);
 			return -errno.enoent();
 		} catch (IOException | RuntimeException e) {
-			LOG.error("truncate {} failed.", path, e);
+			if(LOG.isDebugEnabled()) {
+				LOG.debug("truncate {} returns EIO due to exception.", path, e);
+			} else {
+				LOG.warn("truncate returns EIO due to {}", e.getClass().getName());
+			}
 			return -errno.eio();
 		}
 	}
@@ -369,7 +419,11 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			LOG.warn("fsync {} failed, invalid file handle {}", path, fi.getFh());
 			return -errno.ebadf();
 		} catch (IOException | RuntimeException e) {
-			LOG.error("fsync {} failed.", path, e);
+			if(LOG.isDebugEnabled()) {
+				LOG.debug("fsync {} returns EIO due to exception.", path, e);
+			} else {
+				LOG.warn("fsync returns EIO due to {}", e.getClass().getName());
+			}
 			return -errno.eio();
 		}
 	}

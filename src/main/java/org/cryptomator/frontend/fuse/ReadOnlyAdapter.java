@@ -141,7 +141,11 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 			LOG.trace("statfs {} ({} / {})", path, avail, total);
 			return 0;
 		} catch (IOException | RuntimeException e) {
-			LOG.error("statfs {} failed.", path, e);
+			if(LOG.isDebugEnabled()) {
+				LOG.debug("statfs {} returns EIO due to exception.", path, e);
+			} else {
+				LOG.warn("statfs returns EIO due to {}", e.getClass().getName());
+			}
 			return -errno.eio();
 		}
 	}
@@ -152,17 +156,21 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
 			Set<AccessMode> accessModes = FileAttributesUtil.accessModeMaskToSet(mask);
 			return checkAccess(node, accessModes);
-		} catch (RuntimeException e) {
-			LOG.error("checkAccess failed.", e);
+		} catch (IOException | RuntimeException e) {
+			if(LOG.isDebugEnabled()) {
+				LOG.debug("access {} returns EIO due to exception.", path, e);
+			} else {
+				LOG.warn("access returns EIO due to {}", e.getClass().getName());
+			}
 			return -errno.eio();
 		}
 	}
 
-	protected int checkAccess(Path path, Set<AccessMode> requiredAccessModes) {
+	protected int checkAccess(Path path, Set<AccessMode> requiredAccessModes) throws IOException {
 		return checkAccess(path, requiredAccessModes, EnumSet.of(AccessMode.WRITE));
 	}
 
-	protected int checkAccess(Path path, Set<AccessMode> requiredAccessModes, Set<AccessMode> deniedAccessModes) {
+	protected int checkAccess(Path path, Set<AccessMode> requiredAccessModes, Set<AccessMode> deniedAccessModes) throws IOException {
 		try {
 			if (!Collections.disjoint(requiredAccessModes, deniedAccessModes)) {
 				throw new AccessDeniedException(path.toString());
@@ -173,9 +181,6 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 			return -errno.enoent();
 		} catch (AccessDeniedException e) {
 			return -errno.eacces();
-		} catch (IOException e) {
-			LOG.error("checkAccess failed.", e);
-			return -errno.eio();
 		}
 	}
 
@@ -189,7 +194,11 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 			LOG.trace("readlink {} failed, node not found or not a symlink", path);
 			return -errno.enoent();
 		} catch (IOException | RuntimeException e) {
-			LOG.error("readlink failed.", e);
+			if(LOG.isDebugEnabled()) {
+				LOG.debug("readlink {} returns EIO due to exception.", path, e);
+			} else {
+				LOG.warn("readlink returns EIO due to {}", e.getClass().getName());
+			}
 			return -errno.eio();
 		}
 	}
@@ -222,7 +231,11 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 		} catch (FileSystemException e) {
 			return getErrorCodeForGenericFileSystemException(e, "getattr " + path);
 		} catch (IOException | RuntimeException e) {
-			LOG.error("getattr failed.", e);
+			if(LOG.isDebugEnabled()) {
+				LOG.debug("getattr {} returns EIO due to exception.", path, e);
+			} else {
+				LOG.warn("getattr returns EIO due to {}", e.getClass().getName());
+			}
 			return -errno.eio();
 		}
 	}
@@ -256,6 +269,11 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 		} catch (NoSuchFileException e) {
 			return -errno.enoent();
 		} catch (IOException e) {
+			if(LOG.isDebugEnabled()) {
+				LOG.debug("getxattr {} returns EIO due to exception.", path, e);
+			} else {
+				LOG.warn("getxattr returns EIO due to {}", e.getClass().getName());
+			}
 			return -errno.eio();
 		}
 	}
@@ -287,6 +305,11 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 		} catch (NoSuchFileException e) {
 			return -errno.enoent();
 		} catch (IOException e) {
+			if(LOG.isDebugEnabled()) {
+				LOG.debug("listxattr {} returns EIO due to exception.", path, e);
+			} else {
+				LOG.warn("listxattr returns EIO due to {}", e.getClass().getName());
+			}
 			return -errno.eio();
 		}
 	}
@@ -307,7 +330,11 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 			LOG.error("readdir {} failed, node is not a directory.", path);
 			return -errno.enoent();
 		} catch (IOException | RuntimeException e) {
-			LOG.error("readdir failed.", e);
+			if(LOG.isDebugEnabled()) {
+				LOG.debug("readdir {} returns EIO due to exception.", path, e);
+			} else {
+				LOG.warn("readdir returns EIO due to {}", e.getClass().getName());
+			}
 			return -errno.eio();
 		}
 	}
@@ -332,7 +359,11 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 			LOG.warn("Attempted to open file with unsupported flags.", e);
 			return -errno.erofs();
 		} catch (IOException | RuntimeException e) {
-			LOG.error("open {} failed.", path, e);
+			if(LOG.isDebugEnabled()) {
+				LOG.debug("open {} returns EIO due to exception.", path, e);
+			} else {
+				LOG.warn("open returns EIO due to {}", e.getClass().getName());
+			}
 			return -errno.eio();
 		}
 	}
@@ -349,7 +380,11 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 			LOG.warn("read {} failed, invalid file handle {}", path, fi.getFh());
 			return -errno.ebadf();
 		} catch (IOException | RuntimeException e) {
-			LOG.error("read {} failed.", path, e);
+			if(LOG.isDebugEnabled()) {
+				LOG.debug("read {} returns EIO due to exception.", path, e);
+			} else {
+				LOG.warn("read returns EIO due to {}", e.getClass().getName());
+			}
 			return -errno.eio();
 		}
 	}
@@ -365,7 +400,11 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 			LOG.warn("release {} failed, invalid file handle {}", path, fi.getFh());
 			return -errno.ebadf();
 		} catch (IOException | RuntimeException e) {
-			LOG.error("release {} failed.", path, e);
+			if(LOG.isDebugEnabled()) {
+				LOG.debug("release {} returns EIO due to exception.", path, e);
+			} else {
+				LOG.warn("release returns EIO due to {}", e.getClass().getName());
+			}
 			return -errno.eio();
 		}
 	}
@@ -375,7 +414,11 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 		try {
 			close();
 		} catch (IOException | RuntimeException e) {
-			LOG.error("destroy failed.", e);
+			if(LOG.isDebugEnabled()) {
+				LOG.debug("destroy failed.", e);
+			} else {
+				LOG.warn("destroy failed due to {}.", e.getClass().getName());
+			}
 		}
 	}
 
