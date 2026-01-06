@@ -230,8 +230,6 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 		} catch (UnsupportedFileTypeException _) {
 			LOG.debug("getattr {} returns EINVAL due to unsupported file type.", path);
 			return -errno.einval();
-		} catch (FileSystemException e) {
-			return getErrorCodeForGenericFileSystemException(e, "getattr " + path);
 		} catch (IOException | RuntimeException e) {
 			if(LOG.isDebugEnabled()) {
 				LOG.debug("getattr {} returns EIO due to exception.", path, e);
@@ -429,25 +427,5 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 	@Override
 	public void close() throws IOException {
 		fileHandler.close();
-	}
-
-	/**
-	 * Attempts to get a specific error code that best describes the given exception.
-	 * As a side effect this logs the error.
-	 *
-	 * @param e      An exception
-	 * @param opDesc A human-friendly string describing what operation was attempted (for logging purposes)
-	 * @return A specific error code or -EIO.
-	 */
-	protected int getErrorCodeForGenericFileSystemException(FileSystemException e, String opDesc) {
-		String reason = e.getReason();
-		reason = reason != null ? reason : "";
-//		if (reason.contains("path too long") || reason.contains("name too long")) {
-//			LOG.warn("{} {} failed, name too long.", opDesc);
-//			return -ErrorCodes.ENAMETOOLONG();
-//		} else {
-		LOG.error(opDesc + " failed.", e);
-		return -errno.eio();
-//		}
 	}
 }

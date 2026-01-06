@@ -96,8 +96,6 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			return -errno.einval();
 		} catch (FileAlreadyExistsException _) {
 			return -errno.eexist();
-		} catch (FileSystemException e) {
-			return getErrorCodeForGenericFileSystemException(e, "mkdir " + path);
 		} catch (IOException | RuntimeException e) {
 			if(LOG.isDebugEnabled()) {
 				LOG.debug("mkdir {} returns EIO due to exception.", path, e);
@@ -167,8 +165,6 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			return 0;
 		} catch (FileAlreadyExistsException _) {
 			return -errno.eexist();
-		} catch (FileSystemException e) {
-			return getErrorCodeForGenericFileSystemException(e, "symlink " + targetPath + " -> " + linkPath);
 		} catch (IOException | RuntimeException e) {
 			if(LOG.isDebugEnabled()) {
 				LOG.debug("symlink {} -> {} returns EIO due to exception.", linkPath, targetPath, e);
@@ -196,8 +192,6 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 		} catch (FileAlreadyExistsException _) {
 			LOG.warn("create {} failed, file already exists.", path);
 			return -errno.eexist();
-		} catch (FileSystemException e) {
-			return getErrorCodeForGenericFileSystemException(e, "create " + path);
 		} catch (IOException | RuntimeException e) {
 			if(LOG.isDebugEnabled()) {
 				LOG.debug("create {} returns EIO due to exception.", path, e);
@@ -319,8 +313,6 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			return -errno.enoent();
 		} catch (DirectoryNotEmptyException _) {
 			return -errno.enotempty();
-		} catch (FileSystemException e) {
-			return getErrorCodeForGenericFileSystemException(e, "rename " + oldPath + " -> " + newPath);
 		} catch (IOException | RuntimeException e) {
 			if(LOG.isDebugEnabled()) {
 				LOG.debug("rename {} to {} returns EIO due to exception.", oldPath, newPath, e);
