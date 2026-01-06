@@ -324,8 +324,8 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
 			return dirHandler.readdir(node, filler, offset, fi);
 		} catch (NotDirectoryException _) {
-			LOG.debug("readdir {} returns ENOENT due to being non-directory.", path);
-			return -errno.enoent();
+			LOG.debug("readdir {} returns ENOTDIR due to being non-directory.", path);
+			return -errno.enotdir();
 		} catch (IOException | RuntimeException e) {
 			if(LOG.isDebugEnabled()) {
 				LOG.debug("readdir {} returns EIO due to exception.", path, e);
