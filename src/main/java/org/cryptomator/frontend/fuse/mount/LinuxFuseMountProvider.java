@@ -72,7 +72,7 @@ public class LinuxFuseMountProvider implements MountService {
 			ProcessHelper.waitForSuccess(p, 2, String.format("`%s -V`", UNMOUNT_CMD_NAME));
 			return true;
 		} catch (IOException | TimeoutException | InterruptedException | ProcessHelper.CommandFailedException e) {
-			if( e instanceof InterruptedException) {
+			if (e instanceof InterruptedException) {
 				Thread.currentThread().interrupt();
 			}
 			return false;
@@ -104,6 +104,8 @@ public class LinuxFuseMountProvider implements MountService {
 
 	private static class LinuxFuseMountBuilder extends AbstractMountBuilder {
 
+		private static final Logger LOG = LoggerFactory.getLogger(LinuxFuseMountBuilder.class);
+
 		public LinuxFuseMountBuilder(Path vfsRoot) {
 			super(vfsRoot);
 		}
@@ -124,14 +126,17 @@ public class LinuxFuseMountProvider implements MountService {
 			Objects.requireNonNull(mountFlags);
 
 			var builder = Fuse.builder();
-			Arrays.stream(LIB_PATHS).map(Path::of).filter(Files::exists).map(Path::toString).findAny().ifPresent(builder::setLibraryPath);
+			var libPath = Arrays.stream(LIB_PATHS).map(Path::of).filter(Files::exists).map(Path::toString).findFirst().orElseThrow(() -> new IllegalStateException("Cannot find fuse library anymore"));
+			builder.setLibraryPath(libPath);
 			if (mountFlags.contains("-oallow_other") || mountFlags.contains("-oallow_root")) {
 				LOG.warn("Mounting with flag -oallow_other or -oallow_root. Ensure that in /etc/fuse.conf option user_allow_other is enabled.");
 			}
 			var fuseAdapter = ReadWriteAdapter.create(builder.errno(), vfsRoot, FuseNioAdapter.DEFAULT_MAX_FILENAMELENGTH, FileNameTranscoder.transcoder(), true);
 			var fuse = builder.build(fuseAdapter);
 			try {
-				fuse.mount("fuse-nio-adapter", mountPoint, mountFlags.toArray(String[]::new));
+				var actualMountFlags = combinedMountFlags().toArray(String[]::new);
+				LOG.debug("Mounting {} using fuse library {} with mountflags {}", vfsRoot.getFileSystem(), libPath, actualMountFlags);
+				fuse.mount("fuse-nio-adapter", mountPoint, actualMountFlags);
 				return new LinuxFuseMountedVolume(fuse, fuseAdapter, mountPoint);
 			} catch (FuseMountFailedException e) {
 				throw new MountFailedException(e);
