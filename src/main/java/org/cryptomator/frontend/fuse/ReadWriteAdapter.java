@@ -92,16 +92,12 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			LOG.trace("mkdir {} ({})", path, mode);
 			return 0;
 		} catch(UnsupportedOperationException _) {
-			LOG.debug("mkdir {} returns EINVAL due to unable to set a dir attribute atomically.", path);
+			LOG.debug("mkdir {} returns EINVAL: Unable to set a dir attribute atomically.", path);
 			return -errno.einval();
 		} catch (FileAlreadyExistsException _) {
 			return -errno.eexist();
 		} catch (IOException | RuntimeException e) {
-			if(LOG.isDebugEnabled()) {
-				LOG.debug("mkdir {} returns EIO due to exception.", path, e);
-			} else {
-				LOG.warn("mkdir returns EIO due to {}", e.getClass().getName());
-			}
+			logGenericException("mkdir", path, e);
 			return -errno.eio();
 		}
 	}
@@ -121,11 +117,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 		} catch (NoSuchFileException _) {
 			return -errno.enoent();
 		} catch (IOException | RuntimeException e) {
-			if(LOG.isDebugEnabled()) {
-				LOG.debug("removexattr {} returns EIO due to exception.", path, e);
-			} else {
-				LOG.warn("removexattr returns EIO due to {}", e.getClass().getName());
-			}
+			logGenericException("removexattr", path, e);
 			return -errno.eio();
 		}
 	}
@@ -145,11 +137,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 		} catch (NoSuchFileException _) {
 			return -errno.enoent();
 		} catch (IOException | RuntimeException e) {
-			if(LOG.isDebugEnabled()) {
-				LOG.debug("setxattr {} returns EIO due to exception.", path, e);
-			} else {
-				LOG.warn("setxattr returns EIO due to {}", e.getClass().getName());
-			}
+			logGenericException("setxattr", path, e);
 			return -errno.eio();
 		}
 	}
@@ -190,14 +178,9 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			LOG.trace("create {} with flags {}", path, flags);
 			return 0;
 		} catch (FileAlreadyExistsException _) {
-			LOG.warn("create {} failed, file already exists.", path);
 			return -errno.eexist();
 		} catch (IOException | RuntimeException e) {
-			if(LOG.isDebugEnabled()) {
-				LOG.debug("create {} returns EIO due to exception.", path, e);
-			} else {
-				LOG.warn("create returns EIO due to {}", e.getClass().getName());
-			}
+			logGenericException("create", path, e);
 			return -errno.eio();
 		}
 	}
@@ -221,11 +204,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 		} catch (UnsupportedOperationException _) {
 			return -errno.enotsup();
 		} catch (IOException | RuntimeException e) {
-			if(LOG.isDebugEnabled()) {
-				LOG.debug("chmod {} returns EIO due to exception.", path, e);
-			} else {
-				LOG.warn("chmod returns EIO due to {}", e.getClass().getName());
-			}
+			logGenericException("chmod", path, e);
 			return -errno.eio();
 		}
 	}
@@ -244,11 +223,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 		} catch (NoSuchFileException _) {
 			return -errno.enoent();
 		} catch (IOException | RuntimeException e) {
-			if(LOG.isDebugEnabled()) {
-				LOG.debug("unlink {} returns EIO due to exception.", path, e);
-			} else {
-				LOG.warn("unlink returns EIO due to {}", e.getClass().getName());
-			}
+			logGenericException("unlink", path, e);
 			return -errno.eio();
 		}
 	}
@@ -273,11 +248,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 		} catch (DirectoryNotEmptyException _) {
 			return -errno.enotempty();
 		} catch (IOException | RuntimeException e) {
-			if(LOG.isDebugEnabled()) {
-				LOG.debug("rmdir {} returns EIO due to exception.", path, e);
-			} else {
-				LOG.warn("rmdir returns EIO due to {}", e.getClass().getName());
-			}
+			logGenericException("rmdir", path, e);
 			return -errno.eio();
 		}
 	}
@@ -334,11 +305,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 		} catch (NoSuchFileException _) {
 			return -errno.enoent();
 		} catch (IOException | RuntimeException e) {
-			if(LOG.isDebugEnabled()) {
-				LOG.debug("utimens {} returns EIO due to exception.", path, e);
-			} else {
-				LOG.warn("utimens returns EIO due to {}", e.getClass().getName());
-			}
+			logGenericException("utimens", path, e);
 			return -errno.eio();
 		}
 	}
@@ -354,14 +321,10 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 		} catch (IllegalArgumentException _) {
 			return -errno.einval();
 		} catch (ClosedChannelException _) {
-			LOG.debug("write {} returns EBADF due to invalid file handle {}", path, fi.getFh());
+			LOG.debug("write {} returns EBADF: Invalid file handle {}", path, fi.getFh());
 			return -errno.ebadf();
 		} catch (IOException | RuntimeException e) {
-			if(LOG.isDebugEnabled()) {
-				LOG.debug("write {} returns EIO due to exception.", path, e);
-			} else {
-				LOG.warn("write returns EIO due to {}", e.getClass().getName());
-			}
+			logGenericException("write", path, e);
 			return -errno.eio();
 		}
 	}
@@ -381,11 +344,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 		} catch (NoSuchFileException _) {
 			return -errno.enoent();
 		} catch (IOException | RuntimeException e) {
-			if(LOG.isDebugEnabled()) {
-				LOG.debug("truncate {} returns EIO due to exception.", path, e);
-			} else {
-				LOG.warn("truncate returns EIO due to {}", e.getClass().getName());
-			}
+			logGenericException("truncate", path, e);
 			return -errno.eio();
 		}
 	}
@@ -398,14 +357,10 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			LOG.trace("fsync {}", path);
 			return 0;
 		} catch (ClosedChannelException _) {
-			LOG.debug("fsync {} returns EBADF due to invalid file handle {}", path, fi.getFh());
+			LOG.debug("fsync {} returns EBADF: Invalid file handle {}", path, fi.getFh());
 			return -errno.ebadf();
 		} catch (IOException | RuntimeException e) {
-			if(LOG.isDebugEnabled()) {
-				LOG.debug("fsync {} returns EIO due to exception.", path, e);
-			} else {
-				LOG.warn("fsync returns EIO due to {}", e.getClass().getName());
-			}
+			logGenericException("fsync", path, e);
 			return -errno.eio();
 		}
 	}

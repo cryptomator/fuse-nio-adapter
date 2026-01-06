@@ -21,7 +21,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.AccessMode;
 import java.nio.file.FileStore;
-import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.NoSuchFileException;
@@ -141,11 +140,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 			LOG.trace("statfs {} ({} / {})", path, avail, total);
 			return 0;
 		} catch (IOException | RuntimeException e) {
-			if(LOG.isDebugEnabled()) {
-				LOG.debug("statfs {} returns EIO due to exception.", path, e);
-			} else {
-				LOG.warn("statfs returns EIO due to {}", e.getClass().getName());
-			}
+			logGenericException("statfs", path, e);
 			return -errno.eio();
 		}
 	}
@@ -157,11 +152,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 			Set<AccessMode> accessModes = FileAttributesUtil.accessModeMaskToSet(mask);
 			return checkAccess(node, accessModes);
 		} catch (IOException | RuntimeException e) {
-			if(LOG.isDebugEnabled()) {
-				LOG.debug("access {} returns EIO due to exception.", path, e);
-			} else {
-				LOG.warn("access returns EIO due to {}", e.getClass().getName());
-			}
+			logGenericException("access", path, e);
 			return -errno.eio();
 		}
 	}
@@ -195,11 +186,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 		} catch (NoSuchFileException _) {
 			return -errno.enoent();
 		} catch (IOException | RuntimeException e) {
-			if(LOG.isDebugEnabled()) {
-				LOG.debug("readlink {} returns EIO due to exception.", path, e);
-			} else {
-				LOG.warn("readlink returns EIO due to {}", e.getClass().getName());
-			}
+			logGenericException("readlink", path, e);
 			return -errno.eio();
 		}
 	}
@@ -228,14 +215,10 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 		} catch (NoSuchFileException _) {
 			return -errno.enoent();
 		} catch (UnsupportedFileTypeException _) {
-			LOG.debug("getattr {} returns EINVAL due to unsupported file type.", path);
+			LOG.debug("getattr {} returns EINVAL: Unsupported file type.", path);
 			return -errno.einval();
 		} catch (IOException | RuntimeException e) {
-			if(LOG.isDebugEnabled()) {
-				LOG.debug("getattr {} returns EIO due to exception.", path, e);
-			} else {
-				LOG.warn("getattr returns EIO due to {}", e.getClass().getName());
-			}
+			logGenericException("getattr", path, e);
 			return -errno.eio();
 		}
 	}
@@ -268,11 +251,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 		} catch (NoSuchFileException _) {
 			return -errno.enoent();
 		} catch (IOException | RuntimeException e) {
-			if(LOG.isDebugEnabled()) {
-				LOG.debug("getxattr {} returns EIO due to exception.", path, e);
-			} else {
-				LOG.warn("getxattr returns EIO due to {}", e.getClass().getName());
-			}
+			logGenericException("getxattr", path, e);
 			return -errno.eio();
 		}
 	}
@@ -303,11 +282,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 		} catch (NoSuchFileException _) {
 			return -errno.enoent();
 		} catch (IOException | RuntimeException e) {
-			if(LOG.isDebugEnabled()) {
-				LOG.debug("listxattr {} returns EIO due to exception.", path, e);
-			} else {
-				LOG.warn("listxattr returns EIO due to {}", e.getClass().getName());
-			}
+			logGenericException("listxattr", path, e);
 			return -errno.eio();
 		}
 	}
@@ -324,14 +299,10 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
 			return dirHandler.readdir(node, filler, offset, fi);
 		} catch (NotDirectoryException _) {
-			LOG.debug("readdir {} returns ENOTDIR due to being non-directory.", path);
+			LOG.debug("readdir {} returns ENOTDIR: Not a directory.", path);
 			return -errno.enotdir();
 		} catch (IOException | RuntimeException e) {
-			if(LOG.isDebugEnabled()) {
-				LOG.debug("readdir {} returns EIO due to exception.", path, e);
-			} else {
-				LOG.warn("readdir returns EIO due to {}", e.getClass().getName());
-			}
+			logGenericException("readdir", path, e);
 			return -errno.eio();
 		}
 	}
@@ -353,11 +324,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 		} catch (AccessDeniedException _) {
 			return -errno.erofs();
 		} catch (IOException | RuntimeException e) {
-			if(LOG.isDebugEnabled()) {
-				LOG.debug("open {} returns EIO due to exception.", path, e);
-			} else {
-				LOG.warn("open returns EIO due to {}", e.getClass().getName());
-			}
+			logGenericException("open", path, e);
 			return -errno.eio();
 		}
 	}
@@ -373,14 +340,10 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 		} catch (IllegalArgumentException _) {
 			return -errno.einval();
 		} catch (ClosedChannelException _) {
-			LOG.debug("read {} returns EBADF due to invalid file handle {}", path, fi.getFh());
+			LOG.debug("read {} returns EBADF: Invalid file handle {}", path, fi.getFh());
 			return -errno.ebadf();
 		} catch (IOException | RuntimeException e) {
-			if(LOG.isDebugEnabled()) {
-				LOG.debug("read {} returns EIO due to exception.", path, e);
-			} else {
-				LOG.warn("read returns EIO due to {}", e.getClass().getName());
-			}
+			logGenericException("read", path, e);
 			return -errno.eio();
 		}
 	}
@@ -392,14 +355,10 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 			fileHandler.release(fi);
 			return 0;
 		} catch (ClosedChannelException _) {
-			LOG.debug("release {} returns EBADF due to invalid file handle {}", path, fi.getFh());
+			LOG.debug("release {} returns EBADF: Invalid file handle {}", path, fi.getFh());
 			return -errno.ebadf();
 		} catch (IOException | RuntimeException e) {
-			if(LOG.isDebugEnabled()) {
-				LOG.debug("release {} returns EIO due to exception.", path, e);
-			} else {
-				LOG.warn("release returns EIO due to {}", e.getClass().getName());
-			}
+			logGenericException("release", path, e);
 			return -errno.eio();
 		}
 	}
@@ -409,10 +368,10 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 		try {
 			close();
 		} catch (IOException | RuntimeException e) {
-			if(LOG.isDebugEnabled()) {
+			if (LOG.isDebugEnabled()) {
 				LOG.debug("destroy failed.", e);
 			} else {
-				LOG.warn("destroy failed due to {}.", e.getClass().getName());
+				LOG.warn("destroy failed: {}.", e.getClass().getName());
 			}
 		}
 	}
@@ -429,5 +388,22 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 	@Override
 	public void close() throws IOException {
 		fileHandler.close();
+	}
+
+	/**
+	 * Handles generic exceptions.
+	 * <p>
+	 * Logs a (failed) fuse operation with different granularity
+	 *
+	 * @param operation name of the fuse operation
+	 * @param path      affected path
+	 * @param e         thrown exception
+	 */
+	protected void logGenericException(String operation, String path, Exception e) {
+		if (LOG.isDebugEnabled()) {
+			LOG.debug("{} {} returns EIO: Generic Exception.", operation, path, e);
+		} else {
+			LOG.warn("{} returns EIO: {}", operation, e.getClass().getName());
+		}
 	}
 }
