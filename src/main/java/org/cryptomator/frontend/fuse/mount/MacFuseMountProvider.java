@@ -87,7 +87,7 @@ public class MacFuseMountProvider implements MountService {
 
 	private static class MacFuseMountBuilder extends AbstractMacMountBuilder {
 
-		private static final Logger LOG = LoggerFactory.getLogger(MacFuseMountProvider.class);
+		private static final Logger LOG = LoggerFactory.getLogger(MacFuseMountBuilder.class);
 
 		private String volumeId;
 

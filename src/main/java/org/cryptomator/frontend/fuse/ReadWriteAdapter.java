@@ -92,7 +92,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			LOG.trace("mkdir {} ({})", path, mode);
 			return 0;
 		} catch(UnsupportedOperationException _) {
-			LOG.debug("mkdir {} returns ENOTSUP due to unable to set a dir attribute atomically.", path);
+			LOG.debug("mkdir {} returns EINVAL due to unable to set a dir attribute atomically.", path);
 			return -errno.einval();
 		} catch (FileAlreadyExistsException _) {
 			return -errno.eexist();

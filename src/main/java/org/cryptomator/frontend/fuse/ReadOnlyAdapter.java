@@ -350,7 +350,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 			return 0;
 		} catch (NoSuchFileException _) {
 			return -errno.enoent();
-		} catch (AccessDeniedException e) {
+		} catch (AccessDeniedException _) {
 			return -errno.erofs();
 		} catch (IOException | RuntimeException e) {
 			if(LOG.isDebugEnabled()) {
@@ -368,7 +368,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 			 DataLock _ = pathLock.lockDataForReading()) {
 			LOG.trace("read {} request {} bytes starting at {}...", path, size, offset);
 			int read = fileHandler.read(buf, size, offset, fi);
-			LOG.trace("read {} recieved {} bytes", path, read);
+			LOG.trace("read {} read {} bytes", path, read);
 			return read;
 		} catch (IllegalArgumentException _) {
 			return -errno.einval();

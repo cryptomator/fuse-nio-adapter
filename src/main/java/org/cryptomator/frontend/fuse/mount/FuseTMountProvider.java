@@ -85,7 +85,7 @@ public class FuseTMountProvider implements MountService {
 
 	private static class FuseTMountBuilder extends AbstractMacMountBuilder {
 
-		private static final Logger LOG = LoggerFactory.getLogger(FuseTMountProvider.class);
+		private static final Logger LOG = LoggerFactory.getLogger(FuseTMountBuilder.class);
 
 		private int port;
 

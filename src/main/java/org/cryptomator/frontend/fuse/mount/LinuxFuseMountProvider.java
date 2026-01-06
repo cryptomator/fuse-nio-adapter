@@ -126,7 +126,7 @@ public class LinuxFuseMountProvider implements MountService {
 			Objects.requireNonNull(mountFlags);
 
 			var builder = Fuse.builder();
-			var libPath = Arrays.stream(LIB_PATHS).map(Path::of).filter(Files::exists).map(Path::toString).findFirst().orElseThrow(() -> new IllegalStateException("Cannot find fuse library anymore"));
+			var libPath = Arrays.stream(LIB_PATHS).map(Path::of).filter(Files::exists).map(Path::toString).findFirst().orElseThrow(() -> new IllegalStateException("No fuse library found at expected path"));
 			builder.setLibraryPath(libPath);
 			if (mountFlags.contains("-oallow_other") || mountFlags.contains("-oallow_root")) {
 				LOG.warn("Mounting with flag -oallow_other or -oallow_root. Ensure that in /etc/fuse.conf option user_allow_other is enabled.");
