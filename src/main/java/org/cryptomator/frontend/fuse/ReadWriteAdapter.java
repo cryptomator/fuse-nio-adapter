@@ -231,7 +231,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			if (!OS.WINDOWS.isCurrent()) { //prevent spamming warnings
 				LOG.warn("Setting posix permissions not supported by underlying file system.");
 			}
-			return -errno.enosys();
+			return -errno.enotsup();
 		} catch (IOException | RuntimeException e) {
 			if(LOG.isDebugEnabled()) {
 				LOG.debug("chmod {} returns EIO due to exception.", path, e);
