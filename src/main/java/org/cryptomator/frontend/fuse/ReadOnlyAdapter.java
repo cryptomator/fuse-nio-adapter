@@ -269,7 +269,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 			}
 		} catch (NoSuchFileException _) {
 			return -errno.enoent();
-		} catch (IOException e) {
+		} catch (IOException | RuntimeException e) {
 			if(LOG.isDebugEnabled()) {
 				LOG.debug("getxattr {} returns EIO due to exception.", path, e);
 			} else {
@@ -304,7 +304,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 			return -errno.erange();
 		} catch (NoSuchFileException _) {
 			return -errno.enoent();
-		} catch (IOException e) {
+		} catch (IOException | RuntimeException e) {
 			if(LOG.isDebugEnabled()) {
 				LOG.debug("listxattr {} returns EIO due to exception.", path, e);
 			} else {

@@ -122,7 +122,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			return 0;
 		} catch (NoSuchFileException _) {
 			return -errno.enoent();
-		} catch (IOException e) {
+		} catch (IOException | RuntimeException e) {
 			if(LOG.isDebugEnabled()) {
 				LOG.debug("removexattr {} returns EIO due to exception.", path, e);
 			} else {
@@ -146,7 +146,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			return 0;
 		} catch (NoSuchFileException _) {
 			return -errno.enoent();
-		} catch (IOException e) {
+		} catch (IOException | RuntimeException e) {
 			if(LOG.isDebugEnabled()) {
 				LOG.debug("setxattr {} returns EIO due to exception.", path, e);
 			} else {
