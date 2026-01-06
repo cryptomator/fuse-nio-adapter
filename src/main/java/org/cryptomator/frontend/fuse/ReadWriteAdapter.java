@@ -173,7 +173,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			return getErrorCodeForGenericFileSystemException(e, "symlink " + targetPath + " -> " + linkPath);
 		} catch (IOException | RuntimeException e) {
 			if(LOG.isDebugEnabled()) {
-				LOG.debug("symlink {} -> {} returns EIO due to exception.", targetPath, linkPath, e);
+				LOG.debug("symlink {} -> {} returns EIO due to exception.", linkPath, targetPath, e);
 			} else {
 				LOG.warn("symlink returns EIO due to {}", e.getClass().getName());
 			}
