@@ -177,9 +177,9 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 			}
 			path.getFileSystem().provider().checkAccess(path, requiredAccessModes.toArray(AccessMode[]::new));
 			return 0;
-		} catch (NoSuchFileException e) {
+		} catch (NoSuchFileException _) {
 			return -errno.enoent();
-		} catch (AccessDeniedException e) {
+		} catch (AccessDeniedException _) {
 			return -errno.eacces();
 		}
 	}
@@ -190,7 +190,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 			 DataLock _ = pathLock.lockDataForReading()) {
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
 			return linkHandler.readlink(node, buf, size);
-		} catch (NotLinkException | NoSuchFileException e) {
+		} catch (NotLinkException | NoSuchFileException _) {
 			LOG.trace("readlink {} failed, node not found or not a symlink", path);
 			return -errno.enoent();
 		} catch (IOException | RuntimeException e) {
@@ -224,7 +224,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 			} else {
 				throw new NoSuchFileException("Not a supported node type: " + path);
 			}
-		} catch (NoSuchFileException e) {
+		} catch (NoSuchFileException _) {
 			// see Files.notExists
 			LOG.trace("getattr {} failed, node not found", path);
 			return -errno.enoent();
@@ -266,7 +266,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 			} else {
 				return xattr.read(name, value);
 			}
-		} catch (NoSuchFileException e) {
+		} catch (NoSuchFileException _) {
 			return -errno.enoent();
 		} catch (IOException e) {
 			if(LOG.isDebugEnabled()) {
@@ -300,9 +300,9 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 				}
 				return list.position() - startpos;
 			}
-		} catch (BufferOverflowException e) {
+		} catch (BufferOverflowException _) {
 			return -errno.erange();
-		} catch (NoSuchFileException e) {
+		} catch (NoSuchFileException _) {
 			return -errno.enoent();
 		} catch (IOException e) {
 			if(LOG.isDebugEnabled()) {
@@ -326,7 +326,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
 			LOG.trace("readdir {}", path);
 			return dirHandler.readdir(node, filler, offset, fi);
-		} catch (NotDirectoryException e) {
+		} catch (NotDirectoryException _) {
 			LOG.error("readdir {} failed, node is not a directory.", path);
 			return -errno.enoent();
 		} catch (IOException | RuntimeException e) {
@@ -352,7 +352,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 			LOG.trace("open {}", path);
 			fileHandler.open(node, fi);
 			return 0;
-		} catch (NoSuchFileException e) {
+		} catch (NoSuchFileException _) {
 			LOG.warn("open {} failed, file not found.", path);
 			return -errno.enoent();
 		} catch (AccessDeniedException e) {
@@ -376,7 +376,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 			int read = fileHandler.read(buf, size, offset, fi);
 			LOG.trace("read {} bytes from file {}", read, path);
 			return read;
-		} catch (ClosedChannelException e) {
+		} catch (ClosedChannelException _) {
 			LOG.warn("read {} failed, invalid file handle {}", path, fi.getFh());
 			return -errno.ebadf();
 		} catch (IOException | RuntimeException e) {
@@ -396,7 +396,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 			LOG.trace("release {} ({})", path, fi.getFh());
 			fileHandler.release(fi);
 			return 0;
-		} catch (ClosedChannelException e) {
+		} catch (ClosedChannelException _) {
 			LOG.warn("release {} failed, invalid file handle {}", path, fi.getFh());
 			return -errno.ebadf();
 		} catch (IOException | RuntimeException e) {
@@ -426,7 +426,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 	public boolean isInUse() {
 		try (PathLock pLock = lockManager.tryLockForWriting("/")) {
 			return openFiles.hasDirtyFiles();
-		} catch (AlreadyLockedException e) {
+		} catch (AlreadyLockedException _) {
 			return true;
 		}
 	}

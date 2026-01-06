@@ -91,7 +91,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			LOG.trace("mkdir {} ({})", path, mode);
 			Files.createDirectory(node);
 			return 0;
-		} catch (FileAlreadyExistsException e) {
+		} catch (FileAlreadyExistsException _) {
 			LOG.warn("mkdir {} failed, file already exists.", path);
 			return -errno.eexist();
 		} catch (FileSystemException e) {
@@ -118,7 +118,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			}
 			xattr.delete(name);
 			return 0;
-		} catch (NoSuchFileException e) {
+		} catch (NoSuchFileException _) {
 			return -errno.enoent();
 		} catch (IOException e) {
 			if(LOG.isDebugEnabled()) {
@@ -142,7 +142,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			}
 			xattr.write(name, value);
 			return 0;
-		} catch (NoSuchFileException e) {
+		} catch (NoSuchFileException _) {
 			return -errno.enoent();
 		} catch (IOException e) {
 			if(LOG.isDebugEnabled()) {
@@ -163,7 +163,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			LOG.trace("symlink {} -> {}", linkPath, targetPath);
 			Files.createSymbolicLink(link, target);
 			return 0;
-		} catch (FileAlreadyExistsException e) {
+		} catch (FileAlreadyExistsException _) {
 			LOG.warn("symlink {} -> {} failed, file already exists.", linkPath, targetPath);
 			return -errno.eexist();
 		} catch (FileSystemException e) {
@@ -192,7 +192,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 				fileHandler.createAndOpen(node, fi);
 			}
 			return 0;
-		} catch (FileAlreadyExistsException e) {
+		} catch (FileAlreadyExistsException _) {
 			LOG.warn("create {} failed, file already exists.", path);
 			return -errno.eexist();
 		} catch (FileSystemException e) {
@@ -221,10 +221,10 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			LOG.trace("chmod {} ({})", path, mode);
 			Files.setPosixFilePermissions(node, FileAttributesUtil.octalModeToPosixPermissions(mode));
 			return 0;
-		} catch (NoSuchFileException e) {
+		} catch (NoSuchFileException _) {
 			LOG.warn("chmod {} failed, file not found.", path);
 			return -errno.enoent();
-		} catch (UnsupportedOperationException e) {
+		} catch (UnsupportedOperationException _) {
 			if (!OS.WINDOWS.isCurrent()) { //prevent spamming warnings
 				LOG.warn("Setting posix permissions not supported by underlying file system.");
 			}
@@ -251,7 +251,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			LOG.trace("unlink {}", path);
 			Files.delete(node);
 			return 0;
-		} catch (NoSuchFileException e) {
+		} catch (NoSuchFileException _) {
 			LOG.warn("unlink {} failed, file not found.", path);
 			return -errno.enoent();
 		} catch (IOException | RuntimeException e) {
@@ -277,13 +277,13 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			deleteAppleDoubleFiles(node);
 			Files.delete(node);
 			return 0;
-		} catch (NotDirectoryException e) {
+		} catch (NotDirectoryException _) {
 			LOG.warn("rmdir {} failed, node is not a directory.", path);
 			return -errno.enotdir();
-		} catch (NoSuchFileException e) {
+		} catch (NoSuchFileException _) {
 			LOG.warn("rmdir {} failed, file not found.", path);
 			return -errno.enoent();
-		} catch (DirectoryNotEmptyException e) {
+		} catch (DirectoryNotEmptyException _) {
 			LOG.warn("rmdir {} failed, directory not empty.", path);
 			return -errno.enotempty();
 		} catch (IOException | RuntimeException e) {
@@ -323,10 +323,10 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			LOG.trace("rename {} to {}", oldPath, newPath);
 			Files.move(nodeOld, nodeNew, StandardCopyOption.REPLACE_EXISTING);
 			return 0;
-		} catch (NoSuchFileException e) {
+		} catch (NoSuchFileException _) {
 			LOG.warn("rename {} to {} failed, file not found.", oldPath, newPath);
 			return -errno.enoent();
-		} catch (DirectoryNotEmptyException e) {
+		} catch (DirectoryNotEmptyException _) {
 			LOG.warn("rename {} to {} failed, directory not empty.", oldPath, newPath);
 			return -errno.enotempty();
 		} catch (FileSystemException e) {
@@ -349,7 +349,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			LOG.trace("utimens {} (last modification {}, last access {})", path, mtime, atime);
 			fileHandler.utimens(node, mtime, atime);
 			return 0;
-		} catch (NoSuchFileException e) {
+		} catch (NoSuchFileException _) {
 			LOG.warn("utimens {} failed, file not found.", path);
 			return -errno.enoent();
 		} catch (IOException | RuntimeException e) {
@@ -370,7 +370,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			int written = fileHandler.write(buf, size, offset, fi);
 			LOG.trace("wrote {} bytes to file {}.", written, path);
 			return written;
-		} catch (ClosedChannelException e) {
+		} catch (ClosedChannelException _) {
 			LOG.warn("write {} failed, invalid file handle {}", path, fi.getFh());
 			return -errno.ebadf();
 		} catch (IOException | RuntimeException e) {
@@ -395,7 +395,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 				fileHandler.truncate(node, size);
 			}
 			return 0;
-		} catch (NoSuchFileException e) {
+		} catch (NoSuchFileException _) {
 			LOG.warn("truncate {} failed, file not found.", path);
 			return -errno.enoent();
 		} catch (IOException | RuntimeException e) {
@@ -415,7 +415,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			LOG.trace("fsync {}", path);
 			fileHandler.fsync(fi, metaData);
 			return 0;
-		} catch (ClosedChannelException e) {
+		} catch (ClosedChannelException _) {
 			LOG.warn("fsync {} failed, invalid file handle {}", path, fi.getFh());
 			return -errno.ebadf();
 		} catch (IOException | RuntimeException e) {
