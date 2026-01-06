@@ -370,6 +370,8 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 			int read = fileHandler.read(buf, size, offset, fi);
 			LOG.trace("read {} recieved {} bytes", path, read);
 			return read;
+		} catch (IllegalArgumentException _) {
+			return -errno.einval();
 		} catch (ClosedChannelException _) {
 			LOG.debug("read {} returns EBADF due to invalid file handle {}", path, fi.getFh());
 			return -errno.ebadf();

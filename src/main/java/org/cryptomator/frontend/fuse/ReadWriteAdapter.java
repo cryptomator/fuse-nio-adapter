@@ -351,6 +351,8 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			int written = fileHandler.write(buf, size, offset, fi);
 			LOG.trace("write {} wrote {} bytes.", path, written);
 			return written;
+		} catch (IllegalArgumentException _) {
+			return -errno.einval();
 		} catch (ClosedChannelException _) {
 			LOG.debug("write {} returns EBADF due to invalid file handle {}", path, fi.getFh());
 			return -errno.ebadf();
