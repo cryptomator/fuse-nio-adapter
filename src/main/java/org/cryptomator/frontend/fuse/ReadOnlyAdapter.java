@@ -228,7 +228,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 		} catch (NoSuchFileException _) {
 			return -errno.enoent();
 		} catch (UnsupportedFileTypeException _) {
-			LOG.debug("getattr {} failed. Unsupported file type.", path);
+			LOG.debug("getattr {} returns EINVAL due to unsupported file type.", path);
 			return -errno.einval();
 		} catch (FileSystemException e) {
 			return getErrorCodeForGenericFileSystemException(e, "getattr " + path);
@@ -247,7 +247,6 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 		try (PathLock pathLock = lockManager.lockForReading(path);
 			 DataLock _ = pathLock.lockDataForReading()) {
 			Path node = resolvePath(path);
-			LOG.trace("getxattr {} {}", path, name);
 			var xattr = Files.getFileAttributeView(node, UserDefinedFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
 			if (xattr == null) {
 				return -errno.enotsup();
@@ -285,7 +284,6 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 		try (PathLock pathLock = lockManager.lockForReading(path);
 			 DataLock _ = pathLock.lockDataForReading()) {
 			Path node = resolvePath(path);
-			LOG.trace("listxattr {}", path);
 			var xattr = Files.getFileAttributeView(node, UserDefinedFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
 			if (xattr == null) {
 				return -errno.enotsup();
@@ -326,10 +324,9 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 		try (PathLock pathLock = lockManager.lockForReading(path);
 			 DataLock _ = pathLock.lockDataForReading()) {
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
-			LOG.trace("readdir {}", path);
 			return dirHandler.readdir(node, filler, offset, fi);
 		} catch (NotDirectoryException _) {
-			LOG.error("readdir {} failed, node is not a directory.", path);
+			LOG.debug("readdir {} returns ENOENT due to being non-directory.", path);
 			return -errno.enoent();
 		} catch (IOException | RuntimeException e) {
 			if(LOG.isDebugEnabled()) {
@@ -351,14 +348,11 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 		try (PathLock pathLock = lockManager.lockForReading(path);
 			 DataLock _ = pathLock.lockDataForReading()) {
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
-			LOG.trace("open {}", path);
 			fileHandler.open(node, fi);
 			return 0;
 		} catch (NoSuchFileException _) {
-			LOG.warn("open {} failed, file not found.", path);
 			return -errno.enoent();
 		} catch (AccessDeniedException e) {
-			LOG.warn("Attempted to open file with unsupported flags.", e);
 			return -errno.erofs();
 		} catch (IOException | RuntimeException e) {
 			if(LOG.isDebugEnabled()) {
@@ -374,12 +368,12 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 	public int read(String path, ByteBuffer buf, long size, long offset, FileInfo fi) {
 		try (PathLock pathLock = lockManager.lockForReading(path);
 			 DataLock _ = pathLock.lockDataForReading()) {
-			LOG.trace("read {} bytes from file {} starting at {}...", size, path, offset);
+			LOG.trace("read {} request {} bytes starting at {}...", path, size, offset);
 			int read = fileHandler.read(buf, size, offset, fi);
-			LOG.trace("read {} bytes from file {}", read, path);
+			LOG.trace("read {} recieved {} bytes", path, read);
 			return read;
 		} catch (ClosedChannelException _) {
-			LOG.warn("read {} failed, invalid file handle {}", path, fi.getFh());
+			LOG.debug("read {} returns EBADF due to invalid file handle {}", path, fi.getFh());
 			return -errno.ebadf();
 		} catch (IOException | RuntimeException e) {
 			if(LOG.isDebugEnabled()) {
@@ -395,11 +389,10 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 	public int release(String path, FileInfo fi) {
 		try (PathLock pathLock = lockManager.lockForReading(path);
 			 DataLock _ = pathLock.lockDataForWriting()) {
-			LOG.trace("release {} ({})", path, fi.getFh());
 			fileHandler.release(fi);
 			return 0;
 		} catch (ClosedChannelException _) {
-			LOG.warn("release {} failed, invalid file handle {}", path, fi.getFh());
+			LOG.debug("release {} returns EBADF due to invalid file handle {}", path, fi.getFh());
 			return -errno.ebadf();
 		} catch (IOException | RuntimeException e) {
 			if(LOG.isDebugEnabled()) {
