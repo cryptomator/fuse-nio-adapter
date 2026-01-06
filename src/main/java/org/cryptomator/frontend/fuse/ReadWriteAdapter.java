@@ -91,6 +91,9 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			LOG.trace("mkdir {} ({})", path, mode);
 			Files.createDirectory(node);
 			return 0;
+		} catch(UnsupportedOperationException _) {
+			LOG.debug("mkdir returns ENOTSUP due to unable to set a dir attribute atomically.");
+			return -errno.einval();
 		} catch (FileAlreadyExistsException _) {
 			LOG.warn("mkdir {} failed, file already exists.", path);
 			return -errno.eexist();

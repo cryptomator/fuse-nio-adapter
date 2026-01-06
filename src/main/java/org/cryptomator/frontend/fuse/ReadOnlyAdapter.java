@@ -190,8 +190,9 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 			 DataLock _ = pathLock.lockDataForReading()) {
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
 			return linkHandler.readlink(node, buf, size);
-		} catch (NotLinkException | NoSuchFileException _) {
-			LOG.trace("readlink {} failed, node not found or not a symlink", path);
+		} catch (NotLinkException _) {
+			return -errno.einval();
+		} catch (NoSuchFileException _) {
 			return -errno.enoent();
 		} catch (IOException | RuntimeException e) {
 			if(LOG.isDebugEnabled()) {
@@ -222,12 +223,13 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 			} else if (attrs.isSymbolicLink()) {
 				return linkHandler.getattr(node, attrs, stat);
 			} else {
-				throw new NoSuchFileException("Not a supported node type: " + path);
+				throw new UnsupportedFileTypeException(path);
 			}
 		} catch (NoSuchFileException _) {
-			// see Files.notExists
-			LOG.trace("getattr {} failed, node not found", path);
 			return -errno.enoent();
+		} catch (UnsupportedFileTypeException _) {
+			LOG.debug("getattr {} failed. Unsupported file type.", path);
+			return -errno.einval();
 		} catch (FileSystemException e) {
 			return getErrorCodeForGenericFileSystemException(e, "getattr " + path);
 		} catch (IOException | RuntimeException e) {
