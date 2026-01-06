@@ -13,9 +13,13 @@ Changes to prior versions can be found on the [GitHub release page](https://gith
 * Software attestation in tagged builds ([#132](https://github.com/cryptomator/integrations-linux/pull/132))
 
 ### Changed
+* Refactored logging to be more consistent ([#206](https://github.com/cryptomator/fuse-nio-adapter/issues/206))
 * Update maven project to use JDK 25 ([#204](https://github.com/cryptomator/fuse-nio-adapter/pull/204))
 * Update dependency `com.github.ben-manes.caffeine:caffeine` from 3.2.2 to 3.2.3
 * Pin GitHub action versions used in CI ([#132](https://github.com/cryptomator/integrations-linux/pull/132))
+ 
+### Fixed
+* Wrong error codes returned in some cases ([#207](https://github.com/cryptomator/fuse-nio-adapter/pull/207))
 
 
 ## [5.1.0] - 2025-09-18
