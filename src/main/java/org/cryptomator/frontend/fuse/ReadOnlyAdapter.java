@@ -21,7 +21,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.AccessMode;
 import java.nio.file.FileStore;
-import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.NoSuchFileException;
@@ -141,7 +140,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 			LOG.trace("statfs {} ({} / {})", path, avail, total);
 			return 0;
 		} catch (IOException | RuntimeException e) {
-			LOG.error("statfs {} failed.", path, e);
+			logGenericException("statfs", path, e);
 			return -errno.eio();
 		}
 	}
@@ -152,30 +151,27 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
 			Set<AccessMode> accessModes = FileAttributesUtil.accessModeMaskToSet(mask);
 			return checkAccess(node, accessModes);
-		} catch (RuntimeException e) {
-			LOG.error("checkAccess failed.", e);
+		} catch (IOException | RuntimeException e) {
+			logGenericException("access", path, e);
 			return -errno.eio();
 		}
 	}
 
-	protected int checkAccess(Path path, Set<AccessMode> requiredAccessModes) {
+	protected int checkAccess(Path path, Set<AccessMode> requiredAccessModes) throws IOException {
 		return checkAccess(path, requiredAccessModes, EnumSet.of(AccessMode.WRITE));
 	}
 
-	protected int checkAccess(Path path, Set<AccessMode> requiredAccessModes, Set<AccessMode> deniedAccessModes) {
+	protected int checkAccess(Path path, Set<AccessMode> requiredAccessModes, Set<AccessMode> deniedAccessModes) throws IOException {
 		try {
 			if (!Collections.disjoint(requiredAccessModes, deniedAccessModes)) {
 				throw new AccessDeniedException(path.toString());
 			}
 			path.getFileSystem().provider().checkAccess(path, requiredAccessModes.toArray(AccessMode[]::new));
 			return 0;
-		} catch (NoSuchFileException e) {
+		} catch (NoSuchFileException _) {
 			return -errno.enoent();
-		} catch (AccessDeniedException e) {
+		} catch (AccessDeniedException _) {
 			return -errno.eacces();
-		} catch (IOException e) {
-			LOG.error("checkAccess failed.", e);
-			return -errno.eio();
 		}
 	}
 
@@ -185,11 +181,12 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 			 DataLock _ = pathLock.lockDataForReading()) {
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
 			return linkHandler.readlink(node, buf, size);
-		} catch (NotLinkException | NoSuchFileException e) {
-			LOG.trace("readlink {} failed, node not found or not a symlink", path);
+		} catch (NotLinkException _) {
+			return -errno.einval();
+		} catch (NoSuchFileException _) {
 			return -errno.enoent();
 		} catch (IOException | RuntimeException e) {
-			LOG.error("readlink failed.", e);
+			logGenericException("readlink", path, e);
 			return -errno.eio();
 		}
 	}
@@ -213,16 +210,15 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 			} else if (attrs.isSymbolicLink()) {
 				return linkHandler.getattr(node, attrs, stat);
 			} else {
-				throw new NoSuchFileException("Not a supported node type: " + path);
+				throw new UnsupportedFileTypeException(path);
 			}
-		} catch (NoSuchFileException e) {
-			// see Files.notExists
-			LOG.trace("getattr {} failed, node not found", path);
+		} catch (NoSuchFileException _) {
 			return -errno.enoent();
-		} catch (FileSystemException e) {
-			return getErrorCodeForGenericFileSystemException(e, "getattr " + path);
+		} catch (UnsupportedFileTypeException _) {
+			LOG.debug("getattr {} returns EINVAL: Unsupported file type.", path);
+			return -errno.einval();
 		} catch (IOException | RuntimeException e) {
-			LOG.error("getattr failed.", e);
+			logGenericException("getattr", path, e);
 			return -errno.eio();
 		}
 	}
@@ -232,7 +228,6 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 		try (PathLock pathLock = lockManager.lockForReading(path);
 			 DataLock _ = pathLock.lockDataForReading()) {
 			Path node = resolvePath(path);
-			LOG.trace("getxattr {} {}", path, name);
 			var xattr = Files.getFileAttributeView(node, UserDefinedFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
 			if (xattr == null) {
 				return -errno.enotsup();
@@ -253,9 +248,10 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 			} else {
 				return xattr.read(name, value);
 			}
-		} catch (NoSuchFileException e) {
+		} catch (NoSuchFileException _) {
 			return -errno.enoent();
-		} catch (IOException e) {
+		} catch (IOException | RuntimeException e) {
+			logGenericException("getxattr", path, e);
 			return -errno.eio();
 		}
 	}
@@ -265,7 +261,6 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 		try (PathLock pathLock = lockManager.lockForReading(path);
 			 DataLock _ = pathLock.lockDataForReading()) {
 			Path node = resolvePath(path);
-			LOG.trace("listxattr {}", path);
 			var xattr = Files.getFileAttributeView(node, UserDefinedFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
 			if (xattr == null) {
 				return -errno.enotsup();
@@ -282,11 +277,12 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 				}
 				return list.position() - startpos;
 			}
-		} catch (BufferOverflowException e) {
+		} catch (BufferOverflowException _) {
 			return -errno.erange();
-		} catch (NoSuchFileException e) {
+		} catch (NoSuchFileException _) {
 			return -errno.enoent();
-		} catch (IOException e) {
+		} catch (IOException | RuntimeException e) {
+			logGenericException("listxattr", path, e);
 			return -errno.eio();
 		}
 	}
@@ -301,13 +297,12 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 		try (PathLock pathLock = lockManager.lockForReading(path);
 			 DataLock _ = pathLock.lockDataForReading()) {
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
-			LOG.trace("readdir {}", path);
 			return dirHandler.readdir(node, filler, offset, fi);
-		} catch (NotDirectoryException e) {
-			LOG.error("readdir {} failed, node is not a directory.", path);
-			return -errno.enoent();
+		} catch (NotDirectoryException _) {
+			LOG.debug("readdir {} returns ENOTDIR: Not a directory.", path);
+			return -errno.enotdir();
 		} catch (IOException | RuntimeException e) {
-			LOG.error("readdir failed.", e);
+			logGenericException("readdir", path, e);
 			return -errno.eio();
 		}
 	}
@@ -322,17 +317,14 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 		try (PathLock pathLock = lockManager.lockForReading(path);
 			 DataLock _ = pathLock.lockDataForReading()) {
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
-			LOG.trace("open {}", path);
 			fileHandler.open(node, fi);
 			return 0;
-		} catch (NoSuchFileException e) {
-			LOG.warn("open {} failed, file not found.", path);
+		} catch (NoSuchFileException _) {
 			return -errno.enoent();
-		} catch (AccessDeniedException e) {
-			LOG.warn("Attempted to open file with unsupported flags.", e);
+		} catch (AccessDeniedException _) {
 			return -errno.erofs();
 		} catch (IOException | RuntimeException e) {
-			LOG.error("open {} failed.", path, e);
+			logGenericException("open", path, e);
 			return -errno.eio();
 		}
 	}
@@ -341,15 +333,17 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 	public int read(String path, ByteBuffer buf, long size, long offset, FileInfo fi) {
 		try (PathLock pathLock = lockManager.lockForReading(path);
 			 DataLock _ = pathLock.lockDataForReading()) {
-			LOG.trace("read {} bytes from file {} starting at {}...", size, path, offset);
+			LOG.trace("read {} request {} bytes starting at {}...", path, size, offset);
 			int read = fileHandler.read(buf, size, offset, fi);
-			LOG.trace("read {} bytes from file {}", read, path);
+			LOG.trace("read {} read {} bytes", path, read);
 			return read;
-		} catch (ClosedChannelException e) {
-			LOG.warn("read {} failed, invalid file handle {}", path, fi.getFh());
+		} catch (IllegalArgumentException _) {
+			return -errno.einval();
+		} catch (ClosedChannelException _) {
+			LOG.debug("read {} returns EBADF: Invalid file handle {}", path, fi.getFh());
 			return -errno.ebadf();
 		} catch (IOException | RuntimeException e) {
-			LOG.error("read {} failed.", path, e);
+			logGenericException("read", path, e);
 			return -errno.eio();
 		}
 	}
@@ -358,14 +352,13 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 	public int release(String path, FileInfo fi) {
 		try (PathLock pathLock = lockManager.lockForReading(path);
 			 DataLock _ = pathLock.lockDataForWriting()) {
-			LOG.trace("release {} ({})", path, fi.getFh());
 			fileHandler.release(fi);
 			return 0;
-		} catch (ClosedChannelException e) {
-			LOG.warn("release {} failed, invalid file handle {}", path, fi.getFh());
+		} catch (ClosedChannelException _) {
+			LOG.debug("release {} returns EBADF: Invalid file handle {}", path, fi.getFh());
 			return -errno.ebadf();
 		} catch (IOException | RuntimeException e) {
-			LOG.error("release {} failed.", path, e);
+			logGenericException("release", path, e);
 			return -errno.eio();
 		}
 	}
@@ -375,7 +368,11 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 		try {
 			close();
 		} catch (IOException | RuntimeException e) {
-			LOG.error("destroy failed.", e);
+			if (LOG.isDebugEnabled()) {
+				LOG.debug("destroy failed.", e);
+			} else {
+				LOG.warn("destroy failed: {}.", e.getClass().getName());
+			}
 		}
 	}
 
@@ -383,7 +380,7 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 	public boolean isInUse() {
 		try (PathLock pLock = lockManager.tryLockForWriting("/")) {
 			return openFiles.hasDirtyFiles();
-		} catch (AlreadyLockedException e) {
+		} catch (AlreadyLockedException _) {
 			return true;
 		}
 	}
@@ -394,22 +391,19 @@ public sealed class ReadOnlyAdapter implements FuseNioAdapter permits ReadWriteA
 	}
 
 	/**
-	 * Attempts to get a specific error code that best describes the given exception.
-	 * As a side effect this logs the error.
+	 * Handles generic exceptions.
+	 * <p>
+	 * Logs a (failed) fuse operation with different granularity
 	 *
-	 * @param e      An exception
-	 * @param opDesc A human-friendly string describing what operation was attempted (for logging purposes)
-	 * @return A specific error code or -EIO.
+	 * @param operation name of the fuse operation
+	 * @param path      affected path
+	 * @param e         thrown exception
 	 */
-	protected int getErrorCodeForGenericFileSystemException(FileSystemException e, String opDesc) {
-		String reason = e.getReason();
-		reason = reason != null ? reason : "";
-//		if (reason.contains("path too long") || reason.contains("name too long")) {
-//			LOG.warn("{} {} failed, name too long.", opDesc);
-//			return -ErrorCodes.ENAMETOOLONG();
-//		} else {
-		LOG.error(opDesc + " failed.", e);
-		return -errno.eio();
-//		}
+	protected void logGenericException(String operation, String path, Exception e) {
+		if (LOG.isDebugEnabled()) {
+			LOG.debug("{} {} returns EIO: Generic Exception.", operation, path, e);
+		} else {
+			LOG.warn("{} returns EIO: {}", operation, e.getClass().getName());
+		}
 	}
 }

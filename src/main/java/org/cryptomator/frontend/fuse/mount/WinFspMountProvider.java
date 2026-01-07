@@ -13,6 +13,8 @@ import org.cryptomator.integrations.mount.MountService;
 import org.cryptomator.integrations.mount.UnmountFailedException;
 import org.cryptomator.jfuse.api.Fuse;
 import org.cryptomator.jfuse.api.FuseMountFailedException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -62,6 +64,8 @@ public class WinFspMountProvider implements MountService {
 
 	protected static class WinFspMountBuilder extends AbstractMountBuilder {
 
+		private static final Logger LOG = LoggerFactory.getLogger(WinFspMountBuilder.class);
+
 		private static String DEFAULT_FS_NAME = "FUSE-NIO-FS";
 		String fsName = DEFAULT_FS_NAME;
 		boolean isReadOnly = false;
@@ -107,7 +111,7 @@ public class WinFspMountProvider implements MountService {
 			}
 			combined.removeIf(flag -> flag.startsWith("-oExactFileSystemName="));
 			combined.add("-oExactFileSystemName=" + fsName);
-			if(volumeName != null && !volumeName.isBlank()) {
+			if (volumeName != null && !volumeName.isBlank()) {
 				combined.removeIf(flag -> flag.startsWith("-ovolname="));
 				combined.add("-ovolname=" + volumeName);
 			}
@@ -122,8 +126,10 @@ public class WinFspMountProvider implements MountService {
 			//xattr disabled due to https://github.com/cryptomator/fuse-nio-adapter/issues/86
 			var fuseAdapter = ReadWriteAdapter.create(builder.errno(), vfsRoot, FuseNioAdapter.DEFAULT_MAX_FILENAMELENGTH, FileNameTranscoder.transcoder(), false);
 			try {
+				var mountFlags = combinedMountFlags().toArray(String[]::new);
 				var fuse = builder.build(fuseAdapter);
-				fuse.mount("fuse-nio-adapter", mountPoint, combinedMountFlags().toArray(String[]::new));
+				LOG.debug("Mounting {} using fuse library {} with mountflags {}", vfsRoot.getFileSystem(), libPath, mountFlags);
+				fuse.mount("fuse-nio-adapter", mountPoint, mountFlags);
 				return new WinfspMount(fuse, fuseAdapter, mountPoint);
 			} catch (FuseMountFailedException e) {
 				throw new MountFailedException(e);

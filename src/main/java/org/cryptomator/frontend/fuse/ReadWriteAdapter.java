@@ -17,7 +17,6 @@ import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileStore;
-import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.NoSuchFileException;
@@ -79,7 +78,7 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 	}
 
 	@Override
-	protected int checkAccess(Path path, Set<AccessMode> requiredAccessModes) {
+	protected int checkAccess(Path path, Set<AccessMode> requiredAccessModes) throws IOException {
 		return checkAccess(path, requiredAccessModes, EnumSet.noneOf(AccessMode.class));
 	}
 
@@ -88,16 +87,16 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 		try (PathLock pathLock = lockManager.lockForWriting(path);
 			 DataLock _ = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
-			LOG.trace("mkdir {} ({})", path, mode);
 			Files.createDirectory(node);
+			LOG.trace("mkdir {} ({})", path, mode);
 			return 0;
-		} catch (FileAlreadyExistsException e) {
-			LOG.warn("mkdir {} failed, file already exists.", path);
+		} catch(UnsupportedOperationException _) {
+			LOG.debug("mkdir {} returns EINVAL: Unable to set a dir attribute atomically.", path);
+			return -errno.einval();
+		} catch (FileAlreadyExistsException _) {
 			return -errno.eexist();
-		} catch (FileSystemException e) {
-			return getErrorCodeForGenericFileSystemException(e, "mkdir " + path);
 		} catch (IOException | RuntimeException e) {
-			LOG.error("mkdir {} failed.", path, e);
+			logGenericException("mkdir", path, e);
 			return -errno.eio();
 		}
 	}
@@ -107,16 +106,17 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 		try (PathLock pathLock = lockManager.lockForReading(path);
 			 DataLock _ = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(path);
-			LOG.trace("removexattr {} {}", path, name);
 			var xattr = Files.getFileAttributeView(node, UserDefinedFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
 			if (xattr == null) {
 				return -errno.enotsup();
 			}
 			xattr.delete(name);
+			LOG.trace("removexattr {} {}", path, name);
 			return 0;
-		} catch (NoSuchFileException e) {
+		} catch (NoSuchFileException _) {
 			return -errno.enoent();
-		} catch (IOException e) {
+		} catch (IOException | RuntimeException e) {
+			logGenericException("removexattr", path, e);
 			return -errno.eio();
 		}
 	}
@@ -126,16 +126,17 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 		try (PathLock pathLock = lockManager.lockForReading(path);
 			 DataLock _ = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(path);
-			LOG.trace("setxattr {} {}", path, name);
 			var xattr = Files.getFileAttributeView(node, UserDefinedFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
 			if (xattr == null) {
 				return -errno.enotsup();
 			}
 			xattr.write(name, value);
+			LOG.trace("setxattr {} {}", path, name);
 			return 0;
-		} catch (NoSuchFileException e) {
+		} catch (NoSuchFileException _) {
 			return -errno.enoent();
-		} catch (IOException e) {
+		} catch (IOException | RuntimeException e) {
+			logGenericException("setxattr", path, e);
 			return -errno.eio();
 		}
 	}
@@ -146,16 +147,17 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			 DataLock _ = pathLock.lockDataForWriting()) {
 			Path link = resolvePath(fileNameTranscoder.fuseToNio(linkPath));
 			Path target = link.getFileSystem().getPath(fileNameTranscoder.fuseToNio(targetPath));
-			LOG.trace("symlink {} -> {}", linkPath, targetPath);
 			Files.createSymbolicLink(link, target);
+			LOG.trace("symlink {} -> {}", linkPath, targetPath);
 			return 0;
-		} catch (FileAlreadyExistsException e) {
-			LOG.warn("symlink {} -> {} failed, file already exists.", linkPath, targetPath);
+		} catch (FileAlreadyExistsException _) {
 			return -errno.eexist();
-		} catch (FileSystemException e) {
-			return getErrorCodeForGenericFileSystemException(e, "symlink " + targetPath + " -> " + linkPath);
 		} catch (IOException | RuntimeException e) {
-			LOG.error("symlink failed.", e);
+			if(LOG.isDebugEnabled()) {
+				LOG.debug("symlink {} -> {} returns EIO due to exception.", linkPath, targetPath, e);
+			} else {
+				LOG.warn("symlink returns EIO due to {}", e.getClass().getName());
+			}
 			return -errno.eio();
 		}
 	}
@@ -166,21 +168,18 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			 DataLock _ = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
 			var flags = fi.getOpenFlags();
-			LOG.trace("create {} with flags {}", path, flags);
 			if (fileStore.supportsFileAttributeView(PosixFileAttributeView.class)) {
 				FileAttribute<?> attrs = PosixFilePermissions.asFileAttribute(FileAttributesUtil.octalModeToPosixPermissions(mode));
 				fileHandler.createAndOpen(node, fi, attrs);
 			} else {
 				fileHandler.createAndOpen(node, fi);
 			}
+			LOG.trace("create {} with flags {}", path, flags);
 			return 0;
-		} catch (FileAlreadyExistsException e) {
-			LOG.warn("create {} failed, file already exists.", path);
+		} catch (FileAlreadyExistsException _) {
 			return -errno.eexist();
-		} catch (FileSystemException e) {
-			return getErrorCodeForGenericFileSystemException(e, "create " + path);
 		} catch (IOException | RuntimeException e) {
-			LOG.error("create {} failed.", path, e);
+			logGenericException("create", path, e);
 			return -errno.eio();
 		}
 	}
@@ -196,19 +195,15 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 		try (PathLock pathLock = lockManager.lockForReading(path);
 			 DataLock _ = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
-			LOG.trace("chmod {} ({})", path, mode);
 			Files.setPosixFilePermissions(node, FileAttributesUtil.octalModeToPosixPermissions(mode));
+			LOG.trace("chmod {} ({})", path, mode);
 			return 0;
-		} catch (NoSuchFileException e) {
-			LOG.warn("chmod {} failed, file not found.", path);
+		} catch (NoSuchFileException _) {
 			return -errno.enoent();
-		} catch (UnsupportedOperationException e) {
-			if (!OS.WINDOWS.isCurrent()) { //prevent spamming warnings
-				LOG.warn("Setting posix permissions not supported by underlying file system.");
-			}
-			return -errno.enosys();
+		} catch (UnsupportedOperationException _) {
+			return -errno.enotsup();
 		} catch (IOException | RuntimeException e) {
-			LOG.error("chmod {} failed.", path, e);
+			logGenericException("chmod", path, e);
 			return -errno.eio();
 		}
 	}
@@ -219,17 +214,15 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			 DataLock _ = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
 			if (Files.isDirectory(node, LinkOption.NOFOLLOW_LINKS)) {
-				LOG.warn("unlink {} failed, node is a directory.", path);
 				return -errno.eisdir();
 			}
-			LOG.trace("unlink {}", path);
 			Files.delete(node);
+			LOG.trace("unlink {}", path);
 			return 0;
-		} catch (NoSuchFileException e) {
-			LOG.warn("unlink {} failed, file not found.", path);
+		} catch (NoSuchFileException _) {
 			return -errno.enoent();
 		} catch (IOException | RuntimeException e) {
-			LOG.error("unlink {} failed.", path, e);
+			logGenericException("unlink", path, e);
 			return -errno.eio();
 		}
 	}
@@ -242,22 +235,19 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			if (!Files.isDirectory(node, LinkOption.NOFOLLOW_LINKS)) {
 				throw new NotDirectoryException(path);
 			}
-			LOG.trace("rmdir {}", path);
 			// TODO: recursively check for open file handles
 			deleteAppleDoubleFiles(node);
 			Files.delete(node);
+			LOG.trace("rmdir {}", path);
 			return 0;
-		} catch (NotDirectoryException e) {
-			LOG.warn("rmdir {} failed, node is not a directory.", path);
+		} catch (NotDirectoryException _) {
 			return -errno.enotdir();
-		} catch (NoSuchFileException e) {
-			LOG.warn("rmdir {} failed, file not found.", path);
+		} catch (NoSuchFileException _) {
 			return -errno.enoent();
-		} catch (DirectoryNotEmptyException e) {
-			LOG.warn("rmdir {} failed, directory not empty.", path);
+		} catch (DirectoryNotEmptyException _) {
 			return -errno.enotempty();
 		} catch (IOException | RuntimeException e) {
-			LOG.error("rmdir {} failed.", path, e);
+			logGenericException("rmdir", path, e);
 			return -errno.eio();
 		}
 	}
@@ -286,19 +276,19 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			// TODO: recursively check for open file handles
 			Path nodeOld = resolvePath(fileNameTranscoder.fuseToNio(oldPath));
 			Path nodeNew = resolvePath(fileNameTranscoder.fuseToNio(newPath));
-			LOG.trace("rename {} to {}", oldPath, newPath);
 			Files.move(nodeOld, nodeNew, StandardCopyOption.REPLACE_EXISTING);
+			LOG.trace("rename {} to {}", oldPath, newPath);
 			return 0;
-		} catch (NoSuchFileException e) {
-			LOG.warn("rename {} to {} failed, file not found.", oldPath, newPath);
+		} catch (NoSuchFileException _) {
 			return -errno.enoent();
-		} catch (DirectoryNotEmptyException e) {
-			LOG.warn("rename {} to {} failed, directory not empty.", oldPath, newPath);
+		} catch (DirectoryNotEmptyException _) {
 			return -errno.enotempty();
-		} catch (FileSystemException e) {
-			return getErrorCodeForGenericFileSystemException(e, "rename " + oldPath + " -> " + newPath);
 		} catch (IOException | RuntimeException e) {
-			LOG.error("rename " + oldPath + " to " + newPath + " failed.", e);
+			if(LOG.isDebugEnabled()) {
+				LOG.debug("rename {} to {} returns EIO due to exception.", oldPath, newPath, e);
+			} else {
+				LOG.warn("rename returns EIO due to {}", e.getClass().getName());
+			}
 			return -errno.eio();
 		}
 	}
@@ -308,14 +298,13 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 		try (PathLock pathLock = lockManager.lockForReading(path);
 			 DataLock _ = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
-			LOG.trace("utimens {} (last modification {}, last access {})", path, mtime, atime);
 			fileHandler.utimens(node, mtime, atime);
+			LOG.trace("utimens {} (last modification {}, last access {})", path, mtime, atime);
 			return 0;
-		} catch (NoSuchFileException e) {
-			LOG.warn("utimens {} failed, file not found.", path);
+		} catch (NoSuchFileException _) {
 			return -errno.enoent();
 		} catch (IOException | RuntimeException e) {
-			LOG.error("utimens {} failed.", path, e);
+			logGenericException("utimens", path, e);
 			return -errno.eio();
 		}
 	}
@@ -324,15 +313,17 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 	public int write(String path, ByteBuffer buf, long size, long offset, FileInfo fi) {
 		try (PathLock pathLock = lockManager.lockForReading(path);
 			 DataLock _ = pathLock.lockDataForWriting()) {
-			LOG.trace("write {} bytes to file {} starting at {}...", size, path, offset);
+			LOG.trace("write {} requests {} bytes starting at {}...", path, size, offset);
 			int written = fileHandler.write(buf, size, offset, fi);
-			LOG.trace("wrote {} bytes to file {}.", written, path);
+			LOG.trace("write {} wrote {} bytes.", path, written);
 			return written;
-		} catch (ClosedChannelException e) {
-			LOG.warn("write {} failed, invalid file handle {}", path, fi.getFh());
+		} catch (IllegalArgumentException _) {
+			return -errno.einval();
+		} catch (ClosedChannelException _) {
+			LOG.debug("write {} returns EBADF: Invalid file handle {}", path, fi.getFh());
 			return -errno.ebadf();
 		} catch (IOException | RuntimeException e) {
-			LOG.error("write {} failed.", path, e);
+			logGenericException("write", path, e);
 			return -errno.eio();
 		}
 	}
@@ -342,18 +333,17 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 		try (PathLock pathLock = lockManager.lockForReading(path);
 			 DataLock _ = pathLock.lockDataForWriting()) {
 			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
-			LOG.trace("truncate {} {}", path, size);
 			if (fi != null) {
 				fileHandler.ftruncate(size, fi);
 			} else {
 				fileHandler.truncate(node, size);
 			}
+			LOG.trace("truncate {} {}", path, size);
 			return 0;
-		} catch (NoSuchFileException e) {
-			LOG.warn("truncate {} failed, file not found.", path);
+		} catch (NoSuchFileException _) {
 			return -errno.enoent();
 		} catch (IOException | RuntimeException e) {
-			LOG.error("truncate {} failed.", path, e);
+			logGenericException("truncate", path, e);
 			return -errno.eio();
 		}
 	}
@@ -362,14 +352,14 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 	public int fsync(String path, int isdatasync, FileInfo fi) {
 		try {
 			boolean metaData = isdatasync == 0;
-			LOG.trace("fsync {}", path);
 			fileHandler.fsync(fi, metaData);
+			LOG.trace("fsync {}", path);
 			return 0;
-		} catch (ClosedChannelException e) {
-			LOG.warn("fsync {} failed, invalid file handle {}", path, fi.getFh());
+		} catch (ClosedChannelException _) {
+			LOG.debug("fsync {} returns EBADF: Invalid file handle {}", path, fi.getFh());
 			return -errno.ebadf();
 		} catch (IOException | RuntimeException e) {
-			LOG.error("fsync {} failed.", path, e);
+			logGenericException("fsync", path, e);
 			return -errno.eio();
 		}
 	}

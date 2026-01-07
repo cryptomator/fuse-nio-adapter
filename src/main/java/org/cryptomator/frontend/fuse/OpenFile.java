@@ -51,7 +51,7 @@ public class OpenFile implements Closeable {
 		if (offset >= size) {
 			return 0;
 		} else if (num > Integer.MAX_VALUE) {
-			throw new IOException("Requested too many bytes");
+			throw new IllegalArgumentException("Requested number of bytes out of range");
 		} else {
 			int read = 0;
 			int toRead = (int) Math.min(num, buf.limit());
@@ -79,7 +79,7 @@ public class OpenFile implements Closeable {
 	public int write(ByteBuffer buf, long num, long offset) throws IOException {
 		dirty = true;
 		if (num > Integer.MAX_VALUE) {
-			throw new IOException("Requested too many bytes");
+			throw new IllegalArgumentException("Requested number of bytes out of range");
 		}
 		int written = 0;
 		int toWrite = (int) Math.min(num, buf.limit());
