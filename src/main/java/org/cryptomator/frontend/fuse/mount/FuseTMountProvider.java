@@ -12,6 +12,8 @@ import org.cryptomator.integrations.mount.MountFailedException;
 import org.cryptomator.integrations.mount.MountService;
 import org.cryptomator.jfuse.api.Fuse;
 import org.cryptomator.jfuse.api.FuseMountFailedException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -83,6 +85,8 @@ public class FuseTMountProvider implements MountService {
 
 	private static class FuseTMountBuilder extends AbstractMacMountBuilder {
 
+		private static final Logger LOG = LoggerFactory.getLogger(FuseTMountBuilder.class);
+
 		private int port;
 
 		public FuseTMountBuilder(Path vfsRoot) {
@@ -127,7 +131,9 @@ public class FuseTMountProvider implements MountService {
 			var fuseAdapter = ReadWriteAdapter.create(builder.errno(), vfsRoot, FuseNioAdapter.DEFAULT_MAX_FILENAMELENGTH, filenameTranscoder, false);
 			var fuse = builder.build(fuseAdapter);
 			try {
-				fuse.mount("fuse-nio-adapter", mountPoint, combinedMountFlags().toArray(String[]::new));
+				var actualMountFlags = combinedMountFlags().toArray(String[]::new);
+				LOG.debug("Mounting {} using fuse library {} with mountflags {}", vfsRoot.getFileSystem(), DYLIB_PATH, actualMountFlags);
+				fuse.mount("fuse-nio-adapter", mountPoint, actualMountFlags);
 				return new MacMountedVolume(fuse, fuseAdapter, mountPoint);
 			} catch (FuseMountFailedException e) {
 				throw new MountFailedException(e);

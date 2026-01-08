@@ -90,7 +90,7 @@ public class OpenFileFactory implements AutoCloseable {
 		for (var it = openFiles.entrySet().iterator(); it.hasNext();) {
 			var entry = it.next();
 			OpenFile openFile = entry.getValue();
-			LOG.warn("Closing unclosed file {}", openFile);
+			LOG.debug("Closing unclosed file {}", openFile);
 			try {
 				openFile.close();
 			} catch (IOException e) {
