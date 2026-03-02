@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.NoSuchElementException;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -24,10 +25,11 @@ public class WinfspUtil {
 	private static final String REGSTR_TOKEN = "REG_SZ";
 	private static final String REG_WINFSP_KEY = "HKLM\\SOFTWARE\\WOW6432Node\\WinFsp";
 	private static final String REG_WINFSP_VALUE = "InstallDir";
+	private static final String FALLBACK_PATH = "C:\\Program Files (x86)\\WinFsp\\";
 
 	private static final AtomicReference<String> cache = new AtomicReference<>(null);
 
-	static String getWinFspInstallDir() throws WinFspNotFoundException {
+	static String getWinFspInstallDir() {
 		if (cache.get() == null) {
 			cache.set(readWinFspInstallDirFromRegistry());
 		}
@@ -39,29 +41,23 @@ public class WinfspUtil {
 			ProcessBuilder command = new ProcessBuilder("reg", "query", REG_WINFSP_KEY, "/v", REG_WINFSP_VALUE);
 			Process p = command.start();
 			ProcessHelper.waitForSuccess(p, 3, "`reg query`");
-			String result = p.inputReader(StandardCharsets.UTF_8).lines().filter(l -> l.contains(REG_WINFSP_VALUE)).findFirst().orElseThrow();
-			return result.substring(result.indexOf(REGSTR_TOKEN) + REGSTR_TOKEN.length()).trim();
-		} catch (TimeoutException | IOException | ProcessHelper.CommandFailedException e) {
-			throw new WinFspNotFoundException(e);
+			try (var reader = p.inputReader(StandardCharsets.UTF_8)) {
+				String result = reader.lines().filter(l -> l.contains(REG_WINFSP_VALUE)).findFirst().orElseThrow();
+				var installDir = result.substring(result.indexOf(REGSTR_TOKEN) + REGSTR_TOKEN.length()).trim();
+				LOG.debug("Successfully read WinFsp directory {} from registry.", installDir);
+				return installDir;
+			}
+		} catch (TimeoutException | IOException | ProcessHelper.CommandFailedException | NoSuchElementException e) {
+			//no-op
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
-			throw new WinFspNotFoundException(e);
 		}
+		LOG.debug("Failed to read WinFsp directory from registry. Using fallback path {}", FALLBACK_PATH);
+		return FALLBACK_PATH;
 	}
 
 	static boolean isWinFspInstalled() {
-		try {
-			return Files.exists(Path.of(getWinFspInstallDir()));
-		} catch (WinFspNotFoundException e) {
-			return false;
-		}
-	}
-
-	static class WinFspNotFoundException extends RuntimeException {
-
-		public WinFspNotFoundException(Exception e) {
-			super(e);
-		}
+		return Files.exists(Path.of(getWinFspInstallDir()));
 	}
 
 }
