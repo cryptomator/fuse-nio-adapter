@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 The changelog starts with version 5.0.4.
 Changes to prior versions can be found on the [GitHub release page](https://github.com/cryptomator/fuse-nio-adapter/releases).
 
+## Unreleased
+
+No changes yet
+
+
 ## [6.0.1] - 2026-03-03
 ### Added
 * Try default path for WinFsp dll if reading registry fails ([#220](https://github.com/cryptomator/fuse-nio-adapter/pull/220))
