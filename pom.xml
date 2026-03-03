@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.cryptomator</groupId>
     <artifactId>fuse-nio-adapter</artifactId>
-    <version>6.0.0</version>
+    <version>6.0.1</version>
     <name>FUSE-NIO-Adapter</name>
     <description>Access resources at a given NIO path via FUSE.</description>
     <url>https://github.com/cryptomator/fuse-nio-adapter</url>
@@ -26,22 +26,22 @@
         <caffeine.version>3.2.3</caffeine.version>
 
         <!-- test dependencies -->
-        <junit.jupiter.version>6.0.1</junit.jupiter.version>
-        <mockito.version>5.21.0</mockito.version>
+        <junit.jupiter.version>6.0.3</junit.jupiter.version>
+        <mockito.version>5.22.0</mockito.version>
         <cryptofs.version>2.9.0</cryptofs.version>
 
         <!-- build dependencies -->
         <mvn-clean.version>3.5.0</mvn-clean.version>
-        <mvn-compiler.version>3.14.1</mvn-compiler.version>
-        <mvn-dependency.version>3.9.0</mvn-dependency.version>
+        <mvn-compiler.version>3.15.0</mvn-compiler.version>
+        <mvn-dependency.version>3.10.0</mvn-dependency.version>
         <mvn-deploy.version>3.1.4</mvn-deploy.version>
         <mvn-jar.version>3.5.0</mvn-jar.version>
         <mvn-javadoc.version>3.12.0</mvn-javadoc.version>
         <mvn-gpg.version>3.2.8</mvn-gpg.version>
         <mvn-source.version>3.4.0</mvn-source.version>
-        <mvn-surefire.version>3.5.4</mvn-surefire.version>
-        <central-publishing.version>0.9.0</central-publishing.version>
-        <dependency-check.version>12.1.9</dependency-check.version>
+        <mvn-surefire.version>3.5.5</mvn-surefire.version>
+        <central-publishing.version>0.10.0</central-publishing.version>
+        <dependency-check.version>12.2.0</dependency-check.version>
         <jacoco.version>0.8.14</jacoco.version>
     </properties>
 
@@ -99,7 +99,7 @@
         <dependency>
             <groupId>org.jetbrains</groupId>
             <artifactId>annotations</artifactId>
-            <version>26.0.2-1</version>
+            <version>26.1.0</version>
             <scope>provided</scope>
         </dependency>
 

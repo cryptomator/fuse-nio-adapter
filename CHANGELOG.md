@@ -8,9 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 The changelog starts with version 5.0.4.
 Changes to prior versions can be found on the [GitHub release page](https://github.com/cryptomator/fuse-nio-adapter/releases).
 
+## [6.0.1] - 2026-03-03
+### Added
+* Try default path for WinFsp dll if reading registry fails ([#220](https://github.com/cryptomator/fuse-nio-adapter/pull/220))
+
+### Fixed
+* Throw IllegalArgumentException when using macFUSE with FSKit backend ([#214](https://github.com/cryptomator/fuse-nio-adapter/issues/206))
+
+
 ## [6.0.0] - 2026-01-08
 ### Added
-* Software attestation in tagged builds ([#132](https://github.com/cryptomator/integrations-linux/pull/132))
+* Software attestation in tagged builds ([#205](https://github.com/cryptomator/fuse-nio-adapter/pull/205))
 
 ### Changed
 * *[Breaking Change]* Update project to JDK 25 ([#204](https://github.com/cryptomator/fuse-nio-adapter/pull/204))

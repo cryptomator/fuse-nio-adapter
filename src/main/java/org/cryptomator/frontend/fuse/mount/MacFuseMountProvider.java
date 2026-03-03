@@ -113,6 +113,14 @@ public class MacFuseMountProvider implements MountService {
 		}
 
 		@Override
+		public MountBuilder setMountFlags(String flags) {
+			if(flags.contains("-obackend=fskit)")) {
+				throw new IllegalArgumentException("Unsupported fuse option \"backend=fskit\"");
+			}
+			return super.setMountFlags(flags);
+		}
+
+		@Override
 		public Mount mount() throws MountFailedException {
 			Objects.requireNonNull(mountFlags);
 			if (mountPoint == null) {
