@@ -119,7 +119,7 @@ public class WinFspMountProvider implements MountService {
 		@Override
 		public Mount mount() throws MountFailedException {
 			var builder = Fuse.builder();
-			var libPath = WinFspUtil.getWinFspDLLPath();
+			var libPath = WinFspUtil.getWinFspDLLPath().toString();
 			builder.setLibraryPath(libPath);
 			//xattr disabled due to https://github.com/cryptomator/fuse-nio-adapter/issues/86
 			var fuseAdapter = ReadWriteAdapter.create(builder.errno(), vfsRoot, FuseNioAdapter.DEFAULT_MAX_FILENAMELENGTH, FileNameTranscoder.transcoder(), false);
