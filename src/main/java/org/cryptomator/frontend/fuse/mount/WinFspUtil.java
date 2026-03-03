@@ -48,7 +48,7 @@ public class WinFspUtil {
 	 */
 	static String getWinFspInstallDir() {
 		try {
-			ProcessBuilder command = new ProcessBuilder("reg", "query", REG_WINFSP_KEY, "/v", REG_WINFSP_VALUE);
+			ProcessBuilder command = new ProcessBuilder("C:\\Windows\\System32\\reg.exe", "query", REG_WINFSP_KEY, "/v", REG_WINFSP_VALUE);
 			Process p = command.start();
 			ProcessHelper.waitForSuccess(p, 3, "`reg query`");
 			try (var reader = p.inputReader(StandardCharsets.UTF_8)) {
