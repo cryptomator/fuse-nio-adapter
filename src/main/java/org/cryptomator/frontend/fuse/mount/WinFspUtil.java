@@ -15,11 +15,11 @@ import java.util.concurrent.atomic.AtomicReference;
  * Utility class to determine location of the Winfsp binary.
  * It reads <a href="https://github.com/winfsp/winfsp/wiki/WinFsp-Registry-Settings">WinFsp registry keys</a> and caches the result.
  */
-public class WinfspUtil {
+public class WinFspUtil {
 
-	private static final Logger LOG = LoggerFactory.getLogger(WinfspUtil.class);
+	private static final Logger LOG = LoggerFactory.getLogger(WinFspUtil.class);
 
-	private WinfspUtil() {
+	private WinFspUtil() {
 	}
 
 	private static final String REGSTR_TOKEN = "REG_SZ";
