@@ -47,9 +47,12 @@ public class WinFspUtil {
 	 * @return absolute path of the installation directory of WinFsp
 	 */
 	static Path getWinFspInstallDir() {
+		Process p = null;
 		try {
-			ProcessBuilder command = new ProcessBuilder("C:\\Windows\\System32\\reg.exe", "query", REG_WINFSP_KEY, "/v", REG_WINFSP_VALUE);
-			Process p = command.start();
+			var systemRoot = System.getenv().getOrDefault("SystemRoot", "C:\\Windows");
+			var regExe = Path.of(systemRoot, "System32", "reg.exe").toString();
+			ProcessBuilder command = new ProcessBuilder(regExe, "query", REG_WINFSP_KEY, "/v", REG_WINFSP_VALUE);
+			p = command.start();
 			ProcessHelper.waitForSuccess(p, 3, "`reg query`");
 			try (var reader = p.inputReader(StandardCharsets.UTF_8)) {
 				String result = reader.lines().filter(l -> l.contains(REG_WINFSP_VALUE)).findFirst().orElseThrow();
@@ -64,6 +67,10 @@ public class WinFspUtil {
 			}
 			LOG.debug("Failed to read WinFsp directory from registry. Using fallback path {}", FALLBACK_PATH, e);
 			return Path.of(FALLBACK_PATH);
+		} finally {
+			if (p != null) {
+				p.destroyForcibly();
+			}
 		}
 	}
 
