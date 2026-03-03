@@ -34,8 +34,6 @@ import static org.cryptomator.integrations.mount.MountCapability.VOLUME_NAME;
 @OperatingSystem(OperatingSystem.Value.WINDOWS)
 public class WinFspMountProvider implements MountService {
 
-	private static final String OS_ARCH = System.getProperty("os.arch").toLowerCase();
-
 	@Override
 	public String displayName() {
 		return "WinFsp (Local Drive)";
@@ -121,7 +119,7 @@ public class WinFspMountProvider implements MountService {
 		@Override
 		public Mount mount() throws MountFailedException {
 			var builder = Fuse.builder();
-			var libPath = WinfspUtil.getWinFspInstallDir() + "bin\\" + (OS_ARCH.contains("aarch64") ? "winfsp-a64.dll" : "winfsp-x64.dll");
+			var libPath = WinfspUtil.getWinFspDLLPath();
 			builder.setLibraryPath(libPath);
 			//xattr disabled due to https://github.com/cryptomator/fuse-nio-adapter/issues/86
 			var fuseAdapter = ReadWriteAdapter.create(builder.errno(), vfsRoot, FuseNioAdapter.DEFAULT_MAX_FILENAMELENGTH, FileNameTranscoder.transcoder(), false);

@@ -29,14 +29,24 @@ public class WinfspUtil {
 
 	private static final AtomicReference<String> cache = new AtomicReference<>(null);
 
-	static String getWinFspInstallDir() {
+
+	static String getWinFspDLLPath() {
 		if (cache.get() == null) {
-			cache.set(readWinFspInstallDirFromRegistry());
+			var installDir = getWinFspInstallDir();
+			var dllName = (System.getProperty("os.arch").toLowerCase().contains("aarch64") ? "winfsp-a64.dll" : "winfsp-x64.dll");
+			var libPath = installDir + "bin\\" + dllName;
+			cache.set(libPath);
 		}
 		return cache.get();
 	}
 
-	static String readWinFspInstallDirFromRegistry() {
+	/**
+	 * Attempts to read the WinFsp installation directory from the registry with the "reg" tool.
+	 * If this fails, the default installation path {@value FALLBACK_PATH} is returned.
+	 *
+	 * @return absolute path of the installation directory of WinFsp
+	 */
+	static String getWinFspInstallDir() {
 		try {
 			ProcessBuilder command = new ProcessBuilder("reg", "query", REG_WINFSP_KEY, "/v", REG_WINFSP_VALUE);
 			Process p = command.start();
@@ -57,7 +67,7 @@ public class WinfspUtil {
 	}
 
 	static boolean isWinFspInstalled() {
-		return Files.exists(Path.of(getWinFspInstallDir()));
+		return Files.exists(Path.of(getWinFspDLLPath()));
 	}
 
 }
