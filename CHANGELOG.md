@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 The changelog starts with version 5.0.4.
 Changes to prior versions can be found on the [GitHub release page](https://github.com/cryptomator/fuse-nio-adapter/releases).
 
-## [Unreleased](https://github.com/cryptomator/fuse-nio-adapter/compare/6.0.1...HEAD
+## [Unreleased](https://github.com/cryptomator/fuse-nio-adapter/compare/6.0.1...HEAD)
 ### Changed
 * Updated dependencies:
   - `org.cryptomator:integrations-api` from 1.7.0 to 1.8.0
