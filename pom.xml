@@ -20,15 +20,15 @@
         <project.build.jdk>25</project.build.jdk>
 
         <!-- dependencies -->
-        <integrations-api.version>1.7.0</integrations-api.version>
+        <integrations-api.version>1.8.0</integrations-api.version>
         <jfuse.version>0.7.3</jfuse.version>
         <slf4j.version>2.0.17</slf4j.version>
         <caffeine.version>3.2.3</caffeine.version>
 
         <!-- test dependencies -->
         <junit.jupiter.version>6.0.3</junit.jupiter.version>
-        <mockito.version>5.22.0</mockito.version>
-        <cryptofs.version>2.9.0</cryptofs.version>
+        <mockito.version>5.23.0</mockito.version>
+        <cryptofs.version>2.10.0</cryptofs.version>
 
         <!-- build dependencies -->
         <mvn-clean.version>3.5.0</mvn-clean.version>
@@ -41,7 +41,7 @@
         <mvn-source.version>3.4.0</mvn-source.version>
         <mvn-surefire.version>3.5.5</mvn-surefire.version>
         <central-publishing.version>0.10.0</central-publishing.version>
-        <dependency-check.version>12.2.0</dependency-check.version>
+        <dependency-check.version>12.2.1</dependency-check.version>
         <jacoco.version>0.8.14</jacoco.version>
     </properties>
 
