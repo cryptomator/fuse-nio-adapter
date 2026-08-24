@@ -16,6 +16,7 @@
     </scm>
 
     <properties>
+        <argLine></argLine>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.build.jdk>25</project.build.jdk>
 

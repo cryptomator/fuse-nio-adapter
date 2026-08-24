@@ -16,7 +16,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Scanner;
@@ -49,8 +48,8 @@ public class MirroringFuseMountTest {
 			var mountService = MountService.get().findAny().orElseThrow(() -> new MountFailedException("Did not find a mount provider"));
 			LOG.info("Using mount provider: {}", mountService.displayName());
 			try (Scanner scanner = new Scanner(System.in)) {
-				System.out.println("Enter path to the directory you want to mirror:");
-				Path p = Paths.get(scanner.nextLine());
+				IO.println("Enter path to the directory you want to mirror:");
+				Path p = Path.of(scanner.nextLine());
 				mount(mountService, p, scanner);
 			}
 		}
@@ -76,7 +75,7 @@ public class MirroringFuseMountTest {
 			LOG.info("Using mount provider: {}", mountService.displayName());
 			try (Scanner scanner = new Scanner(System.in)) {
 				LOG.info("Enter path to the vault you want to mirror:");
-				Path vaultPath = Paths.get(scanner.nextLine());
+				Path vaultPath = Path.of(scanner.nextLine());
 				Preconditions.checkArgument(CryptoFileSystemProvider.checkDirStructureForVault(vaultPath, "vault.cryptomator", "masterkey.cryptomator") == DirStructure.VAULT, "Not a vault: " + vaultPath);
 
 				LOG.info("Enter vault password:");
@@ -117,7 +116,7 @@ public class MirroringFuseMountTest {
 			// don't set a mount point
 		} else {
 			LOG.info("Enter mount point: ");
-			Path m = Paths.get(scanner.nextLine());
+			Path m = Path.of(scanner.nextLine());
 			mountBuilder.setMountpoint(m);
 		}
 

@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.text.Normalizer;
 import java.util.EnumSet;
 import java.util.Objects;
@@ -41,7 +40,7 @@ import static org.cryptomator.integrations.mount.MountCapability.VOLUME_NAME;
 public class FuseTMountProvider implements MountService {
 
 	private static final String DYLIB_PATH = "/usr/local/lib/libfuse-t.dylib";
-	private static final Path USER_HOME = Paths.get(System.getProperty("user.home"));
+	private static final Path USER_HOME = Path.of(System.getProperty("user.home"));
 	private static final String MOUNT_OPTION_NOXATTR = "-ononamedattr";
 
 	@Override
@@ -51,7 +50,7 @@ public class FuseTMountProvider implements MountService {
 
 	@Override
 	public boolean isSupported() {
-		return Files.exists(Paths.get(DYLIB_PATH));
+		return Files.exists(Path.of(DYLIB_PATH));
 	}
 
 	@Override

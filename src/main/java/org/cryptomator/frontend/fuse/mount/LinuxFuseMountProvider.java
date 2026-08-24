@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Objects;
@@ -38,7 +37,7 @@ import static org.cryptomator.integrations.mount.MountCapability.MOUNT_TO_EXISTI
 public class LinuxFuseMountProvider implements MountService {
 
 	private static final Logger LOG = LoggerFactory.getLogger(LinuxFuseMountProvider.class);
-	private static final Path USER_HOME = Paths.get(System.getProperty("user.home"));
+	private static final Path USER_HOME = Path.of(System.getProperty("user.home"));
 	private static final String[] LIB_PATHS = {
 			"/usr/lib/x86_64-linux-gnu/libfuse3.so.3", // ABI 3, ubuntu 24.10+, amd64
 			"/usr/lib/x86_64-linux-gnu/libfuse3.so.4", // ABI 4, ubuntu 24.10+, amd64

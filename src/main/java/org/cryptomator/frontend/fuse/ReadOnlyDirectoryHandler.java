@@ -8,15 +8,14 @@ import java.io.IOException;
 import java.nio.file.DirectoryIteratorException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.PosixFileAttributes;
 import java.util.stream.Stream;
 
 public class ReadOnlyDirectoryHandler {
 
-	private static final Path SAME_DIR = Paths.get(".");
-	private static final Path PARENT_DIR = Paths.get("..");
+	private static final Path SAME_DIR = Path.of(".");
+	private static final Path PARENT_DIR = Path.of("..");
 	private final FileNameTranscoder fileNameTranscoder;
 
 	public ReadOnlyDirectoryHandler(FileNameTranscoder fileNameTranscoder) {
