@@ -12,9 +12,10 @@ import java.lang.foreign.SymbolLookup;
 import java.lang.foreign.ValueLayout;
 import java.nio.file.Path;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Utility class to determine the location of the libfuse3 shared library.
+ * Utility class to determine the location of the libfuse3 shared library and cache the result.
  * The library is resolved by its soname using the dynamic linker, which honors {@code LD_LIBRARY_PATH}, the {@code ld.so.cache} and the default library directories.
  */
 public class LinuxFuseUtil {
@@ -36,12 +37,26 @@ public class LinuxFuseUtil {
 	// int dladdr(const void *addr, Dl_info *info)
 	private static final FunctionDescriptor DLADDR = FunctionDescriptor.of(ValueLayout.JAVA_INT, ValueLayout.ADDRESS, ValueLayout.ADDRESS);
 
+	private static final AtomicReference<Optional<Path>> cache = new AtomicReference<>(null);
+
+	/**
+	 * Locates libfuse3 and caches the result.
+	 *
+	 * @return absolute path of the libfuse3 shared library, or an empty optional if the library cannot be found
+	 */
+	static Optional<Path> findLibFuse3() {
+		if (cache.get() == null) {
+			cache.set(locateLibFuse3());
+		}
+		return cache.get();
+	}
+
 	/**
 	 * Locates libfuse3 by loading it via <a href="https://man7.org/linux/man-pages/man3/dlopen.3.html">dlopen</a> and querying its file name via <a href="https://man7.org/linux/man-pages/man3/dladdr.3.html">dladdr</a>.
 	 *
 	 * @return absolute path of the libfuse3 shared library, or an empty optional if the library cannot be found
 	 */
-	static Optional<Path> findLibFuse3() {
+	private static Optional<Path> locateLibFuse3() {
 		for (var soname : SONAMES) {
 			try (var arena = Arena.ofConfined()) {
 				var probe = SymbolLookup.libraryLookup(soname, arena).findOrThrow(PROBE_SYMBOL);
