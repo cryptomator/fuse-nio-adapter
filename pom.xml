@@ -41,6 +41,7 @@
         <mvn-gpg.version>3.2.8</mvn-gpg.version>
         <mvn-source.version>3.4.0</mvn-source.version>
         <mvn-surefire.version>3.5.5</mvn-surefire.version>
+        <mvn-exec.version>3.6.3</mvn-exec.version>
         <central-publishing.version>0.10.0</central-publishing.version>
         <dependency-check.version>12.2.0</dependency-check.version>
         <jacoco.version>0.8.14</jacoco.version>
@@ -159,6 +160,35 @@
     </repositories>
 
     <build>
+        <pluginManagement>
+            <plugins>
+                <!-- shared setup of the mirror and crypto-mirror profiles, which run the interactive MirroringFuseMountTest -->
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>exec-maven-plugin</artifactId>
+                    <version>${mvn-exec.version}</version>
+                    <executions>
+                        <execution>
+                            <id>run-mirror</id>
+                            <phase>test</phase>
+                            <goals>
+                                <goal>exec</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                    <configuration>
+                        <executable>${java.home}/bin/java</executable>
+                        <classpathScope>test</classpathScope>
+                        <arguments>
+                            <argument>--enable-native-access=ALL-UNNAMED</argument>
+                            <argument>-classpath</argument>
+                            <classpath/>
+                            <argument>${mirror.mainClass}</argument>
+                        </arguments>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
         <plugins>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -314,6 +344,42 @@
                                 </configuration>
                             </execution>
                         </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- Mirrors a directory, see `mvn test -Pmirror` -->
+        <profile>
+            <id>mirror</id>
+            <properties>
+                <mirror.mainClass>org.cryptomator.frontend.fuse.mount.MirroringFuseMountTest$Mirror</mirror.mainClass>
+                <!-- test classes are still compiled, only surefire is skipped -->
+                <skipTests>true</skipTests>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- Mirrors a vault, see `mvn test -Pcrypto-mirror` -->
+        <profile>
+            <id>crypto-mirror</id>
+            <properties>
+                <mirror.mainClass>org.cryptomator.frontend.fuse.mount.MirroringFuseMountTest$CryptoFsMirror</mirror.mainClass>
+                <!-- test classes are still compiled, only surefire is skipped -->
+                <skipTests>true</skipTests>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
                     </plugin>
                 </plugins>
             </build>
