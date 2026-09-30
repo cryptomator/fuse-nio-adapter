@@ -18,6 +18,22 @@ java --enable-native-access=org.cryptomator.jfuse,org.cryptomator.frontend.fuse 
 
 Native access is only used on Windows to locate the WinFsp installation directory by reading the registry via `Advapi32.dll`.
 
+## Mirroring Test
+
+To try out the adapter, `MirroringFuseMountTest` can be run in a forked JVM with native access enabled. Both profiles prompt for what to mirror and, unless the mount provider picks the mount point itself, where to mount it.
+
+Mirror a directory:
+
+```
+./mvnw test -Pmirror
+```
+
+Mirror a vault (additionally prompts for the passphrase):
+
+```
+./mvnw test -Pcrypto-mirror
+```
+
 ## License
 
 This project is dual-licensed under the AGPLv3 for FOSS projects as well as a commercial license for independent software vendors and resellers. If you want to use this library in applications, that are *not* licensed under the AGPL, feel free to contact our [support team](https://cryptomator.org/help/).
