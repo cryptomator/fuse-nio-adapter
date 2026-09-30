@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Objects;
 import java.util.Set;
@@ -38,21 +37,6 @@ public class LinuxFuseMountProvider implements MountService {
 
 	private static final Logger LOG = LoggerFactory.getLogger(LinuxFuseMountProvider.class);
 	private static final Path USER_HOME = Path.of(System.getProperty("user.home"));
-	private static final String[] LIB_PATHS = {
-			"/usr/lib/x86_64-linux-gnu/libfuse3.so.3", // ABI 3, ubuntu 24.10+, amd64
-			"/usr/lib/x86_64-linux-gnu/libfuse3.so.4", // ABI 4, ubuntu 24.10+, amd64
-			"/usr/lib/aarch64-linux-gnu/libfuse3.so.3", // ABI 3, ubuntu 24.10+, aarch64
-			"/usr/lib/aarch64-linux-gnu/libfuse3.so.4", // ABI 4, ubuntu 24.10+, aarch64
-			"/lib/x86_64-linux-gnu/libfuse3.so.3", // ABI 3, debian amd64
-			"/lib/x86_64-linux-gnu/libfuse3.so.4", // ABI 4, debian amd64
-			"/lib/aarch64-linux-gnu/libfuse3.so.3", // ABI 3, debian aarch64
-			"/lib/aarch64-linux-gnu/libfuse3.so.4", // ABI 4, debian aarch64
-			"/usr/lib64/libfuse3.so.3", // ABI 3, fedora
-			"/usr/lib64/libfuse3.so.4", // ABI 4, fedora
-			"/usr/lib/libfuse3.so.3", // ABI 3, ArchLinux
-			"/usr/lib/libfuse3.so.4", // ABI 4, ArchLinux
-			"/app/lib/libfuse3.so" // flatpak
-	};
 	private static final String UNMOUNT_CMD_NAME = "fusermount3";
 
 	@Override
@@ -125,7 +109,7 @@ public class LinuxFuseMountProvider implements MountService {
 			Objects.requireNonNull(mountFlags);
 
 			var builder = Fuse.builder();
-			var libPath = Arrays.stream(LIB_PATHS).map(Path::of).filter(Files::exists).map(Path::toString).findFirst().orElseThrow(() -> new IllegalStateException("No fuse library found at expected path"));
+			var libPath = LinuxFuseUtil.findLibFuse3().map(Path::toString).orElseThrow(() -> new IllegalStateException("No fuse library found"));
 			builder.setLibraryPath(libPath);
 			if (mountFlags.contains("-oallow_other") || mountFlags.contains("-oallow_root")) {
 				LOG.warn("Mounting with flag -oallow_other or -oallow_root. Ensure that in /etc/fuse.conf option user_allow_other is enabled.");
