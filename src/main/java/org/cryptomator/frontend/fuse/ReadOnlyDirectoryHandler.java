@@ -40,7 +40,7 @@ public class ReadOnlyDirectoryHandler {
 			while (iter.hasNext()) {
 				var file = iter.next();
 				if( OS.current() == OS.LINUX) {
-					filler.fill(fileNameTranscoder.nioToFuse(file.getFileName().toString()), stat -> fillFileType(path.resolve(file), stat));
+					filler.fill(fileNameTranscoder.nioToFuse(file.getFileName().toString()), stat -> fillFileType(file, stat));
 				} else {
 					filler.fill(fileNameTranscoder.nioToFuse(file.getFileName().toString()));
 				}
