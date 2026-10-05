@@ -9,13 +9,21 @@ The changelog starts with version 5.0.4.
 Changes to prior versions can be found on the [GitHub release page](https://github.com/cryptomator/fuse-nio-adapter/releases).
 
 ## Unreleased
+### Added
+* Maven wrapper (Maven 3.9.16)
+
 ### Fixed
-* Unable to find libfuse on NixOS ([#222](https://github.com/cryptomator/fuse-nio-adapter/issues/222))
+* Fixed unable to find libfuse on NixOS ([#222](https://github.com/cryptomator/fuse-nio-adapter/issues/222))
+* Fixed crash in GNOMEs glib (i.e. used by Nautilus file manager) when moving non-empty dir to trash ([#237](https://github.com/cryptomator/fuse-nio-adapter/pull/237))
 
 ### Changed
-* Read the WinFsp installation directory by calling `RegGetValueW` via the FFM API instead of spawning `reg.exe`. This requires `--enable-native-access=org.cryptomator.frontend.fuse`.
+* **[Breaking]** Read the WinFsp installation directory by calling `RegGetValueW` via the FFM API instead of spawning `reg.exe`. Requires JVM setting `--enable-native-access=org.cryptomator.frontend.fuse`. ([#233](https://github.com/cryptomator/fuse-nio-adapter/pull/233))
 * Locate libfuse3 via the dynamic linker (`dladdr`) using the FFM API instead of probing hard-coded paths ([#236](https://github.com/cryptomator/fuse-nio-adapter/pull/236))
 * On Linux, fill inode type during dir listing ([#237](https://github.com/cryptomator/fuse-nio-adapter/pull/237))
+* Update dependenies
+  - `org.cryptomator:integrations-api` from 1.7.0 to 1.9.0
+  - `org.slf4j:slf4j-api` from 2.0.17 to 2.0.20
+  - `com.github.ben-manes.caffeine:caffeine` from 3.2.3 to 3.3.0
 
 
 ## [6.0.1] - 2026-03-03
