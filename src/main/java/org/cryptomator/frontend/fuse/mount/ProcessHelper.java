@@ -3,7 +3,7 @@ package org.cryptomator.frontend.fuse.mount;
 import org.jetbrains.annotations.Blocking;
 
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
@@ -24,7 +24,7 @@ class ProcessHelper {
 	 */
 	@Blocking
 	static void waitForSuccess(Process process, int timeoutSeconds, String cmdDescription) throws TimeoutException, InterruptedException, CommandFailedException {
-		boolean exited = process.waitFor(timeoutSeconds, TimeUnit.SECONDS);
+		boolean exited = process.waitFor(Duration.ofSeconds(timeoutSeconds));
 		if (!exited) {
 			throw new TimeoutException(cmdDescription + " timed out after " + timeoutSeconds + "s");
 		}

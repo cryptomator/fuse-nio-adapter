@@ -12,29 +12,30 @@ jobs:
     name: Build and Test
     runs-on: ubuntu-latest
     permissions:
+      contents: read # Required for checkout
       id-token: write # Required for the attestations step
       attestations: write # Required for the attestations step
       artifact-metadata: write
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
           distribution: 'temurin'
           java-version: ${{ env.JAVA_VERSION }}
           cache: 'maven'
       - name: Ensure to use tagged version
         if: startsWith(github.ref, 'refs/tags/')
-        run: mvn versions:set --file ./pom.xml -DnewVersion=${GITHUB_REF##*/}
+        run: ./mvnw versions:set --file ./pom.xml -DnewVersion=${GITHUB_REF##*/}
       - name: Build and Test
-        run: mvn -B verify --no-transfer-progress jacoco:report -Pcoverage
+        run: ./mvnw -B verify --no-transfer-progress jacoco:report -Pcoverage
       - name: Attest
         if: startsWith(github.ref, 'refs/tags/')
-        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
           subject-path: |
             target/*.jar
             target/*.pom
-      - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: artifacts
           path: target/*.jar
@@ -42,12 +43,13 @@ jobs:
   deploy-central:
     name: Deploy to Maven Central
     runs-on: ubuntu-latest
-    permissions: {}
+    permissions:
+      contents: read # Required for checkout
     needs: [build]
     if: github.repository_owner == 'cryptomator' && (startsWith(github.ref, 'refs/tags/') || contains(github.event.head_commit.message, '[deploy]'))
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
           distribution: 'temurin'
           java-version: ${{ env.JAVA_VERSION }}
@@ -57,14 +59,14 @@ jobs:
           server-password: MAVEN_CENTRAL_PASSWORD
       - name: Ensure to use tagged version
         if: startsWith(github.ref, 'refs/tags/')
-        run: mvn versions:set --file ./pom.xml -DnewVersion=${GITHUB_REF##*/}
+        run: ./mvnw versions:set --file ./pom.xml -DnewVersion=${GITHUB_REF##*/}
       - name: Verify project version is -SNAPSHOT
         if: startsWith(github.ref, 'refs/tags/') == false
         run: |
-          PROJECT_VERSION=$(mvn help:evaluate "-Dexpression=project.version" -q -DforceStdout)
+          PROJECT_VERSION=$(./mvnw help:evaluate "-Dexpression=project.version" -q -DforceStdout)
           test "${PROJECT_VERSION: -9}" = "-SNAPSHOT"
       - name: Deploy to Maven Central
-        run: mvn deploy -B -DskipTests -Psign,deploy-central --no-transfer-progress
+        run: ./mvnw deploy -B -DskipTests -Psign,deploy-central --no-transfer-progress
         env:
           MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
           MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
@@ -77,25 +79,26 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       packages: write # Required for the deploy to GitHub Packages step
+      contents: read # Required for checkout
     needs: [build]
     if: github.repository_owner == 'cryptomator' && (startsWith(github.ref, 'refs/tags/') || contains(github.event.head_commit.message, '[deploy]'))
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: 'temurin'
           cache: 'maven'
       - name: Ensure to use tagged version
         if: startsWith(github.ref, 'refs/tags/')
-        run: mvn versions:set --file ./pom.xml -DnewVersion=${GITHUB_REF##*/}
+        run: ./mvnw versions:set --file ./pom.xml -DnewVersion=${GITHUB_REF##*/}
       - name: Verify project version is -SNAPSHOT
         if: startsWith(github.ref, 'refs/tags/') == false
         run: |
-          PROJECT_VERSION=$(mvn help:evaluate "-Dexpression=project.version" -q -DforceStdout)
+          PROJECT_VERSION=$(./mvnw help:evaluate "-Dexpression=project.version" -q -DforceStdout)
           test "${PROJECT_VERSION: -9}" = "-SNAPSHOT"
       - name: Deploy to GitHub Packages
-        run: mvn deploy -B -DskipTests -Psign,deploy-github --no-transfer-progress
+        run: ./mvnw deploy -B -DskipTests -Psign,deploy-github --no-transfer-progress
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.RELEASES_GPG_PASSPHRASE }}
@@ -111,7 +114,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/')
     steps:
       - name: Create Release
-        uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2.5.0
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           prerelease: true
           token: ${{ secrets.CRYPTOBOT_RELEASE_TOKEN }}

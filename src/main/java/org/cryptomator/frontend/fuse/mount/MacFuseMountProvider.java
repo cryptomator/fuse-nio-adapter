@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.text.Normalizer;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -47,7 +46,7 @@ public class MacFuseMountProvider implements MountService {
 			"/usr/local/lib/libosxfuse.2.dylib", //osxfuse
 			"/usr/local/lib/libfuse.2.dylib"}; //macFuse
 
-	private static final Path USER_HOME = Paths.get(System.getProperty("user.home"));
+	private static final Path USER_HOME = Path.of(System.getProperty("user.home"));
 
 	@Override
 	public String displayName() {
