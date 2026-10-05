@@ -8,7 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 The changelog starts with version 5.0.4.
 Changes to prior versions can be found on the [GitHub release page](https://github.com/cryptomator/fuse-nio-adapter/releases).
 
-## Unreleased
+## [Unreleased](https://github.com/cryptomator/fuse-nio-adapter/compare/7.0.0...HEAD)
+
+No changes yet.
+
+
+## [7.0.0](https://github.com/cryptomator/fuse-nio-adapter/releases/tag/7.0.0) - 2026-05-10
 ### Added
 * Maven wrapper (Maven 3.9.16)
 
@@ -21,7 +26,7 @@ Changes to prior versions can be found on the [GitHub release page](https://gith
 * Locate libfuse3 via the dynamic linker (`dladdr`) using the FFM API instead of probing hard-coded paths ([#236](https://github.com/cryptomator/fuse-nio-adapter/pull/236))
 * On Linux, fill inode type during dir listing ([#237](https://github.com/cryptomator/fuse-nio-adapter/pull/237))
 * Update dependenies
-  - `org.cryptomator:integrations-api` from 1.7.0 to 1.9.0
+  - `org.cryptomator:integrations-api` from 1.7.0 to 1.9.1
   - `org.slf4j:slf4j-api` from 2.0.17 to 2.0.20
   - `com.github.ben-manes.caffeine:caffeine` from 3.2.3 to 3.3.0
 

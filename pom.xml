@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.cryptomator</groupId>
     <artifactId>fuse-nio-adapter</artifactId>
-    <version>6.1.0-SNAPSHOT</version>
+    <version>7.1.0-SNAPSHOT</version>
     <name>FUSE-NIO-Adapter</name>
     <description>Access resources at a given NIO path via FUSE.</description>
     <url>https://github.com/cryptomator/fuse-nio-adapter</url>
@@ -21,7 +21,7 @@
         <project.build.jdk>25</project.build.jdk>
 
         <!-- dependencies -->
-        <integrations-api.version>1.9.0</integrations-api.version>
+        <integrations-api.version>1.9.1</integrations-api.version>
         <jfuse.version>0.7.3</jfuse.version>
         <slf4j.version>2.0.20</slf4j.version>
         <caffeine.version>3.3.0</caffeine.version>
