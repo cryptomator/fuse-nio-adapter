@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 The changelog starts with version 5.0.4.
 Changes to prior versions can be found on the [GitHub release page](https://github.com/cryptomator/fuse-nio-adapter/releases).
 
-## Unreleased
+## [7.0.0](https://github.com/cryptomator/fuse-nio-adapter/compare/6.0.1...HEAD) - tbd
 ### Added
 * Maven wrapper (Maven 3.9.16)
 
