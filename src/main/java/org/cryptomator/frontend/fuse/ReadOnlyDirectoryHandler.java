@@ -39,6 +39,8 @@ public class ReadOnlyDirectoryHandler {
 			var iter = ds.iterator();
 			while (iter.hasNext()) {
 				var file = iter.next();
+				//introduced due to https://github.com/cryptomator/cryptomator/issues/4319
+				//TODO: evaluate after March 2027 if still  needed or fully switch to readdir+
 				if( OS.current() == OS.LINUX) {
 					filler.fill(fileNameTranscoder.nioToFuse(file.getFileName().toString()), stat -> fillFileType(file, stat));
 				} else {

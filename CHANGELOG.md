@@ -15,6 +15,7 @@ Changes to prior versions can be found on the [GitHub release page](https://gith
 ### Changed
 * Read the WinFsp installation directory by calling `RegGetValueW` via the FFM API instead of spawning `reg.exe`. This requires `--enable-native-access=org.cryptomator.frontend.fuse`.
 * Locate libfuse3 via the dynamic linker (`dladdr`) using the FFM API instead of probing hard-coded paths ([#236](https://github.com/cryptomator/fuse-nio-adapter/pull/236))
+* On Linux, fill inode type during dir listing ([#237](https://github.com/cryptomator/fuse-nio-adapter/pull/237))
 
 
 ## [6.0.1] - 2026-03-03
