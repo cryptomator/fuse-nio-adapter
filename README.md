@@ -16,7 +16,9 @@ This library calls native code and therefore requires native access to be enable
 java --enable-native-access=org.cryptomator.jfuse,org.cryptomator.frontend.fuse ...
 ```
 
-Native access is only used on Windows to locate the WinFsp installation directory by reading the registry via `Advapi32.dll`.
+Native access is used to locate the native FUSE library:
+* On Windows, the WinFsp installation directory is read from the registry via `Advapi32.dll`.
+* On Linux, libfuse3 is loaded via the dynamic linker and its path is resolved via `dladdr`.
 
 ## Mirroring Test
 

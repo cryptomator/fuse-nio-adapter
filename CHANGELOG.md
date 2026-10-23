@@ -22,7 +22,8 @@ No changes yet.
 * Fixed crash in GNOMEs glib (i.e. used by Nautilus file manager) when moving non-empty dir to trash ([#237](https://github.com/cryptomator/fuse-nio-adapter/pull/237))
 
 ### Changed
-* **[Breaking]** Read the WinFsp installation directory by calling `RegGetValueW` via the FFM API instead of spawning `reg.exe`. Requires JVM setting `--enable-native-access=org.cryptomator.frontend.fuse`. ([#233](https://github.com/cryptomator/fuse-nio-adapter/pull/233))
+* **[Breaking]** Requires JVM setting `--enable-native-access=org.cryptomator.frontend.fuse` (#233, #236)
+* Read the WinFsp installation directory by calling `RegGetValueW` via the FFM API instead of spawning `reg.exe`.([#233](https://github.com/cryptomator/fuse-nio-adapter/pull/233))
 * Locate libfuse3 via the dynamic linker (`dladdr`) using the FFM API instead of probing hard-coded paths ([#236](https://github.com/cryptomator/fuse-nio-adapter/pull/236))
 * On Linux, fill inode type during dir listing ([#237](https://github.com/cryptomator/fuse-nio-adapter/pull/237))
 * Update dependenies
