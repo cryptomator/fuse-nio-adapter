@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 The changelog starts with version 5.0.4.
 Changes to prior versions can be found on the [GitHub release page](https://github.com/cryptomator/fuse-nio-adapter/releases).
 
-## [Unreleased](https://github.com/cryptomator/fuse-nio-adapter/compare/7.0.0...HEAD)
+## [7.0.1](https://github.com/cryptomator/fuse-nio-adapter/releases/tag/7.0.1) - 2026-11-12
 
 ### Fixed
 * Windows: JVM crash during unmount (fixed in jfuse, see [cryptomator/jfuse#176](https://github.com/cryptomator/jfuse/issues/176))
