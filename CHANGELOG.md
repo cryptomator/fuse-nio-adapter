@@ -8,6 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 The changelog starts with version 5.0.4.
 Changes to prior versions can be found on the [GitHub release page](https://github.com/cryptomator/fuse-nio-adapter/releases).
 
+## [7.0.1](https://github.com/cryptomator/fuse-nio-adapter/releases/tag/7.0.1) - 2026-11-12
+
+### Fixed
+* Windows: JVM crash during unmount (fixed in jfuse, see [cryptomator/jfuse#176](https://github.com/cryptomator/jfuse/issues/176))
+
+### Changed
+* Update dependencies
+  - `org.cryptomator:jfuse` from 0.7.3 to 0.8.0
+  - `org.cryptomator:integrations-api` from 1.9.1 to 1.10.1
+  - `com.github.ben-manes.caffeine:caffeine` from 3.3.0 to 3.3.1
+
+
 ## [7.0.0](https://github.com/cryptomator/fuse-nio-adapter/releases/tag/7.0.0) - 2026-05-10
 ### Added
 * Maven wrapper (Maven 3.9.16)
@@ -17,7 +29,8 @@ Changes to prior versions can be found on the [GitHub release page](https://gith
 * Fixed crash in GNOMEs glib (i.e. used by Nautilus file manager) when moving non-empty dir to trash ([#237](https://github.com/cryptomator/fuse-nio-adapter/pull/237))
 
 ### Changed
-* **[Breaking]** Read the WinFsp installation directory by calling `RegGetValueW` via the FFM API instead of spawning `reg.exe`. Requires JVM setting `--enable-native-access=org.cryptomator.frontend.fuse`. ([#233](https://github.com/cryptomator/fuse-nio-adapter/pull/233))
+* **[Breaking]** Requires JVM setting `--enable-native-access=org.cryptomator.frontend.fuse` (#233, #236)
+* Read the WinFsp installation directory by calling `RegGetValueW` via the FFM API instead of spawning `reg.exe`.([#233](https://github.com/cryptomator/fuse-nio-adapter/pull/233))
 * Locate libfuse3 via the dynamic linker (`dladdr`) using the FFM API instead of probing hard-coded paths ([#236](https://github.com/cryptomator/fuse-nio-adapter/pull/236))
 * On Linux, fill inode type during dir listing ([#237](https://github.com/cryptomator/fuse-nio-adapter/pull/237))
 * Update dependenies
