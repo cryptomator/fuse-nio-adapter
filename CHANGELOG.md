@@ -10,7 +10,11 @@ Changes to prior versions can be found on the [GitHub release page](https://gith
 
 ## [Unreleased](https://github.com/cryptomator/fuse-nio-adapter/compare/7.0.0...HEAD)
 
-No changes yet.
+### Fixed
+* Windows: JVM crash during unmount (fixed in jfuse, see [cryptomator/jfuse#176](https://github.com/cryptomator/jfuse/issues/176))
+
+### Changed
+* Update `org.cryptomator:jfuse` from 0.7.3 to 0.8.0
 
 
 ## [7.0.0](https://github.com/cryptomator/fuse-nio-adapter/releases/tag/7.0.0) - 2026-05-10

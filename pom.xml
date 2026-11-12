@@ -22,7 +22,7 @@
 
         <!-- dependencies -->
         <integrations-api.version>1.9.1</integrations-api.version>
-        <jfuse.version>0.7.3</jfuse.version>
+        <jfuse.version>0.8.0</jfuse.version>
         <slf4j.version>2.0.20</slf4j.version>
         <caffeine.version>3.3.0</caffeine.version>
 
