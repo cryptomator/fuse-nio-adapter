@@ -45,6 +45,12 @@
         <central-publishing.version>0.12.0</central-publishing.version>
         <dependency-check.version>13.0.0</dependency-check.version>
         <jacoco.version>0.8.16</jacoco.version>
+
+        <!-- input of the mirror and crypto-mirror profiles, MirroringFuseMountTest prompts for each one left empty -->
+        <mirror.dir></mirror.dir>
+        <mirror.vault></mirror.vault>
+        <mirror.passphrase></mirror.passphrase>
+        <mirror.mountPoint></mirror.mountPoint>
     </properties>
 
     <licenses>
@@ -179,8 +185,14 @@
                     <configuration>
                         <executable>${java.home}/bin/java</executable>
                         <classpathScope>test</classpathScope>
+                        <!-- let MirroringFuseMountTest read the console directly, so it gets prompted input and the keystroke to unmount -->
+                        <inheritIo>true</inheritIo>
                         <arguments>
                             <argument>--enable-native-access=ALL-UNNAMED</argument>
+                            <argument>-Dmirror.dir=${mirror.dir}</argument>
+                            <argument>-Dmirror.vault=${mirror.vault}</argument>
+                            <argument>-Dmirror.passphrase=${mirror.passphrase}</argument>
+                            <argument>-Dmirror.mountPoint=${mirror.mountPoint}</argument>
                             <argument>-classpath</argument>
                             <classpath/>
                             <argument>${mirror.mainClass}</argument>
