@@ -48,8 +48,7 @@ public class MirroringFuseMountTest {
 			var mountService = MountService.get().findAny().orElseThrow(() -> new MountFailedException("Did not find a mount provider"));
 			LOG.info("Using mount provider: {}", mountService.displayName());
 			try (Scanner scanner = new Scanner(System.in)) {
-				IO.println("Enter path to the directory you want to mirror:");
-				Path p = Path.of(scanner.nextLine());
+				Path p = Path.of(propertyOrPrompt("mirror.dir", "Enter path to the directory you want to mirror:", scanner));
 				mount(mountService, p, scanner);
 			}
 		}
@@ -74,12 +73,10 @@ public class MirroringFuseMountTest {
 			var mountService = MountService.get().findAny().orElseThrow(() -> new MountFailedException("Did not find a mount provider"));
 			LOG.info("Using mount provider: {}", mountService.displayName());
 			try (Scanner scanner = new Scanner(System.in)) {
-				LOG.info("Enter path to the vault you want to mirror:");
-				Path vaultPath = Path.of(scanner.nextLine());
+				Path vaultPath = Path.of(propertyOrPrompt("mirror.vault", "Enter path to the vault you want to mirror:", scanner));
 				Preconditions.checkArgument(CryptoFileSystemProvider.checkDirStructureForVault(vaultPath, "vault.cryptomator", "masterkey.cryptomator") == DirStructure.VAULT, "Not a vault: " + vaultPath);
 
-				LOG.info("Enter vault password:");
-				String passphrase = scanner.nextLine();
+				String passphrase = propertyOrPrompt("mirror.passphrase", "Enter vault password:", scanner);
 
 				SecureRandom csprng = SecureRandom.getInstanceStrong();
 				CryptoFileSystemProperties props = CryptoFileSystemProperties.cryptoFileSystemProperties()
@@ -92,6 +89,16 @@ public class MirroringFuseMountTest {
 			}
 		}
 
+	}
+
+	// reads the given system property, prompting for the value if the property is unset or empty
+	private static String propertyOrPrompt(String key, String prompt, Scanner scanner) {
+		var value = System.getProperty(key, "");
+		if (!value.isEmpty()) {
+			return value;
+		}
+		LOG.info(prompt);
+		return scanner.nextLine();
 	}
 
 	private static void mount(MountService mountProvider, Path pathToMirror, Scanner scanner) throws MountFailedException {
@@ -115,8 +122,7 @@ public class MirroringFuseMountTest {
 		if (mountProvider.hasCapability(MountCapability.MOUNT_TO_SYSTEM_CHOSEN_PATH)) {
 			// don't set a mount point
 		} else {
-			LOG.info("Enter mount point: ");
-			Path m = Path.of(scanner.nextLine());
+			Path m = Path.of(propertyOrPrompt("mirror.mountPoint", "Enter mount point: ", scanner));
 			mountBuilder.setMountpoint(m);
 		}
 

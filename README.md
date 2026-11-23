@@ -36,6 +36,12 @@ Mirror a vault (additionally prompts for the passphrase):
 ./mvnw test -Pcrypto-mirror
 ```
 
+Instead of being prompted, you can pass the input as properties: `mirror.dir` (directory to mirror), `mirror.vault` (vault to mirror), `mirror.passphrase` (vault passphrase), and `mirror.mountPoint` (mount point):
+
+```
+./mvnw test -Pcrypto-mirror -Dmirror.vault=/path/to/vault -Dmirror.passphrase=secret -Dmirror.mountPoint=/path/to/mountpoint
+```
+
 ## License
 
 This project is dual-licensed under the AGPLv3 for FOSS projects as well as a commercial license for independent software vendors and resellers. If you want to use this library in applications, that are *not* licensed under the AGPL, feel free to contact our [support team](https://cryptomator.org/help/).
