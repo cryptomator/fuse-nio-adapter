@@ -65,6 +65,9 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 		ops.add(Operation.MKDIR);
 		ops.add(Operation.RENAME);
 		ops.add(Operation.RMDIR);
+		ops.add(Operation.SET_BKUPTIME);
+		ops.add(Operation.SET_CHGTIME);
+		ops.add(Operation.SET_CRTIME);
 		ops.add(Operation.SYMLINK);
 		ops.add(Operation.TRUNCATE);
 		ops.add(Operation.UNLINK);
@@ -307,6 +310,36 @@ public final class ReadWriteAdapter extends ReadOnlyAdapter {
 			logGenericException("utimens", path, e);
 			return -errno.eio();
 		}
+	}
+
+	@Override
+	public int setcrtime(String path, TimeSpec crtime) {
+		try (PathLock pathLock = lockManager.lockForReading(path);
+			 DataLock _ = pathLock.lockDataForWriting()) {
+			Path node = resolvePath(fileNameTranscoder.fuseToNio(path));
+			fileHandler.setCreationTime(node, crtime);
+			LOG.trace("setcrtime {} (creation time {})", path, crtime.get());
+			return 0;
+		} catch (NoSuchFileException _) {
+			return -errno.enoent();
+		} catch (IOException | RuntimeException e) {
+			logGenericException("setcrtime", path, e);
+			return -errno.eio();
+		}
+	}
+
+	@Override
+	public int setchgtime(String path, TimeSpec chgtime) {
+		// ENOSYS would fail the whole setattr in macFUSE and FUSE-T
+		LOG.trace("Ignoring setchgtime {} call. NIO can't set the change time.", path);
+		return 0;
+	}
+
+	@Override
+	public int setbkuptime(String path, TimeSpec bkuptime) {
+		// ENOSYS would fail the whole setattr in macFUSE and FUSE-T
+		LOG.trace("Ignoring setbkuptime {} call. NIO can't set the backup time.", path);
+		return 0;
 	}
 
 	@Override

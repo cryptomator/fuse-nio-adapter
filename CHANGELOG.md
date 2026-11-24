@@ -11,7 +11,8 @@ Changes to prior versions can be found on the [GitHub release page](https://gith
 
 ## [Unreleased](https://github.com/cryptomator/fuse-nio-adapter/compare/7.0.1...HEAD)
 
-No changes yet.
+### Added
+* macOS: Set the creation time of files and directories via `setcrtime` ([#245](https://github.com/cryptomator/fuse-nio-adapter/pull/245))
 
 
 ## [7.0.1](https://github.com/cryptomator/fuse-nio-adapter/releases/tag/7.0.1) - 2026-11-12
