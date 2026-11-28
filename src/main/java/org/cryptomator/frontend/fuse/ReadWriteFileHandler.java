@@ -115,4 +115,9 @@ public class ReadWriteFileHandler extends ReadOnlyFileHandler implements Closeab
 		view.setTimes(mTime, aTime, null);
 	}
 
+	public void setCreationTime(Path node, TimeSpec crtime) throws IOException {
+		BasicFileAttributeView view = Files.getFileAttributeView(node, BasicFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
+		view.setTimes(null, null, FileTime.from(crtime.get()));
+	}
+
 }
